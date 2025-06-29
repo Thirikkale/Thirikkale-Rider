@@ -42,7 +42,7 @@ class AuthService {
       
       return true;
     } catch (e) {
-      throw e; // Re-throw to handle in AuthProvider
+      rethrow; // Re-throw to handle in AuthProvider
     }
   }
 

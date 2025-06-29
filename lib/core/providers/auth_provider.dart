@@ -19,7 +19,7 @@ class AuthProvider extends ChangeNotifier {
   // Send OTP for phone verification
   Future<void> sendOTP({
     required String phoneNumber,
-    required Function(String verificationId) onCodeSent,
+    required Function(String verificationId, int? resendToken) onCodeSent,
     required Function(FirebaseAuthException error) onVerificationFailed,
   }) async {
     _setLoading(true);
@@ -29,7 +29,7 @@ class AuthProvider extends ChangeNotifier {
       await _authService.sendOTP(
         phoneNumber: phoneNumber,
         codeSent: (verificationId, resendToken) {
-          onCodeSent(verificationId);
+          onCodeSent(verificationId, resendToken);
         },
         verificationFailed: (error) {
           _setError(error.message ?? 'Phone verification failed');

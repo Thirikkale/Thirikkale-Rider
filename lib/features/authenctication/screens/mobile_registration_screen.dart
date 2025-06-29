@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:thirikkale_rider/core/providers/auth_provider.dart';
 import 'package:thirikkale_rider/core/utils/app_styles.dart';
 import 'package:thirikkale_rider/core/utils/navigation_utils.dart';
 import 'package:thirikkale_rider/features/authenctication/screens/otp_verification_screen.dart';
@@ -23,8 +25,62 @@ class _MobileRegistrationScreenState extends State<MobileRegistrationScreen> {
     if (value.length < 9) {
       return 'Please enter a valid phone number';
     }
-    // Add more validation as needed
+    if (!RegExp(r'^[7][0-9]{8}$').hasMatch(value)) {
+      return 'Please enter a valid Sri Lankan mobile number';
+    }
     return null;
+  }
+
+  // Check if form is valid
+  bool get _isFormValid {
+    return _phoneController.text.isNotEmpty &&
+        _validatePhoneNumber(_phoneController.text) == null;
+  }
+
+  // Send OTP
+  void _sendOTP() async {
+    if (!_isFormValid) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please enter a valid phone number'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    final fullNumber = '+94${_phoneController.text}';
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+
+    await authProvider.sendOTP(
+      phoneNumber: fullNumber,
+      onCodeSent: (verificationId, resendToken) {
+        if (mounted) {
+          // Set the verified phone number in provider
+          authProvider.setVerifiedPhoneNumber(fullNumber);
+
+          Navigator.of(context).push(
+            NoAnimationPageRoute(
+              builder:
+                  (context) => OtpVerificationScreen(
+                    verificationId: verificationId,
+                    phoneNumber: fullNumber,
+                  ),
+            ),
+          );
+        }
+      },
+      onVerificationFailed: (error) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Verification failed: ${error.message}'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      },
+    );
   }
 
   @override
@@ -42,16 +98,11 @@ class _MobileRegistrationScreenState extends State<MobileRegistrationScreen> {
           height: 32.0,
         ),
       ),
-      body: GestureDetector(
-        onTap: () {
-          FocusScope.of(context).unfocus();
-        },
-        child: SingleChildScrollView(
+      body: SingleChildScrollView(
+        child: GestureDetector(
+          onTap: () => FocusScope.of(context).unfocus(),
           child: Column(
             children: [
-              // SizedBox(
-              //   height: MediaQuery.of(context).padding.top + kToolbarHeight,
-              // ),
               // Top image
               Image.asset(
                 'assets/images/mobile_registration_bg.png',
@@ -59,7 +110,8 @@ class _MobileRegistrationScreenState extends State<MobileRegistrationScreen> {
                 height: 250,
                 fit: BoxFit.cover,
               ),
-              // Content below image
+        
+              // Scrollable content
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24.0),
                 child: Column(
@@ -76,30 +128,45 @@ class _MobileRegistrationScreenState extends State<MobileRegistrationScreen> {
                       controller: _phoneController,
                       validator: _validatePhoneNumber,
                       onChanged: (value) {
-                        // Handle real-time changes if needed
+                        setState(() {}); // Update UI for validation
                         print('Phone number changed: +94$value');
                       },
                     ),
                     const SizedBox(height: 32),
-                    // Continue button
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: () {
-                          // Handle submit
-                          String fullNumber = '+94${_phoneController.text}';
-                          print('Phone Number: $fullNumber');
-                          Navigator.of(context).push(
-                            NoAnimationPageRoute(builder: (context) => const OtpVerificationScreen())
-                          );
-                        },
-                        style: AppButtonStyles.primaryButton,
-                        child: const Text('Continue'),
-                      ),
-                    ),
                   ],
                 ),
               ),
+        
+              // Bottom button
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                child: Consumer<AuthProvider>(
+                  builder: (context, authProvider, child) {
+                    if (authProvider.isLoading) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+        
+                    return SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: _isFormValid ? _sendOTP : null,
+                        style: AppButtonStyles.primaryButton.copyWith(
+                          backgroundColor: WidgetStateProperty.resolveWith<Color>(
+                            (Set<WidgetState> states) {
+                              if (states.contains(WidgetState.disabled)) {
+                                return AppColors.lightGrey;
+                              }
+                              return AppColors.primaryBlue;
+                            },
+                          ),
+                        ),
+                        child: const Text('Continue'),
+                      ),
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(height: 32),
             ],
           ),
         ),
