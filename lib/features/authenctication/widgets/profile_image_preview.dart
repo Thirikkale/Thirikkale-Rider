@@ -83,11 +83,6 @@ class ProfileImagePreview extends StatelessWidget {
           style: TextStyle(color: Colors.grey[700]),
         ),
         const SizedBox(height: 16),
-        ElevatedButton(
-          onPressed: requestCameraPermission,
-          style: AppButtonStyles.secondaryButton,
-          child: const Text('Grant Permission'),
-        ),
       ],
     );
   }

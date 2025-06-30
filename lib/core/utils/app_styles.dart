@@ -83,7 +83,7 @@ class AppButtonStyles {
     backgroundColor: AppColors.white,
     foregroundColor: AppColors.primaryBlue,
     textStyle: AppTextStyles.button,
-    padding: const EdgeInsets.symmetric(vertical: 16.0),
+    padding: const EdgeInsets.symmetric(horizontal: 30.0, vertical: 16.0),
     shape: RoundedRectangleBorder(
       borderRadius: BorderRadius.circular(8.0),
       side: const BorderSide(color: AppColors.primaryBlue, width: 1.5),

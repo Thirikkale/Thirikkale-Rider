@@ -5,8 +5,51 @@ import 'package:thirikkale_rider/features/authenctication/widgets/sign_navigatio
 import 'package:thirikkale_rider/widgets/common/custom_appbar.dart';
 import 'package:thirikkale_rider/widgets/common/custom_input_field_label.dart';
 
-class NameRegistrationScreen extends StatelessWidget {
+class NameRegistrationScreen extends StatefulWidget {
   const NameRegistrationScreen({super.key});
+
+  @override
+  State<NameRegistrationScreen> createState() => _NameRegistrationScreenState();
+}
+
+class _NameRegistrationScreenState extends State<NameRegistrationScreen> {
+  final _firstNameController = TextEditingController();
+  final _lastNameController = TextEditingController();
+  bool _isFormValid = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _firstNameController.addListener(_validateForm);
+    _lastNameController.addListener(_validateForm);
+  }
+
+  @override
+  void dispose() {
+    _firstNameController.dispose();
+    _lastNameController.dispose();
+    super.dispose();
+  }
+
+  void _validateForm() {
+    setState(() {
+      _isFormValid =
+          _firstNameController.text.trim().isNotEmpty &&
+          _lastNameController.text.trim().isNotEmpty;
+    });
+  }
+
+  void _navigateToPhotoVerification() {
+    // Send details to backend also store the name in your AuthProvider here
+    // final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    // authProvider.setUserName(_firstNameController.text, _lastNameController.text);
+
+    Navigator.of(context).push(
+      NoAnimationPageRoute(
+        builder: (context) => const PhotoVerificationScreen(),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -32,30 +75,14 @@ class NameRegistrationScreen extends StatelessWidget {
               style: Theme.of(context).textTheme.bodyLarge,
             ),
             const SizedBox(height: 14),
-            CustomInputFieldLabel(label: "First Name"),
+            CustomInputFieldLabel(label: "First Name", controller: _firstNameController,),
             const SizedBox(height: 16),
-            CustomInputFieldLabel(label: "Last Name"),
+            CustomInputFieldLabel(label: "Last Name", controller: _lastNameController,),
             const Spacer(),
             SignNavigationButtonRow(
               onBack: () => Navigator.pop(context),
-              // onNext:
-              //     _isFormValid
-              //         ? () {
-              //           Navigator.push(
-              //             context,
-              //             MaterialPageRoute(
-              //               builder: (context) => const NextScreen(),
-              //             ),
-              //           );
-              //         }
-              //         : null,
-              onNext:
-                  () => Navigator.of(context).push(
-                    NoAnimationPageRoute(
-                      builder: (context) => const PhotoVerificationScreen(),
-                    ),
-                  ),
-              // nextEnabled: _isFormValid,
+              onNext: _isFormValid ? _navigateToPhotoVerification : null,
+              nextEnabled: _isFormValid,
             ),
             const SizedBox(height: 32),
           ],
