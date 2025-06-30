@@ -1,7 +1,9 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:thirikkale_rider/core/utils/app_styles.dart';
+import 'package:thirikkale_rider/core/utils/navigation_utils.dart';
 import 'package:thirikkale_rider/features/authenctication/widgets/sign_navigation_button_row.dart';
+import 'package:thirikkale_rider/features/home/screens/home_screen.dart';
 import 'package:thirikkale_rider/widgets/common/custom_appbar.dart';
 
 class TermsAndPrivacyScreen extends StatefulWidget {
@@ -13,6 +15,13 @@ class TermsAndPrivacyScreen extends StatefulWidget {
 
 class _TermsAndPrivacyScreenState extends State<TermsAndPrivacyScreen> {
   bool _isAgreed = false;
+
+  void _navigateToNextScreen() {
+    Navigator.of(
+      context,
+    ).push(NoAnimationPageRoute(builder: (context) => const HomeScreen()));
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -110,26 +119,11 @@ class _TermsAndPrivacyScreenState extends State<TermsAndPrivacyScreen> {
 
               SignNavigationButtonRow(
                 onBack: () => Navigator.pop(context),
-                // onNext:
-                //     _isFormValid
-                //         ? () {
-                //           Navigator.push(
-                //             context,
-                //             MaterialPageRoute(
-                //               builder: (context) => const NextScreen(),
-                //             ),
-                //           );
-                //         }
-                //         : null,
-                // onNext:
-                //     () => Navigator.push(
-                //       context,
-                //       MaterialPageRoute(
-                //         builder: (context) => const NameRegistrationScreen(),
-                //       ),
-                //     ),
-                // nextEnabled: _isFormValid,
+                onNext: _isAgreed ? _navigateToNextScreen : null,
+                nextEnabled: _isAgreed,
               ),
+
+              const SizedBox(height: 24),
             ],
           ),
         ),
