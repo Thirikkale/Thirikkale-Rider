@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:thirikkale_rider/core/providers/auth_provider.dart';
 import 'package:thirikkale_rider/core/utils/navigation_utils.dart';
+import 'package:thirikkale_rider/core/utils/snackbar_helper.dart';
 import 'package:thirikkale_rider/features/authenctication/screens/name_registration_screen.dart';
 import 'package:thirikkale_rider/features/authenctication/widgets/sign_navigation_button_row.dart';
 import 'package:thirikkale_rider/widgets/common/custom_appbar.dart';
@@ -73,10 +74,11 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
     authProvider.sendOTP(
       phoneNumber: widget.phoneNumber,
       onCodeSent: (newVerificationId, resendToken) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('New OTP sent successfully!')),
+        SnackbarHelper.showSuccessSnackBar(
+          context,
+          "New OTP sent successfully!",
         );
-        // IMPORTANT: Update the state with the new verificationId
+        // Update the state with the new verificationId
         setState(() {
           _currentVerificationId = newVerificationId;
         });
@@ -113,11 +115,9 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
       );
     } else if (mounted) {
       // Show error message
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(authProvider.errorMessage ?? 'Verification failed'),
-          backgroundColor: Colors.red,
-        ),
+      SnackbarHelper.showErrorSnackBar(
+        context,
+        authProvider.errorMessage ?? 'Verification failed',
       );
     }
   }

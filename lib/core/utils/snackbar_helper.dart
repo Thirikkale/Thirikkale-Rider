@@ -35,6 +35,7 @@ class SnackbarHelper {
     required Color backgroundColor,
     required IconData icon,
     Duration duration = const Duration(seconds: 3),
+    VoidCallback? onDismiss,
   }) {
     final snackBar = SnackBar(
       content: Row(
@@ -61,6 +62,7 @@ class SnackbarHelper {
         textColor: AppColors.white,
         onPressed: () {
           ScaffoldMessenger.of(context).hideCurrentSnackBar();
+          onDismiss?.call();
         },
       ),
     );
