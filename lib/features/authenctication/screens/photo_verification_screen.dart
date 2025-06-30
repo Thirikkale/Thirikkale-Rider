@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:thirikkale_rider/core/utils/app_styles.dart';
 import 'package:thirikkale_rider/core/utils/navigation_utils.dart';
+import 'package:thirikkale_rider/core/utils/snackbar_helper.dart';
 import 'package:thirikkale_rider/features/authenctication/screens/full_screen_camera_page.dart';
 import 'package:thirikkale_rider/features/authenctication/screens/terms_and_privacy_screen.dart';
 import 'package:thirikkale_rider/features/authenctication/widgets/photo_guidelines.dart';
@@ -54,6 +55,9 @@ class _PhotoVerificationScreenState extends State<PhotoVerificationScreen> {
   }
 
   void _navigateToNextScreen() {
+    if (_capturedImage == null) {
+      SnackbarHelper.showInfoSnackBar(context, "You can add your profile photo later from your account settings");
+    }
     Navigator.of(context).push(
       NoAnimationPageRoute(builder: (context) => const TermsAndPrivacyScreen()),
     );

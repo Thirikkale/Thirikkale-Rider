@@ -85,9 +85,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
         startTimer(); // Restart the timer
       },
       onVerificationFailed: (error) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(error.message ?? "Failed to send OTP")),
-        );
+        SnackbarHelper.showErrorSnackBar(context, error.message ?? "Failed to send OTP");
       },
     );
   }
