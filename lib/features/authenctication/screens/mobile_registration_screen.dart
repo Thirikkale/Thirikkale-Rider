@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:thirikkale_rider/core/providers/auth_provider.dart';
 import 'package:thirikkale_rider/core/utils/app_styles.dart';
 import 'package:thirikkale_rider/core/utils/navigation_utils.dart';
+import 'package:thirikkale_rider/core/utils/snackbar_helper.dart';
 import 'package:thirikkale_rider/features/authenctication/screens/otp_verification_screen.dart';
 import 'package:thirikkale_rider/features/authenctication/widgets/custom_phone_input_field.dart';
 import 'package:thirikkale_rider/widgets/common/custom_appbar.dart';
@@ -40,12 +41,7 @@ class _MobileRegistrationScreenState extends State<MobileRegistrationScreen> {
   // Send OTP
   void _sendOTP() async {
     if (!_isFormValid) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please enter a valid phone number'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      SnackbarHelper.showErrorSnackBar(context, "Please enter a valid phone number");
       return;
     }
 
@@ -72,12 +68,7 @@ class _MobileRegistrationScreenState extends State<MobileRegistrationScreen> {
       },
       onVerificationFailed: (error) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Verification failed: ${error.message}'),
-              backgroundColor: Colors.red,
-            ),
-          );
+          SnackbarHelper.showErrorSnackBar(context, "Verification failed: ${error.message}");
         }
       },
     );
