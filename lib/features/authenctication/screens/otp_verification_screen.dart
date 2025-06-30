@@ -1,5 +1,4 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:thirikkale_rider/core/providers/auth_provider.dart';
@@ -85,7 +84,10 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
         startTimer(); // Restart the timer
       },
       onVerificationFailed: (error) {
-        SnackbarHelper.showErrorSnackBar(context, error.message ?? "Failed to send OTP");
+        SnackbarHelper.showErrorSnackBar(
+          context,
+          error.message ?? "Failed to send OTP",
+        );
       },
     );
   }
@@ -105,6 +107,13 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
     final success = await authProvider.verifyOTP(_currentVerificationId, otp);
 
     if (success && mounted) {
+      // Token is now available in authProvider.idToken
+
+      // If you want to send the token to your backend immediately:
+      // final backendSuccess = await authProvider.sendTokenToBackend(
+      //   endpoint: 'https://your-api.com/api/auth/verify',
+      // );
+
       // Phone verification successful, proceed to next screen
       Navigator.of(context).push(
         NoAnimationPageRoute(
