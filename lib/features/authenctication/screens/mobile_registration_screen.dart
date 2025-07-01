@@ -18,15 +18,16 @@ class MobileRegistrationScreen extends StatefulWidget {
 
 class _MobileRegistrationScreenState extends State<MobileRegistrationScreen> {
   final TextEditingController _phoneController = TextEditingController();
+  String _cleanPhoneNumber = '';
 
   String? _validatePhoneNumber(String? value) {
-    if (value == null || value.isEmpty) {
+    if (_cleanPhoneNumber.isEmpty) {
       return 'Please enter your phone number';
     }
-    if (value.length < 9) {
+    if (_cleanPhoneNumber.length < 9) {
       return 'Please enter a valid phone number';
     }
-    if (!RegExp(r'^[7][0-9]{8}$').hasMatch(value)) {
+    if (!RegExp(r'^[7][0-9]{8}$').hasMatch(_cleanPhoneNumber)) {
       return 'Please enter a valid Sri Lankan mobile number';
     }
     return null;
@@ -34,14 +35,16 @@ class _MobileRegistrationScreenState extends State<MobileRegistrationScreen> {
 
   // Check if form is valid
   bool get _isFormValid {
-    return _phoneController.text.isNotEmpty &&
-        _validatePhoneNumber(_phoneController.text) == null;
+    return _cleanPhoneNumber.isNotEmpty && _validatePhoneNumber(null) == null;
   }
 
   // Send OTP
   void _sendOTP() async {
     if (!_isFormValid) {
-      SnackbarHelper.showErrorSnackBar(context, "Please enter a valid phone number");
+      SnackbarHelper.showErrorSnackBar(
+        context,
+        "Please enter a valid phone number",
+      );
       return;
     }
 
@@ -68,7 +71,10 @@ class _MobileRegistrationScreenState extends State<MobileRegistrationScreen> {
       },
       onVerificationFailed: (error) {
         if (mounted) {
-          SnackbarHelper.showErrorSnackBar(context, "Verification failed: ${error.message}");
+          SnackbarHelper.showErrorSnackBar(
+            context,
+            "Verification failed: ${error.message}",
+          );
         }
       },
     );
@@ -101,7 +107,7 @@ class _MobileRegistrationScreenState extends State<MobileRegistrationScreen> {
                 height: 250,
                 fit: BoxFit.cover,
               ),
-        
+
               // Scrollable content
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24.0),
@@ -118,16 +124,19 @@ class _MobileRegistrationScreenState extends State<MobileRegistrationScreen> {
                     CustomPhoneInputField(
                       controller: _phoneController,
                       validator: _validatePhoneNumber,
-                      onChanged: (value) {
-                        setState(() {}); // Update UI for validation
-                        print('Phone number changed: +94$value');
+                      onChanged: (cleanNumber) {
+                        setState(() {
+                          _cleanPhoneNumber = cleanNumber; 
+                          print('Phone number changed: +94$cleanNumber');
+                          // Store clean number
+                        });
                       },
                     ),
                     const SizedBox(height: 32),
                   ],
                 ),
               ),
-        
+
               // Bottom button
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24.0),
@@ -136,20 +145,21 @@ class _MobileRegistrationScreenState extends State<MobileRegistrationScreen> {
                     if (authProvider.isLoading) {
                       return const Center(child: CircularProgressIndicator());
                     }
-        
+
                     return SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
                         onPressed: _isFormValid ? _sendOTP : null,
                         style: AppButtonStyles.primaryButton.copyWith(
-                          backgroundColor: WidgetStateProperty.resolveWith<Color>(
-                            (Set<WidgetState> states) {
-                              if (states.contains(WidgetState.disabled)) {
-                                return AppColors.lightGrey;
-                              }
-                              return AppColors.primaryBlue;
-                            },
-                          ),
+                          backgroundColor:
+                              WidgetStateProperty.resolveWith<Color>((
+                                Set<WidgetState> states,
+                              ) {
+                                if (states.contains(WidgetState.disabled)) {
+                                  return AppColors.lightGrey;
+                                }
+                                return AppColors.primaryBlue;
+                              }),
                         ),
                         child: const Text('Continue'),
                       ),
