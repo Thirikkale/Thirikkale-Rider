@@ -18,7 +18,7 @@ class BottomNavbar extends StatelessWidget {
         color: AppColors.white,
         boxShadow: [
           BoxShadow(
-            color: AppColors.black,
+            color: Colors.black12,
             blurRadius: 4,
             offset: Offset(0, -2),
           ),
@@ -34,7 +34,7 @@ class BottomNavbar extends StatelessWidget {
         type: BottomNavigationBarType.fixed,
         backgroundColor: AppColors.white,
         selectedItemColor: AppColors.primaryBlue,
-        unselectedItemColor: AppColors.lightGrey,
+        unselectedItemColor: AppColors.grey,
         selectedLabelStyle: const TextStyle(
           fontSize: 12,
           fontWeight: FontWeight.w500,
