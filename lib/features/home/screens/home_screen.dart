@@ -72,8 +72,13 @@ class HomeScreen extends StatelessWidget {
                             ),
                             SizedBox(width: 16),
                             RideOptionCard(
-                              icon: 'assets/icons/vehicles/ride2.png',
+                              icon: 'assets/icons/vehicles/ride.png',
                               title: 'Ride',
+                            ),
+                            SizedBox(width: 16),
+                            RideOptionCard(
+                              icon: 'assets/icons/vehicles/rush.png',
+                              title: 'Rush',
                             ),
                           ],
                         ),
