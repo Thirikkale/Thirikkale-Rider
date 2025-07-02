@@ -4,9 +4,9 @@ import 'package:thirikkale_rider/features/account/widgets/account_feature_card.d
 import 'package:thirikkale_rider/features/account/widgets/account_info_tile.dart';
 import 'package:thirikkale_rider/features/account/widgets/payment_info_tile.dart';
 import 'package:thirikkale_rider/features/account/widgets/profile_header.dart';
-import 'package:thirikkale_rider/features/home/widgets/section_header.dart';
 import 'package:thirikkale_rider/widgets/bottom_navbar.dart';
 import 'package:thirikkale_rider/widgets/common/custom_appbar_name.dart';
+import 'package:thirikkale_rider/widgets/common/section_subheader.dart';
 
 class AccountScreen extends StatelessWidget {
   const AccountScreen({super.key});
@@ -31,8 +31,8 @@ class AccountScreen extends StatelessWidget {
                 subtitle: '4.96 • Rider',
               ),
 
-              const SizedBox(height: AppDimensions.sectionSpacing),
-              const SectionHeader(title: "Details"),
+              const SizedBox(height: AppDimensions.widgetSpacing),
+              const SectionSubheader(title: "Details"),
               AccountInfoTile(
                 icon: Icons.email_outlined,
                 title: "Email",
@@ -46,8 +46,8 @@ class AccountScreen extends StatelessWidget {
                 onTap: () {},
               ),
 
-              const SizedBox(height: AppDimensions.sectionSpacing),
-              const SectionHeader(title: "Payment"),
+              const SizedBox(height: AppDimensions.subSectionSpacing),
+              const SectionSubheader(title: "Payment"),
               PaymentInfoTile(
                 icon: "assets/images/visa_card.jpg",
                 cardInfo: "Visa •••• •••• •••• 4242",
@@ -55,15 +55,15 @@ class AccountScreen extends StatelessWidget {
                 onTap: () {},
               ),
 
-              const SizedBox(height: AppDimensions.sectionSpacing),
-              const SectionHeader(title: "Rides"),
+              const SizedBox(height: AppDimensions.subSectionSpacing),
+              const SectionSubheader(title: "Rides"),
               AccountInfoTile(
                 icon: Icons.history_rounded,
                 title: "Ride history",
                 onTap: () {},
               ),
+              const SizedBox(height: AppDimensions.subSectionSpacing),
 
-              const SizedBox(height: AppDimensions.widgetSpacing),
               AccountFeatureCard(
                 title: 'CO2 saved',
                 subtitle:
@@ -79,7 +79,11 @@ class AccountScreen extends StatelessWidget {
               ),
 
               const SizedBox(height: AppDimensions.widgetSpacing),
-              AccountFeatureCard(title: 'Promotions', subtitle: 'View current offers and discounts.', icon: const Icon(Icons.price_change_outlined, size: 32))
+              AccountFeatureCard(
+                title: 'Promotions',
+                subtitle: 'View current offers and discounts.',
+                icon: const Icon(Icons.price_change_outlined, size: 32),
+              ),
             ],
           ),
         ),
