@@ -4,7 +4,7 @@ import 'package:thirikkale_rider/features/home/widgets/destination_search_bar.da
 import 'package:thirikkale_rider/features/home/widgets/explore_option_card.dart';
 import 'package:thirikkale_rider/features/home/widgets/ride_option_card.dart';
 import 'package:thirikkale_rider/features/home/widgets/ride_type_tabs.dart';
-import 'package:thirikkale_rider/features/home/widgets/section_header.dart';
+import 'package:thirikkale_rider/widgets/common/section_header.dart';
 import 'package:thirikkale_rider/widgets/bottom_navbar.dart';
 
 class HomeScreen extends StatelessWidget {
