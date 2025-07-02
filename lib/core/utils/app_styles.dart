@@ -44,6 +44,12 @@ class AppTextStyles {
     color: AppColors.black,
   );
 
+  static const TextStyle bodyXLarge = TextStyle(
+    fontSize: 18.0,
+    fontWeight: FontWeight.normal,
+    color: AppColors.black,
+  );
+
   static const TextStyle bodyLarge = TextStyle(
     fontSize: 16.0,
     fontWeight: FontWeight.normal,

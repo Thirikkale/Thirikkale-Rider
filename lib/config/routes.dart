@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:thirikkale_rider/features/account/screens/settings_screen.dart';
 import 'package:thirikkale_rider/features/authenctication/screens/get_started_screen.dart';
 import 'package:thirikkale_rider/features/authenctication/screens/mobile_registration_screen.dart';
 import 'package:thirikkale_rider/features/authenctication/screens/name_registration_screen.dart';
@@ -13,6 +14,7 @@ class AppRoutes {
   static const String termsAndPrivacy = '/terms-and-privacy';
   static const String splashScreen = '/splash-screen';
   static const String home = '/home';
+  static const String settings = '/settings';
 
   static Map<String, WidgetBuilder> getRoutes() {
     return {
@@ -22,6 +24,7 @@ class AppRoutes {
       termsAndPrivacy: (context) => const TermsAndPrivacyScreen(),
       splashScreen: (context) => const SplashScreen(),
       home: (context) => const HomeScreen(),
+      settings: (context) => const SettingsScreen(),
     };
   }
 }

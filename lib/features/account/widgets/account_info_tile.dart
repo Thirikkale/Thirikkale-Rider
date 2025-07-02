@@ -39,7 +39,7 @@ class AccountInfoTile extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: AppTextStyles.bodyMedium.copyWith(
+                  style: AppTextStyles.bodyLarge.copyWith(
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -47,7 +47,7 @@ class AccountInfoTile extends StatelessWidget {
                   const SizedBox(height: 2),
                   Text(
                     subtitle!,
-                    style: AppTextStyles.bodySmall.copyWith(
+                    style: AppTextStyles.bodyMedium.copyWith(
                       color: AppColors.textSecondary,
                     ),
                   ),

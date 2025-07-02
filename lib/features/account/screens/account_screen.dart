@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:thirikkale_rider/core/utils/app_dimension.dart';
+import 'package:thirikkale_rider/core/utils/navigation_utils.dart';
+import 'package:thirikkale_rider/features/account/screens/settings_screen.dart';
 import 'package:thirikkale_rider/features/account/widgets/account_feature_card.dart';
 import 'package:thirikkale_rider/features/account/widgets/account_info_tile.dart';
 import 'package:thirikkale_rider/features/account/widgets/payment_info_tile.dart';
@@ -76,6 +78,11 @@ class AccountScreen extends StatelessWidget {
                 title: 'Settings',
                 subtitle: 'Manage your account and app preferences.',
                 icon: const Icon(Icons.settings_outlined, size: 32),
+                onTap: () {
+                  Navigator.of(context).push(
+                    NoAnimationPageRoute(builder: (context) => const SettingsScreen())
+                  );
+                },
               ),
 
               const SizedBox(height: AppDimensions.widgetSpacing),

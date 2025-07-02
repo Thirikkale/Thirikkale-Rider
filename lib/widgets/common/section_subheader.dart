@@ -10,8 +10,8 @@ class SectionSubheader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       title,
-      style: AppTextStyles.bodyLarge.copyWith(
-        fontWeight: FontWeight.bold,
+      style: AppTextStyles.bodyXLarge.copyWith(
+        fontWeight: FontWeight.w800,
       ),
     );
   }
