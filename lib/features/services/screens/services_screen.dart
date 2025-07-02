@@ -34,7 +34,7 @@ class ServicesScreen extends StatelessWidget {
                   physics: const NeverScrollableScrollPhysics(),
                   crossAxisSpacing: AppDimensions.widgetSpacing,
                   mainAxisSpacing: AppDimensions.widgetSpacing,
-                  childAspectRatio: 0.8,
+                  childAspectRatio: 0.9,
                   children: const [
                     RideServiceCard(
                       image: 'assets/images/service_cards/service_solo.png',

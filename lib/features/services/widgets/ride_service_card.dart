@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:thirikkale_rider/core/utils/app_dimension.dart';
 import 'package:thirikkale_rider/core/utils/app_styles.dart';
 
 class RideServiceCard extends StatelessWidget {
@@ -21,7 +20,7 @@ class RideServiceCard extends StatelessWidget {
         color: AppColors.subtleGrey,
         borderRadius: BorderRadius.circular(12),
       ),
-      padding: const EdgeInsets.all(AppDimensions.widgetSpacing),
+      padding: const EdgeInsets.all(24),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
