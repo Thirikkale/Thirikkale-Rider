@@ -92,7 +92,7 @@ class BottomNavbar extends StatelessWidget {
         destinationScreen = const HomeScreen();
     }
 
-    Navigator.pushReplacement(
+    Navigator.push(
       context,
       NoAnimationPageRoute(builder: (context) => destinationScreen),
     );
