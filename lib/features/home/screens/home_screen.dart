@@ -65,14 +65,14 @@ class HomeScreen extends StatelessWidget {
                               title: 'Tuk',
                               isPromo: true,
                             ),
-                            SizedBox(width: 12),
+                            SizedBox(width: 16),
                             RideOptionCard(
                               icon: 'assets/icons/vehicles/scheduledRide.png',
                               title: 'Scheduled',
                             ),
-                            SizedBox(width: 12),
+                            SizedBox(width: 16),
                             RideOptionCard(
-                              icon: 'assets/icons/vehicles/ride.png',
+                              icon: 'assets/icons/vehicles/ride2.png',
                               title: 'Ride',
                             ),
                           ],
