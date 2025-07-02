@@ -22,19 +22,25 @@ class HomeScreen extends StatelessWidget {
             Expanded(
               child: SingleChildScrollView(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: AppDimensions.pageVerticalPadding),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: AppDimensions.pageVerticalPadding,
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Padding(
-                        padding: EdgeInsets.symmetric(horizontal: AppDimensions.pageHorizontalPadding),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: AppDimensions.pageHorizontalPadding,
+                        ),
                         child: DestinationSearchBar(),
                       ),
 
                       const SizedBox(height: 24),
 
                       Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: AppDimensions.pageHorizontalPadding),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppDimensions.pageHorizontalPadding,
+                        ),
                         child: SectionHeader(
                           title: "Quick Options",
                           actionText: "See all",
@@ -49,7 +55,9 @@ class HomeScreen extends StatelessWidget {
                       SizedBox(
                         height: 120,
                         child: ListView(
-                          padding: const EdgeInsets.symmetric(horizontal: AppDimensions.pageHorizontalPadding),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: AppDimensions.pageHorizontalPadding,
+                          ),
                           scrollDirection: Axis.horizontal,
                           children: const [
                             RideOptionCard(
@@ -74,7 +82,9 @@ class HomeScreen extends StatelessWidget {
                       const SizedBox(height: 24),
 
                       const Padding(
-                        padding: EdgeInsets.symmetric(horizontal: AppDimensions.pageHorizontalPadding),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: AppDimensions.pageHorizontalPadding,
+                        ),
                         child: SectionHeader(title: 'Explore Options'),
                       ),
 
@@ -83,7 +93,9 @@ class HomeScreen extends StatelessWidget {
                       SizedBox(
                         height: 180,
                         child: ListView(
-                          padding: const EdgeInsets.symmetric(horizontal: AppDimensions.pageHorizontalPadding),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: AppDimensions.pageHorizontalPadding,
+                          ),
                           scrollDirection: Axis.horizontal,
                           children: const [
                             ExploreOptionCard(
@@ -99,6 +111,36 @@ class HomeScreen extends StatelessWidget {
                                   'assets/images/option_cards/women_only.png',
                               title: 'Women Only',
                               subtitle: 'Ride comfortably',
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      const SizedBox(height: 24),
+
+                      const Padding(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: AppDimensions.pageHorizontalPadding,
+                        ),
+                        child: SectionHeader(title: 'Beat the Traffic'),
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      SizedBox(
+                        height: 180,
+                        child: ListView(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: AppDimensions.pageHorizontalPadding,
+                          ),
+                          scrollDirection: Axis.horizontal,
+                          children: const [
+                            ExploreOptionCard(
+                              image:
+                                  'assets/images/option_cards/tuk_ride.png',
+                              title: 'Zip Through Traffic',
+                              subtitle:
+                                  'Your quickest way to get around the city',
                             ),
                           ],
                         ),
