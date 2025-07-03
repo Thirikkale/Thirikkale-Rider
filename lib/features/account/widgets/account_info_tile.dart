@@ -22,6 +22,7 @@ class AccountInfoTile extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.symmetric(
           vertical: 12.0,
+          horizontal: 20.0
         ),
         child: Row(
           children: [
