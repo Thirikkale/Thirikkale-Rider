@@ -78,6 +78,7 @@ class _LocationTextFieldState extends State<LocationTextField> {
     return TextField(
       controller: _controller,
       focusNode: _focusNode,
+      autofocus: widget.autoFocus,
       onTap: widget.onTap,
       onChanged: widget.onChanged,
       decoration: InputDecoration(
