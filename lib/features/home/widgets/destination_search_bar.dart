@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:thirikkale_rider/core/utils/app_styles.dart';
+import 'package:thirikkale_rider/features/booking/screens/plan_your_ride_screen.dart';
 
 class DestinationSearchBar extends StatelessWidget {
   const DestinationSearchBar({super.key});
@@ -17,7 +18,7 @@ class DestinationSearchBar extends StatelessWidget {
         child: InkWell(
           borderRadius: BorderRadius.circular(30),
           onTap: () {
-            // Navigate to search screen
+            Navigator.push(context, MaterialPageRoute(builder: (context) => const PlanYourRideScreen()));
           },
           child: Padding(
             padding: const EdgeInsets.all(16),
