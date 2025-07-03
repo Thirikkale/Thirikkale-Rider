@@ -22,7 +22,6 @@ class AccountScreen extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.symmetric(
             vertical: AppDimensions.pageVerticalPadding,
-            horizontal: AppDimensions.pageHorizontalPadding,
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,

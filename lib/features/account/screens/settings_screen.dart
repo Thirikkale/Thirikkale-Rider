@@ -16,7 +16,6 @@ class SettingsScreen extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.symmetric(
             vertical: AppDimensions.pageVerticalPadding,
-            horizontal: AppDimensions.pageHorizontalPadding,
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -49,7 +48,7 @@ class SettingsScreen extends StatelessWidget {
                 title: "Language",
                 onTap: () {},
               ),
-              
+
               const SizedBox(height: AppDimensions.subSectionSpacing),
               SectionSubheader(title: "Safety Setting"),
               AccountInfoTile(
@@ -73,7 +72,12 @@ class SettingsScreen extends StatelessWidget {
 
               const SizedBox(height: AppDimensions.sectionSpacing),
 
-              SignOutBtn(onPressed: () {},)
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 5,
+                ),
+                child: SignOutBtn(onPressed: () {}),
+              ),
             ],
           ),
         ),
