@@ -45,6 +45,10 @@ dependencies:
   http: ^1.4.0
   flutter_multi_formatter: ^2.13.7
   flutter_svg: ^2.2.0
+  flutter_dotenv: ^5.2.1
+  geocoding: ^4.0.0
+  geolocator: ^14.0.2
+  google_maps: ^8.1.1
 
 dev_dependencies:
   flutter_test:
@@ -98,6 +102,7 @@ flutter:
     - assets/icons/vehicles/
     - assets/images/option_cards/
     - assets/images/service_cards/
+    - .env
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
