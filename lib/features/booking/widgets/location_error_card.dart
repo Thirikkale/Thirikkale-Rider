@@ -63,7 +63,7 @@ class LocationErrorCard extends StatelessWidget {
                 child: const Text('Retry'),
               ),
               TextButton(
-                onPressed: () => locationProvider.openAppSettings(),
+                onPressed: () => locationProvider.openLocationSettings(),
                 child: const Text('Settings'),
               ),
             ],
