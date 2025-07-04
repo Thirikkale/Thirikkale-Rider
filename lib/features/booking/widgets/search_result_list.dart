@@ -20,11 +20,16 @@ class SearchResultList extends StatelessWidget {
         final prediction = predictions[index];
         final mainText = prediction['structured_formatting']?['main_text'] ?? '';
         final secondaryText = prediction['structured_formatting']?['secondary_text'] ?? '';
+
+        // Extract distance information
+        final distanceInfo = prediction['distance_info'] as Map<String, dynamic>?;
+        final distanceText = distanceInfo?['distance_text'] as String?;
         
         return LocationListTile(
           icon: Icons.location_on,
           title: mainText,
           subtitle: secondaryText.isNotEmpty ? secondaryText : null,
+          distance: distanceText,
           onTap: () => onLocationSelected(prediction),
         );
       },

@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:thirikkale_rider/core/services/env_service.dart';
 import 'package:http/http.dart' as http;
+import 'package:thirikkale_rider/core/services/location_service.dart';
 
 class PlacesApiService {
   static const String _baseUrl = 'https://maps.googleapis.com/maps/api';
@@ -37,7 +38,19 @@ class PlacesApiService {
 
       final response = await http.get(uri).timeout(_timeout);
 
-      return _handleAutocompleteResponse(response);
+      final predictions = _handleAutocompleteResponse(response);
+
+      // Calculate distances if user location is available
+      if (latitude != null && longitude != null && predictions.isNotEmpty) {
+        await _addDistancesToPredictions(
+          predictions,
+          latitude,
+          longitude,
+          apiKey,
+        );
+      }
+
+      return predictions;
     } on SocketException {
       throw PlacesApiException('No internet connection');
     } on HttpException {
@@ -45,6 +58,126 @@ class PlacesApiService {
     } catch (e) {
       if (e is PlacesApiException) rethrow;
       throw PlacesApiException('Failed to fetch places: ${e.toString()}');
+    }
+  }
+
+  static Future<void> _addDistancesToPredictions(
+    List<Map<String, dynamic>> predictions,
+    double userLat,
+    double userLng,
+    String apiKey,
+  ) async {
+    // Extract place IDs
+    final placeIds = predictions
+        .map((p) => p['place_id'] as String?)
+        .where((id) => id != null)
+        .cast<String>()
+        .toList();
+
+    if (placeIds.isEmpty) return;
+
+    try {
+      // Use Distance Matrix API for batch distance calculation
+      final distances = await _getDistancesFromMatrix(
+        userLat, 
+        userLng, 
+        placeIds, 
+        apiKey,
+      );
+
+      // Add distances to predictions
+      for (int i = 0; i < predictions.length && i < distances.length; i++) {
+        predictions[i]['distance_info'] = distances[i];
+      }
+    } catch (e) {
+      // If Distance Matrix fails, calculate straight-line distances
+      await _calculateStraightLineDistances(predictions, userLat, userLng, apiKey);
+    }
+  }
+
+  static Future<List<Map<String, dynamic>>> _getDistancesFromMatrix(
+    double userLat,
+    double userLng,
+    List<String> placeIds,
+    String apiKey,
+  ) async {
+    final origins = '$userLat,$userLng';
+    final destinations = placeIds.map((id) => 'place_id:$id').join('|');
+
+    final uri = Uri.parse('$_baseUrl/distancematrix/json').replace(
+      queryParameters: {
+        'origins': origins,
+        'destinations': destinations,
+        'key': apiKey,
+        'units': 'metric',
+      },
+    );
+
+    final response = await http.get(uri).timeout(_timeout);
+
+    if (response.statusCode == 200) {
+      final json = jsonDecode(response.body);
+      
+      if (json['status'] == 'OK') {
+        final elements = json['rows'][0]['elements'] as List;
+        
+        return elements.map((element) {
+          if (element['status'] == 'OK') {
+            return {
+              'distance_text': element['distance']['text'],
+              'distance_value': element['distance']['value'], // meters
+              'duration_text': element['duration']['text'],
+              'duration_value': element['duration']['value'], // seconds
+            };
+          } else {
+            return <String, dynamic>{};
+          }
+        }).toList();
+      }
+    }
+
+    throw Exception('Distance Matrix API failed');
+  }
+
+  static Future<void> _calculateStraightLineDistances(
+    List<Map<String, dynamic>> predictions,
+    double userLat,
+    double userLng,
+    String apiKey,
+  ) async {
+    for (final prediction in predictions) {
+      try {
+        final placeId = prediction['place_id'] as String?;
+        if (placeId == null) continue;
+
+        final placeDetails = await getPlaceDetails(placeId);
+        if (placeDetails != null) {
+          final geometry = placeDetails['geometry'];
+          final location = geometry?['location'];
+          
+          if (location != null) {
+            final destLat = location['lat']?.toDouble();
+            final destLng = location['lng']?.toDouble();
+            
+            if (destLat != null && destLng != null) {
+              final distance = LocationService.calculateDistance(
+                startLatitude: userLat,
+                startLongitude: userLng,
+                endLatitude: destLat,
+                endLongitude: destLng,
+              );
+
+              prediction['distance_info'] = {
+                'distance_text': LocationService.formatDistance(distance),
+                'distance_value': distance.round(),
+              };
+            }
+          }
+        }
+      } catch (e) {
+        // Continue if individual place fails
+        continue;
+      }
     }
   }
 
