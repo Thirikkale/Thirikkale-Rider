@@ -19,13 +19,13 @@ class AppTheme {
       fontFamily: 'PlusJakartaSans',
 
       // Card theme
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         color: AppColors.white,
         elevation: 2,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12.0),
         ),
-        shadowColor: AppColors.black.withOpacity(0.1),
+        shadowColor: AppColors.black.withValues(alpha: 0.1),
       ),
 
       // Bottom navigation bar

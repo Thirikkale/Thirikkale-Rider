@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:thirikkale_rider/core/utils/app_dimension.dart';
 import 'package:thirikkale_rider/core/utils/navigation_utils.dart';
+import 'package:thirikkale_rider/features/account/screens/payment_methods/payment_methods_screen.dart';
 import 'package:thirikkale_rider/features/account/screens/settings_screen.dart';
 import 'package:thirikkale_rider/features/account/widgets/account_feature_card.dart';
 import 'package:thirikkale_rider/features/account/widgets/account_info_tile.dart';
@@ -53,7 +54,14 @@ class AccountScreen extends StatelessWidget {
                 icon: "assets/images/visa_card.jpg",
                 cardInfo: "Visa •••• •••• •••• 4242",
                 expiryDate: "Expires 07/2030",
-                onTap: () {},
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const PaymentMethodsScreen(),
+                    ),
+                  );
+                },
               ),
 
               const SizedBox(height: AppDimensions.subSectionSpacing),
