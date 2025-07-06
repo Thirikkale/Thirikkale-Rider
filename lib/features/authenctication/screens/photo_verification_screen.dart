@@ -1,6 +1,5 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:thirikkale_rider/core/utils/app_styles.dart';
 import 'package:thirikkale_rider/core/utils/navigation_utils.dart';
 import 'package:thirikkale_rider/core/utils/snackbar_helper.dart';
@@ -19,29 +18,11 @@ class PhotoVerificationScreen extends StatefulWidget {
 }
 
 class _PhotoVerificationScreenState extends State<PhotoVerificationScreen> {
-  bool _cameraPermissionGranted = false;
   File? _capturedImage;
 
-  @override
-  void initState() {
-    super.initState();
-    _requestCameraPermission();
-  }
-
-  Future<void> _requestCameraPermission() async {
-    final status = await Permission.camera.request();
-    setState(() {
-      _cameraPermissionGranted = status.isGranted;
-    });
-  }
-
   Future<void> _openFullScreenCamera() async {
-    if (!_cameraPermissionGranted) {
-      await _requestCameraPermission();
-      if (!_cameraPermissionGranted) return;
-    }
-
     // Navigate to full-screen camera and wait for the result
+    // The camera package will handle permissions automatically
     final File? imageFile = await Navigator.of(context).push<File>(
       MaterialPageRoute(builder: (context) => const FullScreenCameraPage()),
     );
@@ -107,8 +88,6 @@ class _PhotoVerificationScreenState extends State<PhotoVerificationScreen> {
               // Display either the captured images or a place holder
               ProfileImagePreview(
                 capturedImage: _capturedImage,
-                cameraPermissionGranted: _cameraPermissionGranted,
-                requestCameraPermission: _requestCameraPermission,
               ),
               const SizedBox(height: 16),
               Text(
