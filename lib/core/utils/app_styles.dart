@@ -6,6 +6,7 @@ class AppColors {
   static const Color white = Color(0xFFFFFFFF);
   static const Color primaryBlue = Color(0xFF0EA5E9);
   static const Color secondaryBlue = Color(0xFF3B82F6);
+  static const Color primaryGreen = Color(0xFF22C55E); // Added for pickup marker
 
   // Background colors
   static const Color background = Color(0xFFFFFFFF); // Pure white background
