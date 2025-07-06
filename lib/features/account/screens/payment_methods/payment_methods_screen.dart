@@ -2,14 +2,21 @@ import 'package:flutter/material.dart';
 import 'package:thirikkale_rider/core/utils/app_dimension.dart';
 import 'package:thirikkale_rider/core/utils/app_styles.dart';
 import 'package:thirikkale_rider/core/utils/snackbar_helper.dart';
-import 'package:thirikkale_rider/core/utils/dialog_helper.dart';
 import 'package:thirikkale_rider/features/account/screens/payment_methods/add_payment_method_screen.dart';
+import 'package:thirikkale_rider/features/account/widgets/cash_payment_bottomsheet.dart';
 import 'package:thirikkale_rider/features/account/widgets/payment_method_tile.dart';
 import 'package:thirikkale_rider/features/account/widgets/card_details_bottom_sheet.dart';
 import 'package:thirikkale_rider/widgets/common/custom_appbar_name.dart';
 
-class PaymentMethodsScreen extends StatelessWidget {
+class PaymentMethodsScreen extends StatefulWidget {
   const PaymentMethodsScreen({super.key});
+
+  @override
+  State<PaymentMethodsScreen> createState() => _PaymentMethodsScreenState();
+}
+
+class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
+  String _defaultMethod = 'Card';
 
   void _showCardDetailsBottomSheet(BuildContext context) {
     CardDetailsBottomSheet.show(
@@ -20,6 +27,13 @@ class PaymentMethodsScreen extends StatelessWidget {
       isDefault: false, // Change this based on actual card status
       onSetAsDefault: () {
         // Handle set as default logic
+        setState(() {
+          _defaultMethod = 'Card';
+        });
+        SnackbarHelper.showSuccessSnackBar(
+          context,
+          'Card set as default payment method!',
+        );
       },
       onEdit: () {
         // Handle edit logic
@@ -35,17 +49,14 @@ class PaymentMethodsScreen extends StatelessWidget {
   }
 
   void _showCashPaymentDialog(BuildContext context) {
-    DialogHelper.showCheckboxDialog(
-      context: context,
-      title: 'Cash Payment',
-      content: 'Pay your driver with cash at the end of your ride. No card details required.',
-      checkboxLabel: 'Set as default payment method',
-      confirmText: 'Confirm',
-      cancelText: 'Cancel',
-      // titleIcon: Icons.money,
-      titleIconColor: AppColors.primaryBlue,
+    CashPaymentBottomSheet.show(
+      context,
       onConfirm: (isSetAsDefault) {
+        // The new bottom sheet only calls this when 'Set as default' is pressed
         if (isSetAsDefault) {
+          setState(() {
+            _defaultMethod = 'Cash';
+          });
           SnackbarHelper.showSuccessSnackBar(
             context,
             'Cash set as default payment method!',
@@ -67,10 +78,7 @@ class PaymentMethodsScreen extends StatelessWidget {
         children: [
           const Padding(
             padding: EdgeInsets.all(AppDimensions.pageHorizontalPadding),
-            child: Text(
-              'Payment methods',
-              style: AppTextStyles.heading3,
-            ),
+            child: Text('Payment methods', style: AppTextStyles.heading3),
           ),
           Expanded(
             child: Column(
@@ -79,7 +87,7 @@ class PaymentMethodsScreen extends StatelessWidget {
                   icon: Icons.credit_card,
                   title: 'Card',
                   subtitle: 'Visa •••• •••• •••• 4567',
-                  isDefault: true, // Set as default for demo
+                  isDefault: _defaultMethod == 'Card',
                   onTap: () {
                     _showCardDetailsBottomSheet(context);
                   },
@@ -87,15 +95,17 @@ class PaymentMethodsScreen extends StatelessWidget {
                 PaymentMethodTile(
                   icon: Icons.money,
                   title: 'Cash',
-                  isDefault: false,
+                  isDefault: _defaultMethod == 'Cash',
                   isCash: true,
                   onTap: () {
                     _showCashPaymentDialog(context);
-                  }
+                  },
                 ),
                 const Spacer(),
                 Padding(
-                  padding: const EdgeInsets.all(AppDimensions.pageHorizontalPadding),
+                  padding: const EdgeInsets.all(
+                    AppDimensions.pageHorizontalPadding,
+                  ),
                   child: SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
@@ -103,18 +113,12 @@ class PaymentMethodsScreen extends StatelessWidget {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => const AddPaymentMethodScreen(),
+                            builder:
+                                (context) => const AddPaymentMethodScreen(),
                           ),
                         );
                       },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primaryBlue,
-                        foregroundColor: AppColors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
+                      style: AppButtonStyles.primaryButton,
                       child: const Text(
                         'Add Card',
                         style: TextStyle(

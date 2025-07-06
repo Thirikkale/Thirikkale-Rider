@@ -108,12 +108,11 @@ class CardDetailsBottomSheet extends StatelessWidget {
             'Payment method set as default!',
           );
         },
-        icon: const Icon(Icons.star_outline, size: 18),
         label: const Text('Set as Default'),
         style: OutlinedButton.styleFrom(
           side: BorderSide(color: AppColors.primaryBlue),
           foregroundColor: AppColors.primaryBlue,
-          padding: const EdgeInsets.symmetric(vertical: 12),
+          padding: const EdgeInsets.symmetric(vertical: 16),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(8),
           ),
@@ -139,7 +138,7 @@ class CardDetailsBottomSheet extends StatelessWidget {
             },
             style: OutlinedButton.styleFrom(
               side: const BorderSide(color: AppColors.lightGrey),
-              padding: const EdgeInsets.symmetric(vertical: 12),
+              padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
               ),
@@ -163,7 +162,7 @@ class CardDetailsBottomSheet extends StatelessWidget {
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.error,
               foregroundColor: AppColors.white,
-              padding: const EdgeInsets.symmetric(vertical: 12),
+              padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
               ),

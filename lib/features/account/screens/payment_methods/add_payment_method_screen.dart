@@ -138,14 +138,7 @@ class _AddPaymentMethodScreenState extends State<AddPaymentMethodScreen> {
                       child: SizedBox(
                         width: double.infinity,
                         child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.primaryBlue,
-                            foregroundColor: AppColors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
+                          style: AppButtonStyles.primaryButton,
                           onPressed: () {
                             if (formKey.currentState!.validate()) {
                               SnackbarHelper.showSuccessSnackBar(
