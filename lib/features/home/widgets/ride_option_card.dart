@@ -36,7 +36,7 @@ class RideOptionCard extends StatelessWidget {
                 title,
                 textAlign: TextAlign.center,
                 style: AppTextStyles.bodyMedium.copyWith(
-                  fontWeight: FontWeight.w500,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
             ],

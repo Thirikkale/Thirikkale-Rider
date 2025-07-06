@@ -33,8 +33,9 @@ class DestinationSearchBar extends StatelessWidget {
                 Expanded(
                   child: Text(
                     "Where to?",
-                    style: AppTextStyles.bodyLarge.copyWith(
+                    style: AppTextStyles.bodyXLarge.copyWith(
                       color: AppColors.textSecondary,
+                      fontWeight: FontWeight.w700
                     ),
                   ),
                 ),
