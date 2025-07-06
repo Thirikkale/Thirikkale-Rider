@@ -15,7 +15,7 @@
 
 
     <application
-        android:label="thirikkale_rider"
+        android:label="Thirikkale"
         android:name="${applicationName}"
         android:icon="@mipmap/launcher_icon">
 
