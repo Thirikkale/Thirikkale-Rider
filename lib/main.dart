@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:thirikkale_rider/config/routes.dart';
 import 'package:thirikkale_rider/core/providers/auth_provider.dart';
 import 'package:thirikkale_rider/core/providers/location_provider.dart';
+import 'package:thirikkale_rider/core/providers/ride_booking_provider.dart';
 import 'package:thirikkale_rider/core/services/env_service.dart';
 import 'package:thirikkale_rider/core/utils/app_theme.dart';
 
@@ -24,6 +25,7 @@ class ThirikkaleApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => LocationProvider()),
+        ChangeNotifierProvider(create: (_) => RideBookingProvider()),
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,

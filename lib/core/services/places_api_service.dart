@@ -79,9 +79,9 @@ class PlacesApiService {
     try {
       // Use Distance Matrix API for batch distance calculation
       final distances = await _getDistancesFromMatrix(
-        userLat, 
-        userLng, 
-        placeIds, 
+        userLat,
+        userLng,
+        placeIds,
         apiKey,
       );
 
@@ -90,8 +90,13 @@ class PlacesApiService {
         predictions[i]['distance_info'] = distances[i];
       }
     } catch (e) {
+      print('Distance Matrix API failed: $e. Using fallback.');
       // If Distance Matrix fails, calculate straight-line distances
-      await _calculateStraightLineDistances(predictions, userLat, userLng, apiKey);
+      await _calculateStraightLineDistances(
+        predictions,
+        userLat,
+        userLng,
+      );
     }
   }
 
@@ -143,7 +148,6 @@ class PlacesApiService {
     List<Map<String, dynamic>> predictions,
     double userLat,
     double userLng,
-    String apiKey,
   ) async {
     for (final prediction in predictions) {
       try {

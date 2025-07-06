@@ -18,6 +18,11 @@
         android:label="thirikkale_rider"
         android:name="${applicationName}"
         android:icon="@mipmap/launcher_icon">
+
+        <!-- Google Maps -->
+        <meta-data android:name="com.google.android.geo.API_KEY"
+                   android:value="AIzaSyC0vXbtKKYgW7M3pudJ92ONvFgcVTu2u-E"/>
+
         <activity
             android:name=".MainActivity"
             android:exported="true"
