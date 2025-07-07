@@ -1,6 +1,6 @@
+import 'package:flutter_multi_formatter/flutter_multi_formatter.dart';
 import 'package:thirikkale_rider/core/utils/app_styles.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 class CustomPhoneInputField extends StatefulWidget {
   final String label;
@@ -30,12 +30,15 @@ class _CustomPhoneInputFieldState extends State<CustomPhoneInputField> {
       validator: widget.validator,
       keyboardType: TextInputType.phone,
       cursorColor: AppColors.primaryBlue,
-      onChanged: widget.onChanged,
+      onChanged: (value) {
+        // Extract clean number and pass it to parent
+        if (widget.onChanged != null) {
+          final cleanNumber = value.replaceAll(RegExp(r'[^\d]'), '');
+          widget.onChanged!(cleanNumber);
+        }
+      },
       inputFormatters: [
-        FilteringTextInputFormatter.digitsOnly,
-        LengthLimitingTextInputFormatter(
-          9,
-        ), // Sri Lankan mobile numbers are 9 digits after country code
+        PhoneInputFormatter(defaultCountryCode: 'LK', allowEndlessPhone: false),
       ],
       decoration: InputDecoration(
         filled: true,
