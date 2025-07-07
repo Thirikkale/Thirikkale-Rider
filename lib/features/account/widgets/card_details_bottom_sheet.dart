@@ -160,14 +160,6 @@ class CardDetailsBottomSheet extends StatelessWidget {
               Navigator.pop(context);
               _showDeleteConfirmationDialog(context);
             },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.error,
-              foregroundColor: AppColors.white,
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
             child: const Text(
               'Delete',
               style: TextStyle(

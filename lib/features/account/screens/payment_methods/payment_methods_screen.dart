@@ -119,7 +119,6 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
                           ),
                         );
                       },
-                      style: AppButtonStyles.primaryButton,
                       child: const Text(
                         'Add Card',
                         style: TextStyle(
