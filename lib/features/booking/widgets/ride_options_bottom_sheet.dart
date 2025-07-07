@@ -82,7 +82,7 @@ class RideOptionsBottomSheet extends StatelessWidget {
         color: AppColors.white,
         border: Border(
           top: BorderSide(
-            color: AppColors.lightGrey.withOpacity(0.3),
+            color: AppColors.lightGrey.withValues(alpha: 0.3),
             width: 1,
           ),
         ),

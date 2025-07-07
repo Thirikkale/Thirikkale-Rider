@@ -6,6 +6,7 @@ import 'package:thirikkale_rider/features/authenctication/screens/name_registrat
 import 'package:thirikkale_rider/features/authenctication/screens/splash_screen.dart';
 import 'package:thirikkale_rider/features/authenctication/screens/terms_and_privacy_screen.dart';
 import 'package:thirikkale_rider/features/home/screens/home_screen.dart';
+import 'package:thirikkale_rider/features/services/screens/services_screen.dart';
 
 class AppRoutes {
   static const String initial = '/';
@@ -15,6 +16,7 @@ class AppRoutes {
   static const String splashScreen = '/splash-screen';
   static const String home = '/home';
   static const String settings = '/settings';
+  static const String service = '/service';
 
   static Map<String, WidgetBuilder> getRoutes() {
     return {
@@ -25,6 +27,7 @@ class AppRoutes {
       splashScreen: (context) => const SplashScreen(),
       home: (context) => const HomeScreen(),
       settings: (context) => const SettingsScreen(),
+      service: (context) => const ServicesScreen(),
     };
   }
 }

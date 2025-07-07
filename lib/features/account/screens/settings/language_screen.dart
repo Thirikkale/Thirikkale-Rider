@@ -172,7 +172,7 @@ class _LanguageScreenState extends State<LanguageScreen> {
             vertical: 12,
           ),
           decoration: BoxDecoration(
-            color: isSelected ? AppColors.primaryBlue.withOpacity(0.1) : AppColors.subtleGrey,
+            color: isSelected ? AppColors.primaryBlue.withValues(alpha: 0.1) : AppColors.subtleGrey,
             borderRadius: BorderRadius.circular(8),
             border: isSelected 
                 ? Border.all(color: AppColors.primaryBlue, width: 2)

@@ -3,6 +3,7 @@ import 'package:thirikkale_rider/core/utils/app_dimension.dart';
 import 'package:thirikkale_rider/core/utils/app_styles.dart';
 import 'package:thirikkale_rider/core/utils/snackbar_helper.dart';
 import 'package:thirikkale_rider/widgets/common/custom_appbar_name.dart';
+import 'package:thirikkale_rider/features/account/screens/settings/widgets/settings_subheader.dart';
 
 class EmergencyContactsScreen extends StatefulWidget {
   const EmergencyContactsScreen({super.key});
@@ -53,11 +54,7 @@ class _EmergencyContactsScreenState extends State<EmergencyContactsScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Add a contact',
-                      style: AppTextStyles.heading3,
-                    ),
-                    const SizedBox(height: 20),
+                    const SettingsSubheader(title: 'Add a contact'),
                     Form(
                       key: _formKey,
                       child: Column(
@@ -102,11 +99,12 @@ class _EmergencyContactsScreenState extends State<EmergencyContactsScreen> {
                       ),
                     ),
                     const SizedBox(height: 32),
-                    const Text(
-                      'Your contacts',
-                      style: AppTextStyles.heading3,
-                    ),
-                    const SizedBox(height: 16),
+                    const SettingsSubheader(title: 'Your contacts'),
+                    // const Text(
+                    //   'Your contacts',
+                    //   style: AppTextStyles.heading3,
+                    // ),
+                    // const SizedBox(height: 16),
                     ..._emergencyContacts.map((contact) => _buildContactTile(contact)),
                   ],
                 ),

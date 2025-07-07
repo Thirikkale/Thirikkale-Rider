@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:thirikkale_rider/core/utils/app_dimension.dart';
 import 'package:thirikkale_rider/core/utils/app_styles.dart';
 import 'package:thirikkale_rider/widgets/common/custom_appbar_name.dart';
+import 'package:thirikkale_rider/features/account/screens/settings/widgets/settings_subheader.dart';
+// import 'package:thirikkale_rider/features/account/widgets/account_info_tile.dart';
 
 class SafetyFeaturesScreen extends StatefulWidget {
   const SafetyFeaturesScreen({super.key});
@@ -31,11 +33,7 @@ class _SafetyFeaturesScreenState extends State<SafetyFeaturesScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'During your trip',
-                      style: AppTextStyles.heading3,
-                    ),
-                    const SizedBox(height: 20),
+                    const SettingsSubheader(title: 'During your trip'),
                     _buildSafetyOption(
                       icon: Icons.share_location_outlined,
                       title: 'Share Trip Status',
@@ -61,15 +59,16 @@ class _SafetyFeaturesScreenState extends State<SafetyFeaturesScreen> {
                       showButton: true,
                     ),
                     const SizedBox(height: 32),
-                    const Text(
-                      'Safety resources',
-                      style: AppTextStyles.heading3,
-                    ),
-                    const SizedBox(height: 20),
+                    // const Text(
+                    //   'Safety resources',
+                    //   style: AppTextStyles.heading3,
+                    // ),
+                    // const SizedBox(height: 32),
+                    const SettingsSubheader(title: 'Safety resources'),
                     _buildResourceTile(
-                      icon: Icons.local_police_outlined,
-                      title: 'In-app safety resources',
-                      subtitle: 'Get safety tips, help, and support',
+                      icon: Icons.shield_outlined,
+                      title: 'Learn about safety',
+                      subtitle: 'View tips and resources to stay safe during your trip',
                       onTap: () {
                         // Handle safety resources
                         print('Navigate to safety resources');

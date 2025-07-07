@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:thirikkale_rider/core/utils/app_dimension.dart';
 import 'package:thirikkale_rider/core/utils/app_styles.dart';
 import 'package:thirikkale_rider/widgets/common/custom_appbar_name.dart';
+import 'package:thirikkale_rider/features/account/screens/settings/widgets/settings_subheader.dart';
 import 'dart:developer' as developer;
 
 
@@ -49,14 +50,9 @@ class _AppearanceScreenState extends State<AppearanceScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'Theme',
-                      style: AppTextStyles.bodyLarge.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
+                    const SettingsSubheader(title: 'Theme'),
                     
+                    // Theme options
                     // Theme options
                     ..._themeOptions.map((option) => _buildThemeOption(option)),
                   ],

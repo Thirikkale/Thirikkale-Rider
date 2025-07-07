@@ -27,7 +27,7 @@ class PopupOptionField extends StatelessWidget {
         decoration: BoxDecoration(
           color:
               isSelected
-                  ? AppColors.primaryBlue.withOpacity(0.1)
+                  ? AppColors.primaryBlue.withValues(alpha: 0.1)
                   : Colors.transparent,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(

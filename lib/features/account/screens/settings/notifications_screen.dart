@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:thirikkale_rider/core/utils/app_dimension.dart';
 import 'package:thirikkale_rider/core/utils/app_styles.dart';
 import 'package:thirikkale_rider/widgets/common/custom_appbar_name.dart';
+import 'package:thirikkale_rider/features/account/screens/settings/widgets/settings_subheader.dart';
 
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
@@ -33,7 +34,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildSectionHeader('Ride Updates'),
+                    const SettingsSubheader(title: 'Ride Updates'),
                     _buildNotificationTile(
                       'Ride Status Updates',
                       'Track your ride in real-time, get notifications when driver arrives',
@@ -49,7 +50,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     
                     const SizedBox(height: AppDimensions.subSectionSpacing),
                     
-                    _buildSectionHeader('Promotions & Offers'),
+                    const SettingsSubheader(title: 'Promotions & Offers'),
                     _buildNotificationTile(
                       'Promotional Offers',
                       'Stay informed about special offers, discounts and promotions from our partners',
@@ -57,7 +58,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                       (value) => setState(() => _promotionalOffers = value),
                     ),
                     
-                    const SizedBox(height: AppDimensions.subSectionSpacing),
+                    // const SizedBox(height: AppDimensions.subSectionSpacing),
                     
                     _buildNotificationTile(
                       'App Updates',
@@ -68,7 +69,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     
                     const SizedBox(height: AppDimensions.subSectionSpacing),
                     
-                    _buildSectionHeader('News & Information'),
+                    const SettingsSubheader(title: 'News & Information'),
                     _buildNotificationTile(
                       'News & Articles',
                       'Be the first to hear about city news, traffic patterns and travel advice',
@@ -102,18 +103,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     );
   }
   
-  Widget _buildSectionHeader(String title) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: Text(
-        title,
-        style: AppTextStyles.bodyLarge.copyWith(
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-    );
-  }
-  
   Widget _buildNotificationTile(
     String title,
     String description,
@@ -142,7 +131,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 const SizedBox(height: 4),
                 Text(
                   description,
-                  style: AppTextStyles.bodySmall.copyWith(
+                  style: AppTextStyles.bodyMedium.copyWith(
                     color: AppColors.textSecondary,
                   ),
                 ),
@@ -154,7 +143,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             value: value,
             onChanged: onChanged,
             activeColor: AppColors.primaryBlue,
-            activeTrackColor: AppColors.primaryBlue.withOpacity(0.3),
+            activeTrackColor: AppColors.primaryBlue.withValues(alpha: 0.3),
             inactiveThumbColor: AppColors.grey,
             inactiveTrackColor: AppColors.lightGrey,
           ),

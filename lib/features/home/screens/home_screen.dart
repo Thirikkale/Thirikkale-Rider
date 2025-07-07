@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:thirikkale_rider/core/utils/app_dimension.dart';
 import 'package:thirikkale_rider/features/home/widgets/destination_search_bar.dart';
@@ -6,6 +8,7 @@ import 'package:thirikkale_rider/features/home/widgets/ride_option_card.dart';
 import 'package:thirikkale_rider/features/home/widgets/ride_type_tabs.dart';
 import 'package:thirikkale_rider/widgets/common/section_header.dart';
 import 'package:thirikkale_rider/widgets/bottom_navbar.dart';
+import 'package:thirikkale_rider/features/services/screens/services_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -45,6 +48,12 @@ class HomeScreen extends StatelessWidget {
                           title: "Quick Options",
                           actionText: "See all",
                           onActionTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const ServicesScreen(),
+                              ),
+                            );
                             // Handle see all tap
                           },
                         ),

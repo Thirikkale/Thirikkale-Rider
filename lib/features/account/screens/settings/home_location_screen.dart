@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:thirikkale_rider/core/utils/app_dimension.dart';
 import 'package:thirikkale_rider/core/utils/app_styles.dart';
+import 'package:thirikkale_rider/core/utils/dialog_helper.dart';
+import 'package:thirikkale_rider/core/utils/snackbar_helper.dart';
 import 'package:thirikkale_rider/widgets/common/custom_appbar_name.dart';
+import 'package:thirikkale_rider/features/account/screens/settings/widgets/settings_subheader.dart';
 
 class HomeLocationScreen extends StatefulWidget {
   const HomeLocationScreen({super.key});
@@ -13,6 +16,34 @@ class HomeLocationScreen extends StatefulWidget {
 class _HomeLocationScreenState extends State<HomeLocationScreen> {
   final TextEditingController _locationController = TextEditingController();
   
+  void _showAddressConfirmationDialog(String address) {
+    DialogHelper.showCheckboxDialog(
+      context: context,
+      title: 'Set Home Location',
+      content: 'Would you like to set this address as your home location?\n\n$address',
+      checkboxLabel: 'Set as default home location',
+      initialCheckboxValue: true,
+      confirmText: 'Set Location',
+      cancelText: 'Cancel',
+      titleIcon: Icons.home,
+      onConfirm: (isSetAsDefault) {
+        // Handle the address confirmation
+        if (isSetAsDefault) {
+          // In a real app, you would save this to your data source
+          SnackbarHelper.showSuccessSnackBar(
+            context,
+            'Home location set successfully!',
+          );
+        } else {
+          SnackbarHelper.showSuccessSnackBar(
+            context,
+            'Address saved!',
+          );
+        }
+      },
+    );
+  }
+
   @override
   void dispose() {
     _locationController.dispose();
@@ -31,20 +62,19 @@ class _HomeLocationScreenState extends State<HomeLocationScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Search',
-              style: AppTextStyles.bodyMedium.copyWith(
-                color: AppColors.textSecondary,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            const SizedBox(height: 8),
+            const SettingsSubheader(title: 'Search'),
             TextField(
               controller: _locationController,
               autofocus: true,
               onChanged: (value) {
                 // Handle search
                 print('Searching for: $value');
+              },
+              onSubmitted: (value) {
+                // Handle when user submits the search
+                if (value.isNotEmpty) {
+                  _showAddressConfirmationDialog(value);
+                }
               },
               decoration: InputDecoration(
                 hintText: 'Enter your home address',
@@ -82,7 +112,7 @@ class _HomeLocationScreenState extends State<HomeLocationScreen> {
             InkWell(
               onTap: () {
                 // Handle current location selection
-                print('Use current location');
+                _showAddressConfirmationDialog('Current Location: Latitude, Longitude');
               },
               child: Container(
                 padding: const EdgeInsets.symmetric(
@@ -131,7 +161,7 @@ class _HomeLocationScreenState extends State<HomeLocationScreen> {
             InkWell(
               onTap: () {
                 // Handle map selection
-                print('Choose on map');
+                _showAddressConfirmationDialog('Selected Address from Map: 456 Oak Avenue, Springfield, IL 62701');
               },
               child: Container(
                 padding: const EdgeInsets.symmetric(

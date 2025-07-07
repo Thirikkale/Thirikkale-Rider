@@ -90,14 +90,14 @@ class PaymentMethodBottomSheet extends StatelessWidget {
           width: isSelected ? 2 : 1,
         ),
         borderRadius: BorderRadius.circular(12),
-        color: isSelected ? AppColors.primaryBlue.withOpacity(0.05) : AppColors.white,
+        color: isSelected ? AppColors.primaryBlue.withValues(alpha: 0.5) : AppColors.white,
       ),
       child: ListTile(
         leading: Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
             color: isSelected 
-                ? AppColors.primaryBlue.withOpacity(0.1) 
+                ? AppColors.primaryBlue.withValues(alpha: 0.1)
                 : AppColors.subtleGrey,
             borderRadius: BorderRadius.circular(8),
           ),
