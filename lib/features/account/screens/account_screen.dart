@@ -3,6 +3,7 @@ import 'package:thirikkale_rider/core/utils/app_dimension.dart';
 import 'package:thirikkale_rider/core/utils/navigation_utils.dart';
 import 'package:thirikkale_rider/features/account/screens/payment_methods/payment_methods_screen.dart';
 import 'package:thirikkale_rider/features/account/screens/settings_screen.dart';
+import 'package:thirikkale_rider/features/activity/screens/activity_screen.dart';
 import 'package:thirikkale_rider/features/account/widgets/account_feature_card.dart';
 import 'package:thirikkale_rider/features/account/widgets/account_info_tile.dart';
 import 'package:thirikkale_rider/features/account/widgets/payment_info_tile.dart';
@@ -69,7 +70,11 @@ class AccountScreen extends StatelessWidget {
               AccountInfoTile(
                 icon: Icons.history_rounded,
                 title: "Ride history",
-                onTap: () {},
+                onTap: () {
+                  Navigator.of(context).push(
+                    NoAnimationPageRoute(builder: (context) => const ActivityScreen())
+                  );
+                },
               ),
               const SizedBox(height: AppDimensions.subSectionSpacing),
 

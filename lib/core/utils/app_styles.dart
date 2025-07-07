@@ -125,4 +125,14 @@ class AppButtonStyles {
     ),
     elevation: 0, // Flat design without shadow
   );
+
+  static final ButtonStyle errorButton = ElevatedButton.styleFrom(
+    backgroundColor: AppColors.error,
+    foregroundColor: AppColors.white,
+    textStyle: AppTextStyles.button,
+    padding: const EdgeInsets.symmetric(horizontal: 30.0, vertical: 16.0),
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(8.0),
+    ),
+  );
 }

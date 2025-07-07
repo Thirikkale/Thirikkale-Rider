@@ -131,50 +131,35 @@ class _AddPaymentMethodScreenState extends State<AddPaymentMethodScreen> {
                     ),
                     
                     const SizedBox(height: 20),
-                    
-                    // Add Card Button
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.primaryBlue,
-                            foregroundColor: AppColors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          onPressed: () {
-                            if (formKey.currentState!.validate()) {
-                              SnackbarHelper.showSuccessSnackBar(
-                                context,
-                                setAsDefault 
-                                  ? 'Card added and set as default payment method!'
-                                  : 'Card added successfully!',
-                              );
-                              Navigator.pop(context);
-                            } else {
-                              SnackbarHelper.showErrorSnackBar(
-                                context,
-                                'Please fill all required fields correctly',
-                              );
-                            }
-                          },
-                          child: const Text(
-                            'Add Card',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    
-                    const SizedBox(height: AppDimensions.pageVerticalPadding),
                   ],
+                ),
+              ),
+            ),
+            
+            // Add Card Button - Fixed at bottom
+            Padding(
+              padding: const EdgeInsets.all(AppDimensions.pageHorizontalPadding),
+              child: SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  style: AppButtonStyles.primaryButton,
+                  onPressed: () {
+                    if (formKey.currentState!.validate()) {
+                      SnackbarHelper.showSuccessSnackBar(
+                        context,
+                        setAsDefault 
+                          ? 'Card added and set as default payment method!'
+                          : 'Card added successfully!',
+                      );
+                      Navigator.pop(context);
+                    } else {
+                      SnackbarHelper.showErrorSnackBar(
+                        context,
+                        'Please fill all required fields correctly',
+                      );
+                    }
+                  },
+                  child: const Text('Add Card'),
                 ),
               ),
             ),
