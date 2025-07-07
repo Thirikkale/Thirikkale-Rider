@@ -34,7 +34,7 @@ class AccountScreen extends StatelessWidget {
                 subtitle: '4.96 • Rider',
               ),
 
-              const SizedBox(height: AppDimensions.widgetSpacing),
+              const SizedBox(height: AppDimensions.subSectionSpacing),
               const SectionSubheader(title: "Details"),
               AccountInfoTile(
                 icon: Icons.email_outlined,
@@ -66,7 +66,7 @@ class AccountScreen extends StatelessWidget {
               ),
 
               const SizedBox(height: AppDimensions.subSectionSpacing),
-              const SectionSubheader(title: "Rides"),
+              const SectionSubheader(title: "Rides"),              
               AccountInfoTile(
                 icon: Icons.history_rounded,
                 title: "Ride history",

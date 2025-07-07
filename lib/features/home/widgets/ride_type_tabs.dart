@@ -48,9 +48,9 @@ class _RideTypeTabsState extends State<RideTypeTabs> {
                   const SizedBox(width: 8),
                   Text(
                     title,
-                    style: AppTextStyles.bodyLarge.copyWith(
+                    style: AppTextStyles.bodyXLarge.copyWith(
                       fontWeight:
-                          isSelected ? FontWeight.w600 : FontWeight.normal,
+                          isSelected ? FontWeight.w900 : FontWeight.w600,
                       color:
                           isSelected
                               ? AppColors.textPrimary

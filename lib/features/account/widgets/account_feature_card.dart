@@ -38,14 +38,14 @@ class AccountFeatureCard extends StatelessWidget {
                   children: [
                     Text(
                       title,
-                      style: AppTextStyles.bodyLarge.copyWith(
+                      style: AppTextStyles.bodyXLarge.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       subtitle,
-                      style: AppTextStyles.bodySmall.copyWith(
+                      style: AppTextStyles.bodyMedium.copyWith(
                         color: AppColors.textSecondary,
                       ),
                     ),

@@ -22,6 +22,7 @@ class SettingsScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               SectionSubheader(title: "App Setting"),
+
               AccountInfoTile(
                 icon: Icons.home_outlined,
                 title: "Home",
@@ -86,7 +87,9 @@ class SettingsScreen extends StatelessWidget {
               ),
 
               const SizedBox(height: AppDimensions.subSectionSpacing),
-              SectionSubheader(title: "Safety Setting"),
+              
+              SectionSubheader(title: "Safety Setting"),           
+
               AccountInfoTile(
                 icon: Icons.shield_outlined,
                 title: "Emergency contacts",
@@ -114,6 +117,7 @@ class SettingsScreen extends StatelessWidget {
 
               const SizedBox(height: AppDimensions.subSectionSpacing),
               SectionSubheader(title: "Ride Setting"),
+
               AccountInfoTile(
                 icon: Icons.tune_outlined,
                 title: "Ride preferences",

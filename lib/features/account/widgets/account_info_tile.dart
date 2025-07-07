@@ -41,7 +41,7 @@ class AccountInfoTile extends StatelessWidget {
                 Text(
                   title,
                   style: AppTextStyles.bodyLarge.copyWith(
-                    fontWeight: FontWeight.w500,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
                 if (subtitle != null) ...[

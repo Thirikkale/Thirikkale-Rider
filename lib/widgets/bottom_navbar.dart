@@ -38,11 +38,11 @@ class BottomNavbar extends StatelessWidget {
         unselectedItemColor: AppColors.grey,
         selectedLabelStyle: const TextStyle(
           fontSize: 12,
-          fontWeight: FontWeight.w500,
+          fontWeight: FontWeight.w700,
         ),
         unselectedLabelStyle: const TextStyle(
           fontSize: 12,
-          fontWeight: FontWeight.normal,
+          fontWeight: FontWeight.w500,
         ),
         elevation: 0,
         items: const [
