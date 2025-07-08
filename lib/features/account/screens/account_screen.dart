@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:thirikkale_rider/core/utils/app_dimension.dart';
 import 'package:thirikkale_rider/core/utils/navigation_utils.dart';
 import 'package:thirikkale_rider/features/account/screens/payment_methods/payment_methods_screen.dart';
+import 'package:thirikkale_rider/features/account/screens/promotions_screen.dart';
 import 'package:thirikkale_rider/features/account/screens/settings_screen.dart';
 import 'package:thirikkale_rider/features/activity/screens/activity_screen.dart';
 import 'package:thirikkale_rider/features/account/widgets/account_feature_card.dart';
@@ -102,6 +103,11 @@ class AccountScreen extends StatelessWidget {
                 title: 'Promotions',
                 subtitle: 'View current offers and discounts.',
                 icon: const Icon(Icons.price_change_outlined, size: 32),
+                onTap: () {
+                  Navigator.of(context).push(
+                    NoAnimationPageRoute(builder: (context) => const PromotionsScreen())
+                  );
+                },
               ),
             ],
           ),
