@@ -1,5 +1,3 @@
-import 'dart:developer';
-
 import 'package:flutter/material.dart';
 import 'package:thirikkale_rider/core/utils/app_dimension.dart';
 import 'package:thirikkale_rider/features/home/widgets/destination_search_bar.dart';
@@ -150,16 +148,14 @@ class HomeScreen extends StatelessWidget {
                           scrollDirection: Axis.horizontal,
                           children: const [
                             ExploreOptionCard(
-                              image:
-                                  'assets/images/option_cards/tuk_ride.png',
+                              image: 'assets/images/option_cards/tuk_ride.png',
                               title: 'Zip Through Traffic',
                               subtitle:
                                   'Your quickest way to get around the city',
                             ),
                             SizedBox(width: 16.0),
                             ExploreOptionCard(
-                              image:
-                                  'assets/images/option_cards/rush_ride.png',
+                              image: 'assets/images/option_cards/rush_ride.png',
                               title: 'Rush Hour Hero',
                               subtitle:
                                   'Your fastest route through city traffic',
