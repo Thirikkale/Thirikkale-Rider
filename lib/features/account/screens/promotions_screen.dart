@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:thirikkale_rider/core/utils/app_dimension.dart';
-import 'package:thirikkale_rider/core/utils/app_styles.dart';
 import 'package:thirikkale_rider/core/utils/snackbar_helper.dart';
 import 'package:thirikkale_rider/features/account/widgets/promotion_card.dart';
+import 'package:thirikkale_rider/features/account/widgets/promo_code_input.dart';
 import 'package:thirikkale_rider/widgets/common/custom_appbar_name.dart';
 import 'package:thirikkale_rider/widgets/common/section_subheader.dart';
 
@@ -23,14 +23,28 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
       'code': 'RIDE10',
       'description': 'Expires in 2 days',
       'color': Color(0xFFFFE5B4), // Light orange/beige
-      'icon': '🚗',
+      'icon': Icons.directions_car,
     },
     {
       'title': 'Free upgrade',
       'code': 'UPGRADE',
       'description': 'Expires in 1 week',
       'color': Color(0xFFE5F3FF), // Light blue
-      'icon': '⬆️',
+      'icon': Icons.upgrade,
+    },
+    {
+      'title': 'Student discount',
+      'code': 'STUDENT25',
+      'description': 'Expires in 1 month',
+      'color': Color(0xFFE8F5E8), // Light green
+      'icon': Icons.school,
+    },
+    {
+      'title': 'Weekend special',
+      'code': 'WEEKEND',
+      'description': 'Valid on weekends only',
+      'color': Color(0xFFF0E6FF), // Light purple
+      'icon': Icons.weekend,
     },
   ];
 
@@ -80,7 +94,10 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
               const SizedBox(height: AppDimensions.widgetSpacing),
               
               // Promo code input section
-              _buildPromoCodeSection(),
+              PromoCodeInput(
+                controller: _promoCodeController,
+                onApply: _applyPromoCode,
+              ),
             ],
           ),
         ),
@@ -88,62 +105,7 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
     );
   }
 
-  Widget _buildPromoCodeSection() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppDimensions.pageHorizontalPadding,
-      ),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: AppColors.subtleGrey,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: TextField(
-                    controller: _promoCodeController,
-                    decoration: const InputDecoration(
-                      hintText: 'Enter promo code',
-                      hintStyle: TextStyle(
-                        color: AppColors.textSecondary,
-                      ),
-                      border: InputBorder.none,
-                      contentPadding: EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 16,
-                      ),
-                    ),
-                    style: AppTextStyles.bodyMedium,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              ElevatedButton(
-                onPressed: () {
-                  _applyPromoCode();
-                },
-                style: AppButtonStyles.primaryButton.copyWith(
-                  padding: WidgetStateProperty.all(
-                    const EdgeInsets.symmetric(
-                      horizontal: 24,
-                      vertical: 16,
-                    ),
-                  ),
-                ),
-                child: Text(
-                  'Apply',
-                  style: AppTextStyles.button,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
+  
   void _applyPromoCode() {
     final code = _promoCodeController.text.trim();
     if (code.isEmpty) {

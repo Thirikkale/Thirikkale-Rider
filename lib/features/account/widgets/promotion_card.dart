@@ -7,7 +7,7 @@ class PromotionCard extends StatelessWidget {
   final String code;
   final String description;
   final Color backgroundColor;
-  final String icon;
+  final IconData icon;
   final VoidCallback? onTap;
 
   const PromotionCard({
@@ -67,9 +67,10 @@ class PromotionCard extends StatelessWidget {
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Center(
-                child: Text(
+                child: Icon(
                   icon,
-                  style: const TextStyle(fontSize: 32),
+                  size: 32,
+                  color: AppColors.textPrimary,
                 ),
               ),
             ),
