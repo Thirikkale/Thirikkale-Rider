@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:thirikkale_rider/core/providers/auth_provider.dart';
 import 'package:thirikkale_rider/core/utils/navigation_utils.dart';
+import 'package:thirikkale_rider/core/utils/snackbar_helper.dart';
 import 'package:thirikkale_rider/features/authenctication/screens/photo_verification_screen.dart';
 import 'package:thirikkale_rider/features/authenctication/widgets/sign_navigation_button_row.dart';
 import 'package:thirikkale_rider/widgets/common/custom_appbar.dart';
@@ -39,16 +42,31 @@ class _NameRegistrationScreenState extends State<NameRegistrationScreen> {
     });
   }
 
-  void _navigateToPhotoVerification() {
-    // Send details to backend also store the name in your AuthProvider here
-    // final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    // authProvider.setUserName(_firstNameController.text, _lastNameController.text);
+  void _navigateToPhotoVerification() async {
+    if (!_isFormValid) return;
 
-    Navigator.of(context).push(
-      NoAnimationPageRoute(
-        builder: (context) => const PhotoVerificationScreen(),
-      ),
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    
+    // Register user with backend
+    final success = await authProvider.registerUser(
+      firstName: _firstNameController.text.trim(),
+      lastName: _lastNameController.text.trim(),
     );
+
+    if (success && mounted) {
+      // Registration successful, navigate to next step
+      Navigator.of(context).push(
+        NoAnimationPageRoute(
+          builder: (context) => const PhotoVerificationScreen(),
+        ),
+      );
+    } else if (mounted) {
+      // Show error
+      SnackbarHelper.showErrorSnackBar(
+        context,
+        authProvider.errorMessage ?? 'Registration failed',
+      );
+    }
   }
 
   @override
@@ -79,10 +97,18 @@ class _NameRegistrationScreenState extends State<NameRegistrationScreen> {
             const SizedBox(height: 16),
             CustomInputFieldLabel(label: "Last Name", controller: _lastNameController,),
             const Spacer(),
-            SignNavigationButtonRow(
-              onBack: () => Navigator.pop(context),
-              onNext: _isFormValid ? _navigateToPhotoVerification : null,
-              nextEnabled: _isFormValid,
+            Consumer<AuthProvider>(
+              builder: (context, authProvider, child) {
+                if (authProvider.isLoading) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                
+                return SignNavigationButtonRow(
+                  onBack: () => Navigator.pop(context),
+                  onNext: _isFormValid ? _navigateToPhotoVerification : null,
+                  nextEnabled: _isFormValid,
+                );
+              },
             ),
             const SizedBox(height: 32),
           ],

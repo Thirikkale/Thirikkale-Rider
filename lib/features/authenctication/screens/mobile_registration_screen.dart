@@ -55,16 +55,11 @@ class _MobileRegistrationScreenState extends State<MobileRegistrationScreen> {
       phoneNumber: fullNumber,
       onCodeSent: (verificationId, resendToken) {
         if (mounted) {
-          // Set the verified phone number in provider
-          authProvider.setVerifiedPhoneNumber(fullNumber);
-
           Navigator.of(context).push(
             NoAnimationPageRoute(
-              builder:
-                  (context) => OtpVerificationScreen(
-                    verificationId: verificationId,
-                    phoneNumber: fullNumber,
-                  ),
+              builder: (context) => OtpVerificationScreen(
+                phoneNumber: fullNumber,
+              ),
             ),
           );
         }

@@ -10,12 +10,10 @@ import 'package:thirikkale_rider/widgets/common/custom_appbar.dart';
 import 'package:thirikkale_rider/widgets/otp_input_row.dart';
 
 class OtpVerificationScreen extends StatefulWidget {
-  final String verificationId;
   final String phoneNumber;
 
   const OtpVerificationScreen({
     super.key,
-    required this.verificationId,
     required this.phoneNumber,
   });
 
@@ -28,12 +26,10 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
   late Timer _timer;
   int _start = 30;
   bool _canResend = false;
-  late String _currentVerificationId;
 
   @override
   void initState() {
     super.initState();
-    _currentVerificationId = widget.verificationId;
     startTimer();
   }
 
@@ -77,10 +73,6 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
           context,
           "New OTP sent successfully!",
         );
-        // Update the state with the new verificationId
-        setState(() {
-          _currentVerificationId = newVerificationId;
-        });
         startTimer(); // Restart the timer
       },
       onVerificationFailed: (error) {
@@ -104,22 +96,29 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
     final otp = _otpControllers.map((c) => c.text).join();
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
-    final success = await authProvider.verifyOTP(_currentVerificationId, otp);
+    final success = await authProvider.verifyOTP(otp);
 
     if (success && mounted) {
-      // Token is now available in authProvider.idToken
-
-      // If you want to send the token to your backend immediately:
-      // final backendSuccess = await authProvider.sendTokenToBackend(
-      //   endpoint: 'https://your-api.com/api/auth/verify',
-      // );
-
-      // Phone verification successful, proceed to next screen
-      Navigator.of(context).push(
-        NoAnimationPageRoute(
-          builder: (context) => const NameRegistrationScreen(),
-        ),
-      );
+      // OTP verified successfully, now check if user exists in backend
+      final userExists = await authProvider.checkUserExists();
+      
+      if (mounted) {
+        if (userExists) {
+          // User exists and is logged in, navigate to main app
+          Navigator.pushNamedAndRemoveUntil(
+            context,
+            '/home',
+            (route) => false,
+          );
+        } else {
+          // User needs to register, navigate to name registration
+          Navigator.of(context).push(
+            NoAnimationPageRoute(
+              builder: (context) => const NameRegistrationScreen(),
+            ),
+          );
+        }
+      }
     } else if (mounted) {
       // Show error message
       SnackbarHelper.showErrorSnackBar(
