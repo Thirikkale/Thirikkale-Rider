@@ -51,7 +51,7 @@ class CashPaymentBottomSheet extends StatelessWidget {
                   _buildContent(),
                   const SizedBox(height: 32),
                   _buildSetAsDefaultButton(context), // Replaced buttons
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 18),
                 ],
               ),
             ),

@@ -138,60 +138,62 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
           height: 32.0,
         ),
       ),
-      body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 24.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(height: 24),
-            Text(
-              'Enter the 6-digit code sent via\nSMS to ${widget.phoneNumber}',
-              style: Theme.of(context).textTheme.headlineSmall,
-            ),
-
-            const SizedBox(height: 32),
-
-            // OTP fields
-            OtpInputRow(
-              controllers: _otpControllers,
-              onChanged: (value, index) {
-                setState(() {}); // Update UI when text changes
-              },
-            ),
-            const SizedBox(height: 24),
-
-            // Resend OTP Timer and Button
-            Center(
-              child:
-                  _canResend
-                      ? TextButton(
-                        onPressed: _resendOtp,
-                        child: const Text('Resend Code'),
-                      )
-                      : Text(
-                        'Resend code in 00:${_start.toString().padLeft(2, '0')}',
-                        style: TextStyle(color: Colors.grey.shade600),
-                      ),
-            ),
-
-            const Spacer(),
-
-            // Navigation buttons with loading state
-            Consumer<AuthProvider>(
-              builder: (context, authProvider, child) {
-                if (authProvider.isLoading) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-
-                return SignNavigationButtonRow(
-                  onBack: () => Navigator.pop(context),
-                  onNext: _isFormValid ? _verifyOtp : null,
-                  nextEnabled: _isFormValid && !authProvider.isLoading,
-                );
-              },
-            ),
-            const SizedBox(height: 32),
-          ],
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 24),
+              Text(
+                'Enter the 6-digit code sent via\nSMS to ${widget.phoneNumber}',
+                style: Theme.of(context).textTheme.headlineSmall,
+              ),
+        
+              const SizedBox(height: 32),
+        
+              // OTP fields
+              OtpInputRow(
+                controllers: _otpControllers,
+                onChanged: (value, index) {
+                  setState(() {}); // Update UI when text changes
+                },
+              ),
+              const SizedBox(height: 24),
+        
+              // Resend OTP Timer and Button
+              Center(
+                child:
+                    _canResend
+                        ? TextButton(
+                          onPressed: _resendOtp,
+                          child: const Text('Resend Code'),
+                        )
+                        : Text(
+                          'Resend code in 00:${_start.toString().padLeft(2, '0')}',
+                          style: TextStyle(color: Colors.grey.shade600),
+                        ),
+              ),
+        
+              const Spacer(),
+        
+              // Navigation buttons with loading state
+              Consumer<AuthProvider>(
+                builder: (context, authProvider, child) {
+                  if (authProvider.isLoading) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+        
+                  return SignNavigationButtonRow(
+                    onBack: () => Navigator.pop(context),
+                    onNext: _isFormValid ? _verifyOtp : null,
+                    nextEnabled: _isFormValid && !authProvider.isLoading,
+                  );
+                },
+              ),
+              const SizedBox(height: 18),
+            ],
+          ),
         ),
       ),
     );

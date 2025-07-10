@@ -13,8 +13,10 @@ class BottomNavbar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final double bottomPadding = MediaQuery.of(context).padding.bottom;
+
     return Container(
-      height: kBottomNavigationBarHeight + 30,
+      height: kBottomNavigationBarHeight + 8 + bottomPadding,
       decoration: const BoxDecoration(
         color: AppColors.white,
         boxShadow: [

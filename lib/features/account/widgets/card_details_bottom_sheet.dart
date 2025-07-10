@@ -57,7 +57,7 @@ class CardDetailsBottomSheet extends StatelessWidget {
                   if (!isDefault) _buildSetAsDefaultButton(context),
                   if (!isDefault) const SizedBox(height: 16),
                   _buildActionButtons(context),
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 18),
                 ],
               ),
             ),
