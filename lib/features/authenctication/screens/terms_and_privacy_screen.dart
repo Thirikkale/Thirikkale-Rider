@@ -123,7 +123,7 @@ class _TermsAndPrivacyScreenState extends State<TermsAndPrivacyScreen> {
                 nextEnabled: _isAgreed,
               ),
 
-              const SizedBox(height: 24),
+              const SizedBox(height: 18),
             ],
           ),
         ),

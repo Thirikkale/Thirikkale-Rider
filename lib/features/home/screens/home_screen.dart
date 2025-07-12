@@ -214,7 +214,21 @@ class HomeScreen extends StatelessWidget {
                             horizontal: AppDimensions.pageHorizontalPadding,
                           ),
                           scrollDirection: Axis.horizontal,
-                          children: _buildExploreCards(context, beatTrafficOptions),
+                          children: const [
+                            ExploreOptionCard(
+                              image: 'assets/images/option_cards/tuk_ride.png',
+                              title: 'Zip Through Traffic',
+                              subtitle:
+                                  'Your quickest way to get around the city',
+                            ),
+                            SizedBox(width: 16.0),
+                            ExploreOptionCard(
+                              image: 'assets/images/option_cards/rush_ride.png',
+                              title: 'Rush Hour Hero',
+                              subtitle:
+                                  'Your fastest route through city traffic',
+                            ),
+                          ],
                         ),
                       ),
                     ],

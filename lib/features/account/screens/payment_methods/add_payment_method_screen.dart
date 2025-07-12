@@ -138,7 +138,7 @@ class _AddPaymentMethodScreenState extends State<AddPaymentMethodScreen> {
             
             // Add Card Button - Fixed at bottom
             Padding(
-              padding: const EdgeInsets.all(AppDimensions.pageHorizontalPadding),
+              padding: const EdgeInsets.symmetric(horizontal: AppDimensions.pageHorizontalPadding),
               child: SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
@@ -163,6 +163,7 @@ class _AddPaymentMethodScreenState extends State<AddPaymentMethodScreen> {
                 ),
               ),
             ),
+            const SizedBox(height: 18,)
           ],
         ),
       ),

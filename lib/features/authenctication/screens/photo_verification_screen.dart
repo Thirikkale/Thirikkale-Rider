@@ -54,80 +54,82 @@ class _PhotoVerificationScreenState extends State<PhotoVerificationScreen> {
         ),
         onSkip: _navigateToNextScreen,
       ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Take your profile photo',
-                style: Theme.of(context).textTheme.headlineMedium,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Your profile photo helps people recognize you. Please note that once you submit your profile photo it can only be changed in limited circumstances.',
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
-              const SizedBox(height: 24),
-              Text(
-                'Why you should submit a picture?',
-                style: Theme.of(
-                  context,
-                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Submitting your photo helps us offer women-only ride options, creating a safer and more comfortable experience for women riders.',
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
-              const SizedBox(height: 24),
-              const PhotoGuidelines(),
-              const SizedBox(height: 24),
-
-              // Display either the captured images or a place holder
-              ProfileImagePreview(
-                capturedImage: _capturedImage,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Verifi will confirm that your photo depicts a live individual, captured in real-time, and Thirikkale will utilize the image to detect any duplicate accounts.',
-                style: Theme.of(context).textTheme.bodySmall,
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 8),
-              Center(
-                child: TextButton(
-                  onPressed: () {
-                    // Show detailed privacy policy
-                  },
-                  child: const Text('Learn More'),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Take your profile photo',
+                  style: Theme.of(context).textTheme.headlineMedium,
                 ),
-              ),
-              const SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: _openFullScreenCamera,
-                  style: AppButtonStyles.primaryButton,
-                  child: const Text('Take Photo'),
-                ),
-              ),
-
-              // Show continue button if we have a photo
-              if (_capturedImage != null) ...[
                 const SizedBox(height: 16),
+                Text(
+                  'Your profile photo helps people recognize you. Please note that once you submit your profile photo it can only be changed in limited circumstances.',
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+                const SizedBox(height: 24),
+                Text(
+                  'Why you should submit a picture?',
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Submitting your photo helps us offer women-only ride options, creating a safer and more comfortable experience for women riders.',
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+                const SizedBox(height: 24),
+                const PhotoGuidelines(),
+                const SizedBox(height: 24),
+        
+                // Display either the captured images or a place holder
+                ProfileImagePreview(
+                  capturedImage: _capturedImage,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Verifi will confirm that your photo depicts a live individual, captured in real-time, and Thirikkale will utilize the image to detect any duplicate accounts.',
+                  style: Theme.of(context).textTheme.bodySmall,
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 8),
+                Center(
+                  child: TextButton(
+                    onPressed: () {
+                      // Show detailed privacy policy
+                    },
+                    child: const Text('Learn More'),
+                  ),
+                ),
+                const SizedBox(height: 24),
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: _navigateToNextScreen,
-                    style: AppButtonStyles.secondaryButton,
-                    child: const Text('Continue with This Photo'),
+                    onPressed: _openFullScreenCamera,
+                    style: AppButtonStyles.primaryButton,
+                    child: const Text('Take Photo'),
                   ),
                 ),
+        
+                // Show continue button if we have a photo
+                if (_capturedImage != null) ...[
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: _navigateToNextScreen,
+                      style: AppButtonStyles.secondaryButton,
+                      child: const Text('Continue with This Photo'),
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 18),
               ],
-              const SizedBox(height: 24),
-            ],
+            ),
           ),
         ),
       ),
