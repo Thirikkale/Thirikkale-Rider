@@ -21,7 +21,7 @@ class RebookBtn extends StatelessWidget {
           fontWeight: FontWeight.w500,
         ),
         elevation: 1,
-        shadowColor: AppColors.black.withOpacity(0.1),
+        shadowColor: AppColors.black.withValues(alpha: 0.1),
       ),
     );
   }

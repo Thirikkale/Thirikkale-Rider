@@ -26,7 +26,7 @@ class VehicleOptionCard extends StatelessWidget {
           decoration: BoxDecoration(
             color:
                 isSelected
-                    ? AppColors.primaryBlue.withOpacity(0.1)
+                    ? AppColors.primaryBlue.withValues(alpha: 0.1)
                     : AppColors.white,
             borderRadius: BorderRadius.circular(8),
             border: Border.all(

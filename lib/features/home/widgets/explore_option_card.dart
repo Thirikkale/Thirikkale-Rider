@@ -28,7 +28,7 @@ class ExploreOptionCard extends StatelessWidget {
           gradient: LinearGradient(
             begin: Alignment.bottomCenter,
             end: Alignment.topCenter,
-            colors: [Colors.black.withOpacity(0.7), Colors.transparent],
+            colors: [Colors.black.withValues(alpha: 0.7), Colors.transparent],
           ),
         ),
         padding: const EdgeInsets.all(16),
@@ -57,7 +57,7 @@ class ExploreOptionCard extends StatelessWidget {
             Text(
               subtitle,
               style: AppTextStyles.bodyMedium.copyWith(
-                color: Colors.white.withOpacity(0.9),
+                color: Colors.white.withValues(alpha: 0.9),
               ),
             ),
           ],

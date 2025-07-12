@@ -18,7 +18,7 @@ class SearchError extends StatelessWidget {
             Icon(
               Icons.error_outline,
               size: 64,
-              color: AppColors.error.withOpacity(0.7),
+              color: AppColors.error.withValues(alpha: 0.7),
             ),
             const SizedBox(height: 16),
             Text(

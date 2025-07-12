@@ -73,67 +73,69 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
         title: 'Payment methods',
         showBackButton: true,
       ),
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Padding(
-            padding: EdgeInsets.all(AppDimensions.pageHorizontalPadding),
-            child: Text('Payment methods', style: AppTextStyles.heading3),
-          ),
-          Expanded(
-            child: Column(
-              children: [
-                PaymentMethodTile(
-                  icon: Icons.credit_card,
-                  title: 'Card',
-                  subtitle: 'Visa •••• •••• •••• 4567',
-                  isDefault: _defaultMethod == 'Card',
-                  onTap: () {
-                    _showCardDetailsBottomSheet(context);
-                  },
-                ),
-                PaymentMethodTile(
-                  icon: Icons.money,
-                  title: 'Cash',
-                  isDefault: _defaultMethod == 'Cash',
-                  isCash: true,
-                  onTap: () {
-                    _showCashPaymentDialog(context);
-                  },
-                ),
-                const Spacer(),
-                Padding(
-                  padding: const EdgeInsets.all(
-                    AppDimensions.pageHorizontalPadding,
+      body: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Padding(
+              padding: EdgeInsets.all(AppDimensions.pageHorizontalPadding),
+              child: Text('Payment methods', style: AppTextStyles.heading3),
+            ),
+            Expanded(
+              child: Column(
+                children: [
+                  PaymentMethodTile(
+                    icon: Icons.credit_card,
+                    title: 'Card',
+                    subtitle: 'Visa •••• •••• •••• 4567',
+                    isDefault: _defaultMethod == 'Card',
+                    onTap: () {
+                      _showCardDetailsBottomSheet(context);
+                    },
                   ),
-                  child: SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder:
-                                (context) => const AddPaymentMethodScreen(),
+                  PaymentMethodTile(
+                    icon: Icons.money,
+                    title: 'Cash',
+                    isDefault: _defaultMethod == 'Cash',
+                    isCash: true,
+                    onTap: () {
+                      _showCashPaymentDialog(context);
+                    },
+                  ),
+                  const Spacer(),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppDimensions.pageHorizontalPadding,
+                    ),
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        style: AppButtonStyles.primaryButton,
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder:
+                                  (context) => const AddPaymentMethodScreen(),
+                            ),
+                          );
+                        },
+                        child: const Text(
+                          'Add Card',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
                           ),
-                        );
-                      },
-                      style: AppButtonStyles.primaryButton,
-                      child: const Text(
-                        'Add Card',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
                         ),
                       ),
                     ),
                   ),
-                ),
-                const SizedBox(height: AppDimensions.pageVerticalPadding),
-              ],
+                  const SizedBox(height: 18),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

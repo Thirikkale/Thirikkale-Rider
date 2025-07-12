@@ -30,37 +30,39 @@ class CardDetailsBottomSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(20),
-          topRight: Radius.circular(20),
-        ),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _buildHandle(),
-          Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppDimensions.pageHorizontalPadding,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildTitle(),
-                const SizedBox(height: 20),
-                _buildCardDetails(),
-                const SizedBox(height: 32),
-                if (!isDefault) _buildSetAsDefaultButton(context),
-                if (!isDefault) const SizedBox(height: 16),
-                _buildActionButtons(context),
-                const SizedBox(height: 32),
-              ],
-            ),
+    return SafeArea(
+      child: Container(
+        decoration: const BoxDecoration(
+          color: AppColors.white,
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(20),
+            topRight: Radius.circular(20),
           ),
-        ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _buildHandle(),
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppDimensions.pageHorizontalPadding,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildTitle(),
+                  const SizedBox(height: 20),
+                  _buildCardDetails(),
+                  const SizedBox(height: 32),
+                  if (!isDefault) _buildSetAsDefaultButton(context),
+                  if (!isDefault) const SizedBox(height: 16),
+                  _buildActionButtons(context),
+                  const SizedBox(height: 18),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -155,18 +157,11 @@ class CardDetailsBottomSheet extends StatelessWidget {
         const SizedBox(width: 12),
         Expanded(
           child: ElevatedButton(
+            style: AppButtonStyles.errorButton,
             onPressed: () {
               Navigator.pop(context);
               _showDeleteConfirmationDialog(context);
             },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.error,
-              foregroundColor: AppColors.white,
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
             child: const Text(
               'Delete',
               style: TextStyle(

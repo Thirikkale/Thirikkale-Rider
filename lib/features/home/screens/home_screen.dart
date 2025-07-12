@@ -6,6 +6,7 @@ import 'package:thirikkale_rider/features/home/widgets/ride_option_card.dart';
 import 'package:thirikkale_rider/features/home/widgets/ride_type_tabs.dart';
 import 'package:thirikkale_rider/widgets/common/section_header.dart';
 import 'package:thirikkale_rider/widgets/bottom_navbar.dart';
+import 'package:thirikkale_rider/features/services/screens/services_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -45,6 +46,12 @@ class HomeScreen extends StatelessWidget {
                           title: "Quick Options",
                           actionText: "See all",
                           onActionTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const ServicesScreen(),
+                              ),
+                            );
                             // Handle see all tap
                           },
                         ),
@@ -141,16 +148,14 @@ class HomeScreen extends StatelessWidget {
                           scrollDirection: Axis.horizontal,
                           children: const [
                             ExploreOptionCard(
-                              image:
-                                  'assets/images/option_cards/tuk_ride.png',
+                              image: 'assets/images/option_cards/tuk_ride.png',
                               title: 'Zip Through Traffic',
                               subtitle:
                                   'Your quickest way to get around the city',
                             ),
                             SizedBox(width: 16.0),
                             ExploreOptionCard(
-                              image:
-                                  'assets/images/option_cards/rush_ride.png',
+                              image: 'assets/images/option_cards/rush_ride.png',
                               title: 'Rush Hour Hero',
                               subtitle:
                                   'Your fastest route through city traffic',
