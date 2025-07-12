@@ -8,14 +8,22 @@ import 'package:thirikkale_rider/widgets/bottom_navbar.dart';
 import 'package:thirikkale_rider/widgets/common/custom_appbar_name.dart';
 
 class ActivityScreen extends StatefulWidget {
-  const ActivityScreen({super.key});
+  final int initialTabIndex;
+  
+  const ActivityScreen({super.key, this.initialTabIndex = 0});
 
   @override
   State<ActivityScreen> createState() => _ActivityScreenState();
 }
 
 class _ActivityScreenState extends State<ActivityScreen> {
-  int _selectedTabIndex = 0;
+  late int _selectedTabIndex;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedTabIndex = widget.initialTabIndex;
+  }
 
   // Sample data for different activity types
   final List<Map<String, dynamic>> _ongoingActivities = [

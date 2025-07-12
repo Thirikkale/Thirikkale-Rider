@@ -73,7 +73,7 @@ class AccountScreen extends StatelessWidget {
                 title: "Ride history",
                 onTap: () {
                   Navigator.of(context).push(
-                    NoAnimationPageRoute(builder: (context) => const ActivityScreen())
+                    NoAnimationPageRoute(builder: (context) => const ActivityScreen(initialTabIndex: 1))
                   );
                 },
               ),
