@@ -4,10 +4,10 @@ import 'package:thirikkale_rider/features/home/widgets/destination_search_bar.da
 import 'package:thirikkale_rider/features/home/widgets/explore_option_card.dart';
 import 'package:thirikkale_rider/features/home/widgets/ride_option_card.dart';
 import 'package:thirikkale_rider/features/home/widgets/ride_type_tabs.dart';
-import 'package:thirikkale_rider/features/home/screens/ride_option_detail_screen.dart';
 import 'package:thirikkale_rider/widgets/common/section_header.dart';
 import 'package:thirikkale_rider/widgets/bottom_navbar.dart';
 import 'package:thirikkale_rider/features/services/screens/services_screen.dart';
+import 'package:thirikkale_rider/features/booking/screens/plan_your_ride_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -52,6 +52,19 @@ class HomeScreen extends StatelessWidget {
     },
   ];
 
+  // Helper method to navigate to PlanYourRideScreen with parameters
+  void _navigateToPlanYourRide(BuildContext context, String rideType, {String? schedule}) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => PlanYourRideScreen(
+          initialRideType: rideType,
+          initialSchedule: schedule ?? 'Now',
+        ),
+      ),
+    );
+  }
+
   // Helper method to build explore option cards
   List<Widget> _buildExploreCards(BuildContext context, List<Map<String, String>> options) {
     final cards = <Widget>[];
@@ -65,22 +78,19 @@ class HomeScreen extends StatelessWidget {
           title: option['title']!,
           subtitle: option['subtitle']!,
           onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => RideOptionDetailScreen(
-                  image: option['image']!,
-                  title: option['detailTitle']!,
-                  subtitle: option['subtitle']!,
-                  description: option['description']!,
-                  buttonText: option['buttonText']!,
-                  onChooseOption: () {
-                    Navigator.pop(context);
-                    // Handle option selection
-                  },
-                ),
-              ),
-            );
+            // Map option titles to ride types
+            String rideType = 'Solo'; // default
+            if (option['title']!.contains('Shared')) {
+              rideType = 'Shared';
+            } else if (option['title']!.contains('Women')) {
+              rideType = 'Women Only';
+            } else if (option['title']!.contains('Rush')) {
+              rideType = 'Rush';
+            } else if (option['title']!.contains('Tuk')) {
+              rideType = 'Tuk';
+            }
+            
+            _navigateToPlanYourRide(context, rideType);
           },
         ),
       );
@@ -149,26 +159,30 @@ class HomeScreen extends StatelessWidget {
                             horizontal: AppDimensions.pageHorizontalPadding,
                           ),
                           scrollDirection: Axis.horizontal,
-                          children: const [
+                          children: [
                             RideOptionCard(
                               icon: 'assets/icons/vehicles/tuk.png',
                               title: 'Tuk',
                               isPromo: true,
+                              onTap: () => _navigateToPlanYourRide(context, 'Tuk'),
                             ),
-                            SizedBox(width: 16),
+                            const SizedBox(width: 16),
                             RideOptionCard(
                               icon: 'assets/icons/vehicles/scheduledRide.png',
                               title: 'Scheduled',
+                              onTap: () => _navigateToPlanYourRide(context, 'Solo', schedule: 'Scheduled'),
                             ),
-                            SizedBox(width: 16),
+                            const SizedBox(width: 16),
                             RideOptionCard(
                               icon: 'assets/icons/vehicles/ride.png',
                               title: 'Ride',
+                              onTap: () => _navigateToPlanYourRide(context, 'Solo'),
                             ),
-                            SizedBox(width: 16),
+                            const SizedBox(width: 16),
                             RideOptionCard(
                               icon: 'assets/icons/vehicles/rush.png',
                               title: 'Rush',
+                              onTap: () => _navigateToPlanYourRide(context, 'Rush'),
                             ),
                           ],
                         ),
@@ -214,19 +228,21 @@ class HomeScreen extends StatelessWidget {
                             horizontal: AppDimensions.pageHorizontalPadding,
                           ),
                           scrollDirection: Axis.horizontal,
-                          children: const [
+                          children: [
                             ExploreOptionCard(
                               image: 'assets/images/option_cards/tuk_ride.png',
                               title: 'Zip Through Traffic',
                               subtitle:
                                   'Your quickest way to get around the city',
+                              onTap: () => _navigateToPlanYourRide(context, 'Tuk'),
                             ),
-                            SizedBox(width: 16.0),
+                            const SizedBox(width: 16.0),
                             ExploreOptionCard(
                               image: 'assets/images/option_cards/rush_ride.png',
                               title: 'Rush Hour Hero',
                               subtitle:
                                   'Your fastest route through city traffic',
+                              onTap: () => _navigateToPlanYourRide(context, 'Rush'),
                             ),
                           ],
                         ),

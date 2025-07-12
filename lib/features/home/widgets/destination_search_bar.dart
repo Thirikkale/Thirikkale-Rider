@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:thirikkale_rider/core/utils/app_styles.dart';
 import 'package:thirikkale_rider/features/booking/screens/plan_your_ride_screen.dart';
+import 'package:thirikkale_rider/core/utils/app_dimension.dart';
 
 class DestinationSearchBar extends StatelessWidget {
   const DestinationSearchBar({super.key});
@@ -18,10 +19,17 @@ class DestinationSearchBar extends StatelessWidget {
         child: InkWell(
           borderRadius: BorderRadius.circular(30),
           onTap: () {
-            Navigator.push(context, MaterialPageRoute(builder: (context) => const PlanYourRideScreen()));
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const PlanYourRideScreen(
+                  initialSchedule: 'Now',
+                ),
+              ),
+            );
           },
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(AppDimensions.widgetSpacing),
             child: Row(
               children: [
                 const Icon(
@@ -29,7 +37,7 @@ class DestinationSearchBar extends StatelessWidget {
                   color: AppColors.textSecondary,
                   size: 24,
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: AppDimensions.subSectionSpacing),
                 Expanded(
                   child: Text(
                     "Where to?",
@@ -41,7 +49,7 @@ class DestinationSearchBar extends StatelessWidget {
                 ),
                 Container(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
+                    horizontal: AppDimensions.subSectionSpacing,
                     vertical: 6,
                   ),
                   decoration: BoxDecoration(
@@ -57,7 +65,7 @@ class DestinationSearchBar extends StatelessWidget {
                         color: AppColors.primaryBlue,
                         size: 16,
                       ),
-                      const SizedBox(width: 4),
+                      const SizedBox(width: AppDimensions.subSectionSpacingDown),
                       Text(
                         "Now",
                         style: AppTextStyles.bodyMedium.copyWith(
@@ -65,7 +73,7 @@ class DestinationSearchBar extends StatelessWidget {
                           fontWeight: FontWeight.w500,
                         ),
                       ),
-                      const SizedBox(width: 4),
+                      const SizedBox(width: AppDimensions.subSectionSpacingDown),
                       const Icon(
                         Icons.keyboard_arrow_right,
                         color: AppColors.textSecondary,
