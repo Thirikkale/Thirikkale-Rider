@@ -38,6 +38,8 @@ class _PlanYourRideScreenState extends State<PlanYourRideScreen> {
   final Completer<GoogleMapController> _mapController = Completer();
   Timer? _debounce;
 
+  int locatorHeightFromAbove = 35;
+
   String? selectedRideType;
   String? selectedSchedule;
   bool _mapLoading = true;
@@ -532,20 +534,22 @@ class _PlanYourRideScreenState extends State<PlanYourRideScreen> {
   void _focusOnCurrentLocation() async {
     try {
       final locationProvider = Provider.of<LocationProvider>(context, listen: false);
-      
+      const double latOffset = 0.002; 
+
       if (locationProvider.currentLocation != null) {
         final controller = await _mapController.future;
         await controller.animateCamera(
           CameraUpdate.newCameraPosition(
             CameraPosition(
               target: LatLng(
-                locationProvider.currentLatitude!,
+                locationProvider.currentLatitude! - latOffset,
                 locationProvider.currentLongitude!,
               ),
               zoom: 16,
             ),
           ),
         );
+
       } else {
         _showErrorMessage('Current location not available');
       }
@@ -670,7 +674,7 @@ class _PlanYourRideScreenState extends State<PlanYourRideScreen> {
           if (_mapLoading)
             Positioned.fill(
               child: Container(
-                color: Colors.grey[300],
+                color: AppColors.surfaceLight,
                 child: const Center(
                   child: CircularProgressIndicator(),
                 ),
@@ -683,11 +687,11 @@ class _PlanYourRideScreenState extends State<PlanYourRideScreen> {
               children: [
                 // Location selection instruction - moved higher up from bottom
                 Positioned(
-                  top: kToolbarHeight - 35 , // Increased distance from appbar to lift it higher from bottom
-                  left: 16,
-                  right: 16,
+                  top: kToolbarHeight - locatorHeightFromAbove , // Increased distance from appbar (locatorHeightFromAbove) to lift it higher from bottom
+                  left: AppDimensions.pageHorizontalPadding,
+                  right: AppDimensions.pageHorizontalPadding,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    padding: const EdgeInsets.symmetric(horizontal: AppDimensions.pageHorizontalPadding, vertical: 12),
                     decoration: BoxDecoration(
                       color: _locationSelectionMode == 'pickup' 
                         ? AppColors.success.withValues(alpha: 0.9)
@@ -705,23 +709,23 @@ class _PlanYourRideScreenState extends State<PlanYourRideScreen> {
                       children: [
                         Icon(
                           _locationSelectionMode == 'pickup' ? Icons.my_location : Icons.location_on,
-                          color: Colors.white,
+                          color: AppColors.white,
                           size: 20,
                         ),
-                        const SizedBox(width: 8),
+                        const SizedBox(width: AppDimensions.subSectionSpacingDown * 2),
                         Expanded(
                           child: Text(
                             _locationSelectionMode == 'pickup'
                               ? 'Selecting pickup location...'
                               : 'Selecting drop-off location...',
                             style: AppTextStyles.bodyMedium.copyWith(
-                              color: Colors.white,
+                              color: AppColors.white,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
                         ),
                         IconButton(
-                          icon: Icon(Icons.close, color: Colors.white, size: 20),
+                          icon: Icon(Icons.close, color: AppColors.white, size: 20),
                           onPressed: () {
                             setState(() {
                               _isSelectingLocation = false;
@@ -742,8 +746,8 @@ class _PlanYourRideScreenState extends State<PlanYourRideScreen> {
                 if (_isSelectingLocation)
                 Positioned(
                   bottom: 200,
-                  left: 16,
-                  right: 16,
+                  left: AppDimensions.pageHorizontalPadding,
+                  right: AppDimensions.pageHorizontalPadding,
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: _locationSelectionMode == 'pickup' 
@@ -760,7 +764,7 @@ class _PlanYourRideScreenState extends State<PlanYourRideScreen> {
                     child: Text(
                       'Confirm ${_locationSelectionMode == 'pickup' ? 'Pickup' : 'Drop-off'} Location',
                       style: AppTextStyles.bodyLarge.copyWith(
-                        color: Colors.white, 
+                        color: AppColors.white, 
                         fontWeight: FontWeight.bold
                       ),
                     ),
@@ -814,40 +818,40 @@ class _PlanYourRideScreenState extends State<PlanYourRideScreen> {
 
           // All buttons in a single column (right side)
           Positioned(
-            right: 16,
+            right: AppDimensions.pageHorizontalPadding,
             top: 120,
             child: Column(
               children: [
                 FloatingActionButton(
                   heroTag: "focus_btn",
                   mini: true,
-                  backgroundColor: Colors.white,
+                  backgroundColor: AppColors.white,
                   onPressed: _focusOnCurrentLocation,
                   child: Icon(Icons.my_location, color: AppColors.primaryBlue),
                 ),
-                const SizedBox(height: 8),
+                SizedBox(height: AppDimensions.subSectionSpacingDown * 2),
                 FloatingActionButton(
                   heroTag: "schedule_btn",
                   mini: true,
-                  backgroundColor: _isScheduleNow ? AppColors.primaryBlue : Colors.white,
+                  backgroundColor: _isScheduleNow ? AppColors.primaryBlue : AppColors.white,
                   elevation: 4,
                   onPressed: _toggleSchedule,
                   child: Icon(
                     _isScheduleNow ? Icons.access_time : Icons.schedule,
-                    color: _isScheduleNow ? Colors.white : AppColors.primaryBlue,
+                    color: _isScheduleNow ? AppColors.white : AppColors.primaryBlue,
                     size: 20,
                   ),
                 ),
-                const SizedBox(height: 8),
+                SizedBox(height: AppDimensions.subSectionSpacingDown * 2),
                 FloatingActionButton(
                   heroTag: "ride_type_btn",
                   mini: true,
-                  backgroundColor: _isRideSolo ? AppColors.primaryBlue : Colors.white,
+                  backgroundColor: _isRideSolo ? AppColors.primaryBlue : AppColors.white,
                   elevation: 4,
                   onPressed: _toggleRideType,
                   child: Icon(
                     _isRideSolo ? Icons.person : Icons.people,
-                    color: _isRideSolo ? Colors.white : AppColors.primaryBlue,
+                    color: _isRideSolo ? AppColors.white : AppColors.primaryBlue,
                     size: 20,
                   ),
                 ),
@@ -860,23 +864,14 @@ class _PlanYourRideScreenState extends State<PlanYourRideScreen> {
             alignment: Alignment.bottomCenter,
             child: Container(
               // Add solid white background to prevent see-through
-              color: Colors.white,
+              decoration: const BoxDecoration(
+                color: AppColors.white,
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(20),
+                  topRight: Radius.circular(20),
+                ),
+              ),
               child: SafeArea(
-                child: Container(
-                  decoration: const BoxDecoration(
-                    color: AppColors.white,
-                    borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(20),
-                      topRight: Radius.circular(20),
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black26,
-                        blurRadius: 12,
-                        offset: Offset(0, -4),
-                      ),
-                    ],
-                  ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -884,7 +879,7 @@ class _PlanYourRideScreenState extends State<PlanYourRideScreen> {
                     Container(
                       width: 40,
                       height: 4,
-                      margin: const EdgeInsets.only(top: 12, bottom: 20),
+                      margin: EdgeInsets.only(top: AppDimensions.widgetSpacing * 0.75, bottom: AppDimensions.pageHorizontalPadding),
                       decoration: BoxDecoration(
                         color: AppColors.lightGrey,
                         borderRadius: BorderRadius.circular(2),
@@ -898,7 +893,7 @@ class _PlanYourRideScreenState extends State<PlanYourRideScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text('PICKUP', style: AppTextStyles.bodySmall.copyWith(color: AppColors.primaryBlue)),
-                          const SizedBox(height: 8),
+                          SizedBox(height: AppDimensions.subSectionSpacingDown * 2),
                           
                           TextField(
                             controller: _pickupController,
@@ -926,13 +921,13 @@ class _PlanYourRideScreenState extends State<PlanYourRideScreen> {
                                 borderSide: BorderSide.none,
                               ),
                               filled: true,
-                              fillColor: Colors.grey[50],
+                              fillColor: AppColors.surfaceLight,
                             ),
                           ),
                           const SizedBox(height: AppDimensions.widgetSpacing),
                           
                           Text('DROP', style: AppTextStyles.bodySmall.copyWith(color: AppColors.primaryBlue)),
-                          const SizedBox(height: 8),
+                          SizedBox(height: AppDimensions.subSectionSpacingDown * 2),
                           
                           TextField(
                             controller: _destinationController,
@@ -979,12 +974,12 @@ class _PlanYourRideScreenState extends State<PlanYourRideScreen> {
                                 borderSide: BorderSide.none,
                               ),
                               filled: true,
-                              fillColor: Colors.grey[50],
+                              fillColor: AppColors.surfaceLight,
                             ),
                             onChanged: _onDestinationChanged,
                           ),
                           const SizedBox(height: AppDimensions.sectionSpacing/2),
-
+                
                           // Show current selection status - separated units
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1004,8 +999,8 @@ class _PlanYourRideScreenState extends State<PlanYourRideScreen> {
                                       color: AppColors.primaryBlue,
                                       size: 18,
                                     ),
-                                    const SizedBox(width: 8),
-
+                                    SizedBox(width: AppDimensions.subSectionSpacingDown * 2),
+                
                                     Text(
                                       _isScheduleNow ? 'Now' : 'Scheduled',
                                       style: AppTextStyles.bodyMedium.copyWith(
@@ -1032,7 +1027,7 @@ class _PlanYourRideScreenState extends State<PlanYourRideScreen> {
                                       color: AppColors.primaryBlue,
                                       size: 18,
                                     ),
-                                    const SizedBox(width: 8),
+                                    SizedBox(width: AppDimensions.subSectionSpacingDown * 2),
                                     Text(
                                       _isRideSolo ? 'Solo Ride' : 'Shared Ride',
                                       style: AppTextStyles.bodyMedium.copyWith(
@@ -1046,14 +1041,14 @@ class _PlanYourRideScreenState extends State<PlanYourRideScreen> {
                             ],
                           ),
                           
-                          const SizedBox(height: AppDimensions.sectionSpacing/2),
-
+                          SizedBox(height: AppDimensions.sectionSpacing/2),
+                
                           SizedBox(
                             width: double.infinity,
                             child: ElevatedButton(
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: AppColors.primaryBlue,
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                                 padding: const EdgeInsets.symmetric(vertical: 14),
                               ),
                               onPressed: () async {
@@ -1080,16 +1075,15 @@ class _PlanYourRideScreenState extends State<PlanYourRideScreen> {
                                   _showErrorMessage('Please enter pickup and drop locations');
                                 }
                               },
-                              child: Text('Book Ride', style: AppTextStyles.bodyLarge.copyWith(color: Colors.white, fontWeight: FontWeight.bold)),
+                              child: Text('Book Ride', style: AppTextStyles.bodyLarge.copyWith(color: AppColors.white, fontWeight: FontWeight.bold)),
                             ),
                           ),
-                          const SizedBox(height: 18),
+                          SizedBox(height: AppDimensions.widgetSpacing + 2),
                         ],
                       ),
                     ),
                   ],
                 ),
-              ),
             ),
           ),
       )
