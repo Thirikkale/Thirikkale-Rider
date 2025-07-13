@@ -12,6 +12,7 @@ import 'package:thirikkale_rider/core/utils/app_dimension.dart';
 import 'package:thirikkale_rider/core/utils/snackbar_helper.dart';
 import 'package:thirikkale_rider/core/utils/dialog_helper.dart';
 import 'package:thirikkale_rider/features/booking/screens/ride_booking_screen.dart';
+import 'package:thirikkale_rider/features/booking/screens/location_search_screen.dart';
 import 'package:thirikkale_rider/widgets/common/custom_appbar_name.dart';
 
 class PlanYourRideScreen extends StatefulWidget {
@@ -502,6 +503,84 @@ class _PlanYourRideScreenState extends State<PlanYourRideScreen> {
     print('Started location selection for: $mode');
   }
 
+  Future<void> _openLocationSearch(String mode) async {
+    final result = await Navigator.push<Map<String, dynamic>>(
+      context,
+      MaterialPageRoute(
+        builder: (context) => LocationSearchScreen(
+          title: mode == 'pickup' ? 'Pickup Location' : 'Destination',
+          initialText: mode == 'pickup' 
+              ? _pickupController.text 
+              : _destinationController.text,
+          hintText: mode == 'pickup' 
+              ? 'Search for pickup location' 
+              : 'Search for destination',
+          isPickup: mode == 'pickup',
+        ),
+      ),
+    );
+
+    if (result != null && mounted) {
+      if (result.containsKey('use_map')) {
+        // User wants to select from map
+        _startLocationSelection(mode);
+      } else {
+        // User selected a location
+        await _handleLocationSearchResult(result, mode);
+      }
+    }
+  }
+
+  Future<void> _handleLocationSearchResult(Map<String, dynamic> location, String mode) async {
+    try {
+      String address = location['description'] ?? location['formatted_address'] ?? 'Unknown Location';
+      LatLng? coordinates;
+      
+      // Extract coordinates if available
+      if (location['geometry'] != null && location['geometry']['location'] != null) {
+        final loc = location['geometry']['location'];
+        coordinates = LatLng(
+          loc['lat']?.toDouble() ?? 0.0,
+          loc['lng']?.toDouble() ?? 0.0,
+        );
+      } else if (location['place_id'] != null && location['place_id'] != 'current_location') {
+        // Get place details for coordinates
+        final placeDetails = await PlacesApiService.getPlaceDetails(location['place_id']);
+        if (placeDetails != null && placeDetails['geometry'] != null) {
+          final loc = placeDetails['geometry']['location'];
+          coordinates = LatLng(
+            loc['lat']?.toDouble() ?? 0.0,
+            loc['lng']?.toDouble() ?? 0.0,
+          );
+          address = placeDetails['formatted_address'] ?? address;
+        }
+      }
+      
+      // Update the UI
+      if (mounted) {
+        setState(() {
+          if (mode == 'pickup') {
+            _pickupController.text = address;
+            _selectedPickupCoords = coordinates;
+          } else {
+            _destinationController.text = address;
+            _selectedDestinationCoords = coordinates;
+          }
+        });
+        
+        print('Selected location for $mode: $address');
+        if (coordinates != null) {
+          print('Coordinates: ${coordinates.latitude}, ${coordinates.longitude}');
+        }
+      }
+    } catch (e) {
+      print('Error handling location search result: $e');
+      if (mounted) {
+        _showErrorMessage('Failed to set location. Please try again.');
+      }
+    }
+  }
+
 
 
   void _finishLocationSelectionAutomatically() {
@@ -926,6 +1005,8 @@ class _PlanYourRideScreenState extends State<PlanYourRideScreen> {
                           
                           TextField(
                             controller: _pickupController,
+                            readOnly: true,
+                            onTap: () => _openLocationSearch('pickup'),
                             decoration: InputDecoration(
                               hintText: _pickupController.text.isEmpty ? 'Tap refresh to get location' : 'Location Fetched',
                               prefixIcon: Icon(Icons.my_location),
@@ -960,6 +1041,8 @@ class _PlanYourRideScreenState extends State<PlanYourRideScreen> {
                           
                           TextField(
                             controller: _destinationController,
+                            readOnly: true,
+                            onTap: () => _openLocationSearch('destination'),
                             decoration: InputDecoration(
                               hintText: 'Where are you going?',
                               prefixIcon: Icon(Icons.location_on),
