@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:thirikkale_rider/core/services/location_service.dart';
 import 'package:thirikkale_rider/core/services/places_api_service.dart';
+import 'package:thirikkale_rider/core/services/search_history_service.dart';
 
 class LocationProvider extends ChangeNotifier {
   // Current location state
@@ -194,5 +195,22 @@ class LocationProvider extends ChangeNotifier {
   // Open app settings
   Future<void> openAppSettings() async {
     await LocationService.openAppSettings();
+  }
+
+  // Search History Methods
+  Future<List<Map<String, dynamic>>> getSearchHistory() async {
+    return await SearchHistoryService.getSearchHistory();
+  }
+
+  Future<List<Map<String, dynamic>>> getRecentSearchesWithFallback() async {
+    return await SearchHistoryService.getRecentSearchesWithFallback();
+  }
+
+  Future<void> addToSearchHistory(Map<String, dynamic> location) async {
+    await SearchHistoryService.addToHistory(location);
+  }
+
+  Future<void> clearSearchHistory() async {
+    await SearchHistoryService.clearHistory();
   }
 }

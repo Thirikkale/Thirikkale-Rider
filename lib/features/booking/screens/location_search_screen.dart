@@ -29,16 +29,31 @@ class _LocationSearchScreenState extends State<LocationSearchScreen> {
   final FocusNode _searchFocus = FocusNode();
   Timer? _debounce;
   bool _isSearching = false;
+  List<Map<String, dynamic>> _recentSearches = [];
 
   @override
   void initState() {
     super.initState();
     _searchController.text = widget.initialText;
+    _loadRecentSearches();
     
     // Auto focus and show keyboard
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _searchFocus.requestFocus();
     });
+  }
+
+  Future<void> _loadRecentSearches() async {
+    final locationProvider = Provider.of<LocationProvider>(
+      context,
+      listen: false,
+    );
+    final searches = await locationProvider.getRecentSearchesWithFallback();
+    if (mounted) {
+      setState(() {
+        _recentSearches = searches;
+      });
+    }
   }
 
   @override
@@ -67,8 +82,17 @@ class _LocationSearchScreenState extends State<LocationSearchScreen> {
     });
   }
 
-  void _selectLocation(Map<String, dynamic> location) {
-    Navigator.pop(context, location);
+  void _selectLocation(Map<String, dynamic> location) async {
+    // Add to search history
+    final locationProvider = Provider.of<LocationProvider>(
+      context,
+      listen: false,
+    );
+    await locationProvider.addToSearchHistory(location);
+    
+    if (mounted) {
+      Navigator.pop(context, location);
+    }
   }
 
   void _selectCurrentLocation() async {
@@ -183,26 +207,45 @@ class _LocationSearchScreenState extends State<LocationSearchScreen> {
           onTap: _selectCurrentLocation,
         ),
 
-      // Nearby Places
-      _buildLocationOption(
-        icon: Icons.place,
-        title: 'Maharagama',
-        subtitle: '2.2 mi',
-        onTap: () => _selectLocation({
-          'description': 'Maharagama',
-          'place_id': 'maharagama_default',
-        }),
-      ),
+      // Recent searches section (only show if there are actual searches)
+      if (_recentSearches.isNotEmpty) ...[
+        // Section header
+        Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: 8,
+            vertical: 16,
+          ),
+          child: Row(
+            children: [
+              Icon(
+                Icons.history,
+                color: AppColors.textSecondary,
+                size: 16,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'Recent searches',
+                style: AppTextStyles.bodySmall.copyWith(
+                  color: AppColors.textSecondary,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ],
+          ),
+        ),
 
-      _buildLocationOption(
-        icon: Icons.shopping_bag,
-        title: 'One Galle Face Mall',
-        subtitle: '11 mi • 1A, Centre Rd, Colombo',
-        onTap: () => _selectLocation({
-          'description': 'One Galle Face Mall, 1A, Centre Rd, Colombo',
-          'place_id': 'one_galle_face_mall',
-        }),
-      ),
+        // Recent searches
+        ..._recentSearches.map((search) => _buildLocationOption(
+          icon: Icons.history,
+          title: search['structured_formatting']?['main_text'] ?? 
+                 search['description'] ?? 
+                 'Unknown Location',
+          subtitle: search['structured_formatting']?['secondary_text'] ?? 
+                   'Recent search',
+          onTap: () => _selectLocation(search),
+        )),
+      ],
 
       // Set location on map
       _buildLocationOption(
@@ -226,11 +269,17 @@ class _LocationSearchScreenState extends State<LocationSearchScreen> {
     return ListView.separated(
       padding: const EdgeInsets.all(AppDimensions.pageHorizontalPadding),
       itemCount: options.length,
-      separatorBuilder: (context, index) => const Divider(
-        color: AppColors.lightGrey,
-        thickness: 1,
-        height: 1,
-      ),
+      separatorBuilder: (context, index) {
+        // Don't show divider after section headers
+        if (index < options.length - 1 && options[index + 1] is Padding) {
+          return const SizedBox.shrink();
+        }
+        return const Divider(
+          color: AppColors.lightGrey,
+          thickness: 1,
+          height: 1,
+        );
+      },
       itemBuilder: (context, index) => options[index],
     );
   }

@@ -527,6 +527,10 @@ class _PlanYourRideScreenState extends State<PlanYourRideScreen> {
       } else {
         // User selected a location
         await _handleLocationSearchResult(result, mode);
+        
+        // Add to search history
+        final locationProvider = Provider.of<LocationProvider>(context, listen: false);
+        await locationProvider.addToSearchHistory(result);
       }
     }
   }
