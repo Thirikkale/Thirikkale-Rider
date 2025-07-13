@@ -102,6 +102,7 @@ class _PlanYourRideScreenState extends State<PlanYourRideScreen> {
     // Set initial ride type
     if (widget.initialRideType != null) {
       final rideType = widget.initialRideType!.toLowerCase();
+      selectedRideType = widget.initialRideType; // Store the original ride type
       _isRideSolo = rideType == 'solo' || rideType == 'ride' || rideType == 'tuk' || rideType == 'rush';
       // If it's 'shared', then _isRideSolo will be false
     }
@@ -295,6 +296,7 @@ class _PlanYourRideScreenState extends State<PlanYourRideScreen> {
                   pickupLng: pickupLng,
                   destLat: destLat,
                   destLng: destLng,
+                  initialRideType: selectedRideType, // Pass the selected ride type
                 ),
           ),
         );
@@ -584,7 +586,6 @@ class _PlanYourRideScreenState extends State<PlanYourRideScreen> {
       }
     }
   }
-
 
 
   void _finishLocationSelectionAutomatically() {

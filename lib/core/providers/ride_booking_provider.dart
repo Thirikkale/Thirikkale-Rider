@@ -69,6 +69,7 @@ class RideBookingProvider extends ChangeNotifier {
     double? pickupLng,
     double? destLat,
     double? destLng,
+    bool preserveVehicleSelection = false,
   }) async {
     _isSettingTrip = true;
     notifyListeners();
@@ -83,11 +84,13 @@ class RideBookingProvider extends ChangeNotifier {
     _destLat = destLat;
     _destLng = destLng;
 
-    // Reset previous selections when trip details change
-    _selectedVehicle = null;
+    // Reset previous selections when trip details change, unless preserving
+    if (!preserveVehicleSelection) {
+      _selectedVehicle = null;
+      _estimatedPrice = null;
+    }
     _estimatedDuration = null;
     _estimatedDistance = null;
-    _estimatedPrice = null;
 
     _isSettingTrip = false;
     notifyListeners();
@@ -107,6 +110,45 @@ class RideBookingProvider extends ChangeNotifier {
     _selectedVehicle = vehicle;
     _estimatedPrice = vehicle.price;
     notifyListeners();
+  }
+
+  void setInitialVehicleByRideType(String? rideType) {
+    if (rideType == null) return;
+    
+    // Map ride type to vehicle option ID
+    String vehicleId;
+    switch (rideType.toLowerCase()) {
+      case 'tuk':
+        vehicleId = 'tuk';
+        break;
+      case 'ride':
+      case 'solo':
+        vehicleId = 'ride';
+        break;
+      case 'rush':
+        vehicleId = 'rush';
+        break;
+      case 'prime':
+      case 'prime ride':
+        vehicleId = 'primeRide';
+        break;
+      case 'shared':
+        // For shared rides, we could use a different logic or default to ride
+        vehicleId = 'ride';
+        break;
+      default:
+        // Default to ride if unknown type
+        vehicleId = 'ride';
+        break;
+    }
+    
+    // Find and select the corresponding vehicle option
+    final vehicle = _vehicleOptions.firstWhere(
+      (option) => option.id == vehicleId,
+      orElse: () => _vehicleOptions.first, // Fallback to first option
+    );
+    
+    selectVehicle(vehicle);
   }
 
   void setPaymentMethod(String method) {

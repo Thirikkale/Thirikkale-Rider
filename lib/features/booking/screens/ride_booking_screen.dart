@@ -13,6 +13,7 @@ class RideBookingScreen extends StatefulWidget {
   final double? pickupLng;
   final double? destLat;
   final double? destLng;
+  final String? initialRideType;
 
   const RideBookingScreen({
     super.key,
@@ -22,6 +23,7 @@ class RideBookingScreen extends StatefulWidget {
     this.pickupLng,
     this.destLat,
     this.destLng,
+    this.initialRideType,
   });
 
   @override
@@ -50,6 +52,13 @@ class _RideBookingScreenState extends State<RideBookingScreen> {
       context,
       listen: false,
     );
+    
+    // Set initial vehicle selection FIRST if we have a ride type
+    if (widget.initialRideType != null) {
+      bookingProvider.setInitialVehicleByRideType(widget.initialRideType);
+    }
+    
+    // Then set trip details, preserving the vehicle selection if we set one
     bookingProvider.setTripDetails(
       pickup: widget.pickupAddress,
       destination: widget.destinationAddress,
@@ -57,6 +66,7 @@ class _RideBookingScreenState extends State<RideBookingScreen> {
       pickupLng: widget.pickupLng,
       destLat: widget.destLat,
       destLng: widget.destLng,
+      preserveVehicleSelection: widget.initialRideType != null, // Preserve if we have initial ride type
     );
   }
 
