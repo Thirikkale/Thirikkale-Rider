@@ -10,6 +10,7 @@ import 'package:thirikkale_rider/core/services/location_service.dart';
 import 'package:thirikkale_rider/core/utils/app_styles.dart';
 import 'package:thirikkale_rider/core/utils/app_dimension.dart';
 import 'package:thirikkale_rider/core/utils/snackbar_helper.dart';
+import 'package:thirikkale_rider/core/utils/dialog_helper.dart';
 import 'package:thirikkale_rider/features/booking/screens/ride_booking_screen.dart';
 import 'package:thirikkale_rider/widgets/common/custom_appbar_name.dart';
 
@@ -305,10 +306,13 @@ class _PlanYourRideScreenState extends State<PlanYourRideScreen> {
   }
 
   void _showLoadingDialog() {
-    showDialog(
+    DialogHelper.showInfoDialog(
       context: context,
-      barrierDismissible: false,
-      builder: (context) => const Center(child: CircularProgressIndicator()),
+      title: 'Processing Ride Request',
+      content: 'Getting location details and preparing your ride...',
+      buttonText: 'Please Wait',
+      titleIcon: Icons.directions_car,
+      titleIconColor: AppColors.primaryBlue,
     );
   }
 
@@ -464,13 +468,6 @@ class _PlanYourRideScreenState extends State<PlanYourRideScreen> {
       _locationSelectionMode = mode;
     });
     
-    // Show instruction to user
-    SnackbarHelper.showInfoSnackBar(
-      context,
-      mode == 'pickup' 
-        ? 'Move the map to select pickup location. Location will be set automatically in 3 seconds.'
-        : 'Move the map to select drop-off location. Location will be set automatically in 3 seconds.',
-    );
     
     print('Started location selection for: $mode');
   }
@@ -858,177 +855,245 @@ class _PlanYourRideScreenState extends State<PlanYourRideScreen> {
             ),
           ),
 
+          // pickup drop collecting container - styled like bottom sheet
           Align(
             alignment: Alignment.bottomCenter,
             child: Container(
-              margin: const EdgeInsets.only(bottom: AppDimensions.widgetSpacing, left: 8, right: 8),
-              padding: const EdgeInsets.symmetric(horizontal: AppDimensions.sectionSpacing, vertical: AppDimensions.pageVerticalPadding),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(24),
-                boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 12)],
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('PICKUP', style: AppTextStyles.bodySmall.copyWith(color: AppColors.primaryBlue)),
-                  const SizedBox(height: 8),
-                  TextField(
-                    controller: _pickupController,
-                    decoration: InputDecoration(
-                      hintText: _pickupController.text.isEmpty ? 'Tap refresh to get location' : 'Location Fetched',
-                      prefixIcon: Icon(Icons.my_location),
-                      suffixIcon: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          IconButton(
-                            icon: Icon(Icons.refresh, color: AppColors.primaryBlue),
-                            onPressed: _checkLocationServices,
-                            tooltip: 'Refresh location',
-                          ),
-                          IconButton(
-                            icon: Icon(Icons.map, color: AppColors.primaryBlue),
-                            onPressed: () => _startLocationSelection('pickup'),
-                            tooltip: 'Select from map',
-                          ),
-                        ],
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: AppDimensions.widgetSpacing, vertical: 12),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide.none,
-                      ),
-                      filled: true,
-                      fillColor: Colors.grey[50],
+              // Add solid white background to prevent see-through
+              color: Colors.white,
+              child: SafeArea(
+                child: Container(
+                  decoration: const BoxDecoration(
+                    color: AppColors.white,
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(20),
+                      topRight: Radius.circular(20),
                     ),
-                  ),
-                  const SizedBox(height: AppDimensions.widgetSpacing),
-                  Text('DROP', style: AppTextStyles.bodySmall.copyWith(color: AppColors.primaryBlue)),
-                  const SizedBox(height: 8),
-                  TextField(
-                    controller: _destinationController,
-                    decoration: InputDecoration(
-                      hintText: 'Where are you going?',
-                      prefixIcon: Icon(Icons.location_on),
-                      suffixIcon: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          if (_destinationController.text.isNotEmpty)
-                            IconButton(
-                              icon: Icon(Icons.clear, color: AppColors.primaryBlue),
-                              onPressed: () {
-                                setState(() {
-                                  _destinationController.clear();
-                                  _selectedDestinationCoords = null;
-                                });
-                              },
-                              tooltip: 'Clear destination',
-                            ),
-                          IconButton(
-                            icon: Icon(Icons.map, color: AppColors.primaryBlue),
-                            onPressed: () => _startLocationSelection('destination'),
-                            tooltip: 'Select from map',
-                          ),
-                        ],
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: AppDimensions.widgetSpacing, vertical: 12),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide.none,
-                      ),
-                      filled: true,
-                      fillColor: Colors.grey[50],
-                    ),
-                    onChanged: _onDestinationChanged,
-                  ),
-                  const SizedBox(height: AppDimensions.sectionSpacing),
-                  // Show current selection status - separated units
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      // Schedule status (left side)
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: AppDimensions.widgetSpacing, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: AppColors.surfaceLight,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              _isScheduleNow ? Icons.access_time : Icons.schedule,
-                              color: AppColors.primaryBlue,
-                              size: 18,
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              _isScheduleNow ? 'Now' : 'Scheduled',
-                              style: AppTextStyles.bodyMedium.copyWith(
-                                color: AppColors.textPrimary,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      
-                      // Ride type status (right side)
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: AppDimensions.widgetSpacing, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: AppColors.surfaceLight,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              _isRideSolo ? Icons.person : Icons.people,
-                              color: AppColors.primaryBlue,
-                              size: 18,
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              _isRideSolo ? 'Solo Ride' : 'Shared Ride',
-                              style: AppTextStyles.bodyMedium.copyWith(
-                                color: AppColors.textPrimary,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
-                        ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black26,
+                        blurRadius: 12,
+                        offset: Offset(0, -4),
                       ),
                     ],
                   ),
-                  const SizedBox(height: AppDimensions.widgetSpacing),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primaryBlue,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        padding: const EdgeInsets.symmetric(vertical: 14),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Handle bar like bottom sheet
+                    Container(
+                      width: 40,
+                      height: 4,
+                      margin: const EdgeInsets.only(top: 12, bottom: 20),
+                      decoration: BoxDecoration(
+                        color: AppColors.lightGrey,
+                        borderRadius: BorderRadius.circular(2),
                       ),
-                      onPressed: () {
-                        if (_pickupController.text.isNotEmpty && _destinationController.text.isNotEmpty) {
-                          _navigateToRideBooking({
-                            'description': _destinationController.text,
-                            'place_id': null,
-                          });
-                        } else {
-                          _showErrorMessage('Please enter pickup and drop locations');
-                        }
-                      },
-                      child: Text('Book Ride', style: AppTextStyles.bodyLarge.copyWith(color: Colors.white, fontWeight: FontWeight.bold)),
                     ),
-                  ),
-                ],
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppDimensions.pageHorizontalPadding,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('PICKUP', style: AppTextStyles.bodySmall.copyWith(color: AppColors.primaryBlue)),
+                          const SizedBox(height: 8),
+                          
+                          TextField(
+                            controller: _pickupController,
+                            decoration: InputDecoration(
+                              hintText: _pickupController.text.isEmpty ? 'Tap refresh to get location' : 'Location Fetched',
+                              prefixIcon: Icon(Icons.my_location),
+                              suffixIcon: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  IconButton(
+                                    icon: Icon(Icons.refresh, color: AppColors.primaryBlue),
+                                    onPressed: _checkLocationServices,
+                                    tooltip: 'Refresh location',
+                                  ),
+                                  IconButton(
+                                    icon: Icon(Icons.map, color: AppColors.primaryBlue),
+                                    onPressed: () => _startLocationSelection('pickup'),
+                                    tooltip: 'Select from map',
+                                  ),
+                                ],
+                              ),
+                              contentPadding: const EdgeInsets.symmetric(horizontal: AppDimensions.widgetSpacing, vertical: 12),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide: BorderSide.none,
+                              ),
+                              filled: true,
+                              fillColor: Colors.grey[50],
+                            ),
+                          ),
+                          const SizedBox(height: AppDimensions.widgetSpacing),
+                          
+                          Text('DROP', style: AppTextStyles.bodySmall.copyWith(color: AppColors.primaryBlue)),
+                          const SizedBox(height: 8),
+                          
+                          TextField(
+                            controller: _destinationController,
+                            decoration: InputDecoration(
+                              hintText: 'Where are you going?',
+                              prefixIcon: Icon(Icons.location_on),
+                              suffixIcon: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  if (_destinationController.text.isNotEmpty)
+                                    IconButton(
+                                      icon: Icon(Icons.clear, color: AppColors.primaryBlue),
+                                      onPressed: () async {
+                                        final confirmed = await DialogHelper.showConfirmationDialog(
+                                          context: context,
+                                          title: 'Clear Destination',
+                                          content: 'Are you sure you want to clear the selected destination?',
+                                          confirmText: 'Clear',
+                                          cancelText: 'Cancel',
+                                          titleIcon: Icons.clear_all,
+                                          titleIconColor: AppColors.error,
+                                          confirmButtonColor: AppColors.error,
+                                        );
+                                        
+                                        if (confirmed == true) {
+                                          setState(() {
+                                            _destinationController.clear();
+                                            _selectedDestinationCoords = null;
+                                          });
+                                        }
+                                      },
+                                      tooltip: 'Clear destination',
+                                    ),
+                                  IconButton(
+                                    icon: Icon(Icons.map, color: AppColors.primaryBlue),
+                                    onPressed: () => _startLocationSelection('destination'),
+                                    tooltip: 'Select from map',
+                                  ),
+                                ],
+                              ),
+                              contentPadding: const EdgeInsets.symmetric(horizontal: AppDimensions.widgetSpacing, vertical: 12),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide: BorderSide.none,
+                              ),
+                              filled: true,
+                              fillColor: Colors.grey[50],
+                            ),
+                            onChanged: _onDestinationChanged,
+                          ),
+                          const SizedBox(height: AppDimensions.sectionSpacing/2),
+
+                          // Show current selection status - separated units
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              // Schedule status (left side)
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: AppDimensions.widgetSpacing, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: AppColors.surfaceLight,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      _isScheduleNow ? Icons.access_time : Icons.schedule,
+                                      color: AppColors.primaryBlue,
+                                      size: 18,
+                                    ),
+                                    const SizedBox(width: 8),
+
+                                    Text(
+                                      _isScheduleNow ? 'Now' : 'Scheduled',
+                                      style: AppTextStyles.bodyMedium.copyWith(
+                                        color: AppColors.textPrimary,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              
+                              // Ride type status (right side)
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: AppDimensions.widgetSpacing, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: AppColors.surfaceLight,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      _isRideSolo ? Icons.person : Icons.people,
+                                      color: AppColors.primaryBlue,
+                                      size: 18,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      _isRideSolo ? 'Solo Ride' : 'Shared Ride',
+                                      style: AppTextStyles.bodyMedium.copyWith(
+                                        color: AppColors.textPrimary,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                          
+                          const SizedBox(height: AppDimensions.sectionSpacing/2),
+
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.primaryBlue,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                padding: const EdgeInsets.symmetric(vertical: 14),
+                              ),
+                              onPressed: () async {
+                                if (_pickupController.text.isNotEmpty && _destinationController.text.isNotEmpty) {
+                                  // Show confirmation dialog before proceeding
+                                  final confirmed = await DialogHelper.showConfirmationDialog(
+                                    context: context,
+                                    title: 'Confirm Ride Details',
+                                    content: 'Pickup: ${_pickupController.text}\n\nDrop-off: ${_destinationController.text}',
+                                    confirmText: 'Book Ride',
+                                    cancelText: 'Edit Locations',
+                                    titleIcon: Icons.confirmation_number,
+                                    titleIconColor: AppColors.primaryBlue,
+                                    confirmButtonColor: AppColors.primaryBlue,
+                                  );
+                                  
+                                  if (confirmed == true) {
+                                    _navigateToRideBooking({
+                                      'description': _destinationController.text,
+                                      'place_id': null,
+                                    });
+                                  }
+                                } else {
+                                  _showErrorMessage('Please enter pickup and drop locations');
+                                }
+                              },
+                              child: Text('Book Ride', style: AppTextStyles.bodyLarge.copyWith(color: Colors.white, fontWeight: FontWeight.bold)),
+                            ),
+                          ),
+                          const SizedBox(height: 18),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
-        ],
+      )
+      ],
       ),
     );
   }
