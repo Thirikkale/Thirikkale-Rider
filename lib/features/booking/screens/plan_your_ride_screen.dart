@@ -38,7 +38,7 @@ class _PlanYourRideScreenState extends State<PlanYourRideScreen> {
   final Completer<GoogleMapController> _mapController = Completer();
   Timer? _debounce;
 
-  int locatorHeightFromAbove = 35;
+  int locatorHeightFromAbove = 30;
 
   String? selectedRideType;
   String? selectedSchedule;
@@ -345,8 +345,10 @@ class _PlanYourRideScreenState extends State<PlanYourRideScreen> {
 
   void _onCameraMove(CameraPosition position) {
     if (_isSelectingLocation) {
-      // Update selected position as camera moves
-      _selectedLocation = position.target;
+      // Calculate the actual position where the pin is displayed
+      // The pin is positioned at locatorHeightFromAbove% from top instead of center
+      final actualPosition = _calculatePinPosition(position);
+      _selectedLocation = actualPosition;
       
       // Cancel previous timers
       if (_geocodingTimer?.isActive ?? false) {
@@ -355,7 +357,7 @@ class _PlanYourRideScreenState extends State<PlanYourRideScreen> {
       
       // Start geocoding timer (1 second for address update)
       _geocodingTimer = Timer(const Duration(milliseconds: 1000), () {
-        _updateAddressFromPosition(position.target);
+        _updateAddressFromPosition(actualPosition);
       });
       
       // Start auto-selection timer (3 seconds to auto-select location)
@@ -367,6 +369,30 @@ class _PlanYourRideScreenState extends State<PlanYourRideScreen> {
         _finishLocationSelectionAutomatically();
       });
     }
+  }
+
+  // Calculate the actual coordinates where the pin is visually positioned
+  LatLng _calculatePinPosition(CameraPosition cameraPosition) {
+    // The pin is displayed at locatorHeightFromAbove% from top instead of center (50%)
+    // We need to calculate the latitude offset based on this visual difference
+    
+    final double pinPositionRatio = locatorHeightFromAbove / 100.0; // Convert to ratio (0.30 for 30%)
+    final double centerRatio = 0.5; // Camera center is at 50% from top
+    final double offsetRatio = pinPositionRatio - centerRatio; // Negative means pin is above center
+    
+    // Calculate the latitude offset based on the zoom level and screen position difference
+    // Higher zoom levels need smaller offsets, lower zoom levels need larger offsets
+    final double zoomFactor = cameraPosition.zoom;
+    final double baseLatOffset = 0.001; // Base offset for zoom level 15
+    final double scaledLatOffset = baseLatOffset * (15.0 / zoomFactor); // Scale based on zoom
+    
+    // Apply the offset - negative offsetRatio means we move north (increase latitude)
+    final double latitudeOffset = -offsetRatio * scaledLatOffset * 4; // Multiply by 4 for more precise adjustment
+    
+    return LatLng(
+      cameraPosition.target.latitude + latitudeOffset,
+      cameraPosition.target.longitude, // Longitude stays the same as pin is centered horizontally
+    );
   }
 
   void _updateAddressFromPosition(LatLng position) async {
@@ -388,7 +414,8 @@ class _PlanYourRideScreenState extends State<PlanYourRideScreen> {
         });
         
         print('Address updated from map: $address');
-        print('Coordinates: ${position.latitude}, ${position.longitude}');
+        print('Pin position coordinates: ${position.latitude}, ${position.longitude}');
+        print('Location mode: $_locationSelectionMode');
       }
     } catch (e) {
       print('Error getting address from Places API: $e');
@@ -414,7 +441,8 @@ class _PlanYourRideScreenState extends State<PlanYourRideScreen> {
           });
           
           print('Address updated from geocoding: $address');
-          print('Coordinates: ${position.latitude}, ${position.longitude}');
+          print('Pin position coordinates: ${position.latitude}, ${position.longitude}');
+          print('Location mode: $_locationSelectionMode');
         }
       } catch (fallbackError) {
         print('Fallback geocoding also failed: $fallbackError');
@@ -528,6 +556,7 @@ class _PlanYourRideScreenState extends State<PlanYourRideScreen> {
       }
       
       print('Manual location selection completed for: $currentMode');
+      print('Selected coordinates: ${_selectedLocation!.latitude}, ${_selectedLocation!.longitude}');
     }
   }
 
@@ -775,7 +804,7 @@ class _PlanYourRideScreenState extends State<PlanYourRideScreen> {
                 Positioned(
                   left: 0,
                   right: 0,
-                  top: MediaQuery.of(context).size.height * 0.35, // Position at 35% from top instead of center
+                  top: MediaQuery.of(context).size.height * locatorHeightFromAbove/100, // Position at 35% from top instead of center
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
