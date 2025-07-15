@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:thirikkale_rider/core/services/location_service.dart';
 import 'package:thirikkale_rider/core/services/places_api_service.dart';
 import 'package:thirikkale_rider/core/services/search_history_service.dart';
+import 'package:geocoding/geocoding.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 class LocationProvider extends ChangeNotifier {
   // Current location state
@@ -212,5 +214,118 @@ class LocationProvider extends ChangeNotifier {
 
   Future<void> clearSearchHistory() async {
     await SearchHistoryService.clearHistory();
+  }
+
+  // Reverse Geocoding Methods
+  Future<String> reverseGeocode(double latitude, double longitude) async {
+    try {
+      // Try Places API first for better formatted addresses
+      final placeDetails = await getPlaceDetailsFromCoordinates(latitude, longitude);
+      if (placeDetails != null && placeDetails['formatted_address'] != null) {
+        return placeDetails['formatted_address'];
+      }
+      
+      // Fallback to geocoding package
+      List<Placemark> placemarks = await placemarkFromCoordinates(latitude, longitude);
+      if (placemarks.isNotEmpty) {
+        return formatPlacemark(placemarks.first);
+      }
+      
+      return 'Unknown Location';
+    } catch (e) {
+      print('Error in reverse geocoding: $e');
+      return '${latitude.toStringAsFixed(6)}, ${longitude.toStringAsFixed(6)}';
+    }
+  }
+
+  String formatPlacemark(Placemark placemark) {
+    List<String> addressParts = [];
+    
+    // Add more detailed address information
+    if (placemark.name?.isNotEmpty == true) {
+      addressParts.add(placemark.name!);
+    }
+    if (placemark.street?.isNotEmpty == true && placemark.street != placemark.name) {
+      addressParts.add(placemark.street!);
+    }
+    if (placemark.subLocality?.isNotEmpty == true) {
+      addressParts.add(placemark.subLocality!);
+    }
+    if (placemark.locality?.isNotEmpty == true) {
+      addressParts.add(placemark.locality!);
+    }
+    if (placemark.administrativeArea?.isNotEmpty == true && placemark.administrativeArea != placemark.locality) {
+      addressParts.add(placemark.administrativeArea!);
+    }
+    
+    final address = addressParts.isNotEmpty ? addressParts.join(', ') : 'Unknown Location';
+    print('Formatted address: $address');
+    return address;
+  }
+
+  Future<Map<String, dynamic>?> getPlaceDetailsFromCoordinates(double latitude, double longitude) async {
+    try {
+      // Use reverse geocoding first to get address
+      List<Placemark> placemarks = await placemarkFromCoordinates(latitude, longitude);
+      
+      if (placemarks.isNotEmpty) {
+        final placemark = placemarks.first;
+        final address = formatPlacemark(placemark);
+        
+        // Create a detailed location name using available data
+        String locationName = address;
+        if (placemark.name?.isNotEmpty == true) {
+          locationName = placemark.name!;
+        } else if (placemark.subLocality?.isNotEmpty == true) {
+          locationName = placemark.subLocality!;
+        } else if (placemark.locality?.isNotEmpty == true) {
+          locationName = placemark.locality!;
+        }
+        
+        print('Place details from coordinates - Name: $locationName, Address: $address');
+        
+        // Return the geocoded address with coordinates
+        return {
+          'formatted_address': address,
+          'geometry': {
+            'location': {
+              'lat': latitude,
+              'lng': longitude,
+            }
+          },
+          'place_id': 'custom_${latitude}_${longitude}', // Custom place ID
+          'name': locationName,
+          'types': ['point_of_interest'],
+        };
+      }
+      return null;
+    } catch (e) {
+      print('Error getting place details from coordinates: $e');
+      return null;
+    }
+  }
+
+  // Map Pin Position Calculation
+  LatLng calculatePinPosition(CameraPosition cameraPosition, int locatorHeightFromAbove) {
+    // The pin is displayed at locatorHeightFromAbove% from top instead of center (50%)
+    // We need to calculate the latitude offset based on this visual difference
+    
+    final double pinPositionRatio = locatorHeightFromAbove / 100.0; // Convert to ratio (0.30 for 30%)
+    final double centerRatio = 0.5; // Camera center is at 50% from top
+    final double offsetRatio = pinPositionRatio - centerRatio; // Negative means pin is above center
+    
+    // Calculate the latitude offset based on the zoom level and screen position difference
+    // Higher zoom levels need smaller offsets, lower zoom levels need larger offsets
+    final double zoomFactor = cameraPosition.zoom;
+    final double baseLatOffset = 0.001; // Base offset for zoom level 15
+    final double scaledLatOffset = baseLatOffset * (15.0 / zoomFactor); // Scale based on zoom
+    
+    // Apply the offset - negative offsetRatio means we move north (increase latitude)
+    final double latitudeOffset = -offsetRatio * scaledLatOffset * 4; // Multiply by 4 for more precise adjustment
+    
+    return LatLng(
+      cameraPosition.target.latitude + latitudeOffset,
+      cameraPosition.target.longitude, // Longitude stays the same as pin is centered horizontally
+    );
   }
 }

@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:thirikkale_rider/core/providers/location_provider.dart';
@@ -376,36 +375,16 @@ class _PlanYourRideScreenState extends State<PlanYourRideScreen> {
 
   // Calculate the actual coordinates where the pin is visually positioned
   LatLng _calculatePinPosition(CameraPosition cameraPosition) {
-    // The pin is displayed at locatorHeightFromAbove% from top instead of center (50%)
-    // We need to calculate the latitude offset based on this visual difference
-    
-    final double pinPositionRatio = locatorHeightFromAbove / 100.0; // Convert to ratio (0.30 for 30%)
-    final double centerRatio = 0.5; // Camera center is at 50% from top
-    final double offsetRatio = pinPositionRatio - centerRatio; // Negative means pin is above center
-    
-    // Calculate the latitude offset based on the zoom level and screen position difference
-    // Higher zoom levels need smaller offsets, lower zoom levels need larger offsets
-    final double zoomFactor = cameraPosition.zoom;
-    final double baseLatOffset = 0.001; // Base offset for zoom level 15
-    final double scaledLatOffset = baseLatOffset * (15.0 / zoomFactor); // Scale based on zoom
-    
-    // Apply the offset - negative offsetRatio means we move north (increase latitude)
-    final double latitudeOffset = -offsetRatio * scaledLatOffset * 4; // Multiply by 4 for more precise adjustment
-    
-    return LatLng(
-      cameraPosition.target.latitude + latitudeOffset,
-      cameraPosition.target.longitude, // Longitude stays the same as pin is centered horizontally
-    );
+    final locationProvider = Provider.of<LocationProvider>(context, listen: false);
+    return locationProvider.calculatePinPosition(cameraPosition, locatorHeightFromAbove);
   }
 
   void _updateAddressFromPosition(LatLng position) async {
     try {
-      // Get place details using Places API integration
-      final placeDetails = await _getPlaceDetailsFromCoordinates(position);
+      final locationProvider = Provider.of<LocationProvider>(context, listen: false);
+      final address = await locationProvider.reverseGeocode(position.latitude, position.longitude);
       
-      if (placeDetails != null && mounted) {
-        final address = placeDetails['formatted_address'] ?? 'Unknown Location';
-        
+      if (mounted) {
         setState(() {
           if (_locationSelectionMode == 'pickup') {
             _pickupController.text = address;
@@ -416,83 +395,30 @@ class _PlanYourRideScreenState extends State<PlanYourRideScreen> {
           }
         });
         
-        print('Address updated from map: $address');
+        print('Address updated: $address');
         print('Pin position coordinates: ${position.latitude}, ${position.longitude}');
         print('Location mode: $_locationSelectionMode');
       }
     } catch (e) {
-      print('Error getting address from Places API: $e');
-      // Fallback to basic address formatting
-      try {
-        List<Placemark> placemarks = await placemarkFromCoordinates(
-          position.latitude,
-          position.longitude,
-        );
+      print('Error updating address from position: $e');
+      
+      // Last resort: use coordinates as address
+      if (mounted) {
+        final coordsAddress = '${position.latitude.toStringAsFixed(6)}, ${position.longitude.toStringAsFixed(6)}';
+        setState(() {
+          if (_locationSelectionMode == 'pickup') {
+            _pickupController.text = coordsAddress;
+            _selectedPickupCoords = position;
+          } else if (_locationSelectionMode == 'destination') {
+            _destinationController.text = coordsAddress;
+            _selectedDestinationCoords = position;
+          }
+        });
         
-        if (placemarks.isNotEmpty && mounted) {
-          final placemark = placemarks.first;
-          final address = _formatPlacemark(placemark);
-          
-          setState(() {
-            if (_locationSelectionMode == 'pickup') {
-              _pickupController.text = address;
-              _selectedPickupCoords = position;
-            } else if (_locationSelectionMode == 'destination') {
-              _destinationController.text = address;
-              _selectedDestinationCoords = position;
-            }
-          });
-          
-          print('Address updated from geocoding: $address');
-          print('Pin position coordinates: ${position.latitude}, ${position.longitude}');
-          print('Location mode: $_locationSelectionMode');
-        }
-      } catch (fallbackError) {
-        print('Fallback geocoding also failed: $fallbackError');
-        
-        // Last resort: use coordinates as address
-        if (mounted) {
-          final coordsAddress = '${position.latitude.toStringAsFixed(6)}, ${position.longitude.toStringAsFixed(6)}';
-          setState(() {
-            if (_locationSelectionMode == 'pickup') {
-              _pickupController.text = coordsAddress;
-              _selectedPickupCoords = position;
-            } else if (_locationSelectionMode == 'destination') {
-              _destinationController.text = coordsAddress;
-              _selectedDestinationCoords = position;
-            }
-          });
-          
-          _showErrorMessage('Using coordinates as location. Address lookup failed.');
-          print('Using coordinates as fallback: $coordsAddress');
-        }
+        _showErrorMessage('Using coordinates as location. Address lookup failed.');
+        print('Using coordinates as fallback: $coordsAddress');
       }
     }
-  }
-
-  String _formatPlacemark(Placemark placemark) {
-    List<String> addressParts = [];
-    
-    // Add more detailed address information
-    if (placemark.name?.isNotEmpty == true) {
-      addressParts.add(placemark.name!);
-    }
-    if (placemark.street?.isNotEmpty == true && placemark.street != placemark.name) {
-      addressParts.add(placemark.street!);
-    }
-    if (placemark.subLocality?.isNotEmpty == true) {
-      addressParts.add(placemark.subLocality!);
-    }
-    if (placemark.locality?.isNotEmpty == true) {
-      addressParts.add(placemark.locality!);
-    }
-    if (placemark.administrativeArea?.isNotEmpty == true && placemark.administrativeArea != placemark.locality) {
-      addressParts.add(placemark.administrativeArea!);
-    }
-    
-    final address = addressParts.isNotEmpty ? addressParts.join(', ') : 'Unknown Location';
-    print('Formatted address: $address');
-    return address;
   }
 
   void _startLocationSelection(String mode) {
@@ -690,52 +616,6 @@ class _PlanYourRideScreenState extends State<PlanYourRideScreen> {
       context,
       _isRideSolo ? 'Solo ride selected' : 'Shared ride selected',
     );
-  }
-
-  Future<Map<String, dynamic>?> _getPlaceDetailsFromCoordinates(LatLng position) async {
-    try {
-      // Use reverse geocoding first to get address
-      List<Placemark> placemarks = await placemarkFromCoordinates(
-        position.latitude,
-        position.longitude,
-      );
-      
-      if (placemarks.isNotEmpty) {
-        final placemark = placemarks.first;
-        final address = _formatPlacemark(placemark);
-        
-        // Create a detailed location name using available data
-        String locationName = address;
-        if (placemark.name?.isNotEmpty == true) {
-          locationName = placemark.name!;
-        } else if (placemark.subLocality?.isNotEmpty == true) {
-          locationName = placemark.subLocality!;
-        } else if (placemark.locality?.isNotEmpty == true) {
-          locationName = placemark.locality!;
-        }
-        
-        print('Place details from coordinates - Name: $locationName, Address: $address');
-        
-        // Try to find place using Places API nearby search
-        // For now, we'll return the geocoded address with coordinates
-        return {
-          'formatted_address': address,
-          'geometry': {
-            'location': {
-              'lat': position.latitude,
-              'lng': position.longitude,
-            }
-          },
-          'place_id': 'custom_${position.latitude}_${position.longitude}', // Custom place ID
-          'name': locationName,
-          'types': ['point_of_interest'],
-        };
-      }
-      return null;
-    } catch (e) {
-      print('Error getting place details from coordinates: $e');
-      return null;
-    }
   }
 
   @override
