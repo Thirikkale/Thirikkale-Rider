@@ -8,7 +8,6 @@ import 'package:thirikkale_rider/widgets/common/section_header.dart';
 import 'package:thirikkale_rider/widgets/bottom_navbar.dart';
 import 'package:thirikkale_rider/features/services/screens/services_screen.dart';
 import 'package:thirikkale_rider/features/booking/screens/plan_your_ride_screen.dart';
-import 'package:thirikkale_rider/features/home/screens/ride_option_detail_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -79,37 +78,19 @@ class HomeScreen extends StatelessWidget {
           title: option['title']!,
           subtitle: option['subtitle']!,
           onTap: () {
-            // Navigate to detail screen first
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => RideOptionDetailScreen(
-                  image: option['image']!,
-                  title: option['detailTitle'] ?? option['title']!,
-                  subtitle: option['subtitle']!,
-                  description: option['description']!,
-                  buttonText: option['buttonText']!,
-                  onChooseOption: () {
-                    // Navigate back to home and then to plan your ride
-                    Navigator.pop(context);
-                    
-                    // Map option titles to ride types
-                    String rideType = 'Solo'; // default
-                    if (option['title']!.contains('Shared')) {
-                      rideType = 'Shared';
-                    } else if (option['title']!.contains('Women')) {
-                      rideType = 'Women Only';
-                    } else if (option['title']!.contains('Rush')) {
-                      rideType = 'Rush';
-                    } else if (option['title']!.contains('Tuk')) {
-                      rideType = 'Tuk';
-                    }
-                    
-                    _navigateToPlanYourRide(context, rideType);
-                  },
-                ),
-              ),
-            );
+            // Map option titles to ride types
+            String rideType = 'Solo'; // default
+            if (option['title']!.contains('Shared')) {
+              rideType = 'Shared';
+            } else if (option['title']!.contains('Women')) {
+              rideType = 'Women Only';
+            } else if (option['title']!.contains('Rush')) {
+              rideType = 'Rush';
+            } else if (option['title']!.contains('Tuk')) {
+              rideType = 'Tuk';
+            }
+            
+            _navigateToPlanYourRide(context, rideType);
           },
         ),
       );
@@ -247,7 +228,23 @@ class HomeScreen extends StatelessWidget {
                             horizontal: AppDimensions.pageHorizontalPadding,
                           ),
                           scrollDirection: Axis.horizontal,
-                          children: _buildExploreCards(context, beatTrafficOptions),
+                          children: [
+                            ExploreOptionCard(
+                              image: 'assets/images/option_cards/tuk_ride.png',
+                              title: 'Zip Through Traffic',
+                              subtitle:
+                                  'Your quickest way to get around the city',
+                              onTap: () => _navigateToPlanYourRide(context, 'Tuk'),
+                            ),
+                            const SizedBox(width: 16.0),
+                            ExploreOptionCard(
+                              image: 'assets/images/option_cards/rush_ride.png',
+                              title: 'Rush Hour Hero',
+                              subtitle:
+                                  'Your fastest route through city traffic',
+                              onTap: () => _navigateToPlanYourRide(context, 'Rush'),
+                            ),
+                          ],
                         ),
                       ),
                     ],

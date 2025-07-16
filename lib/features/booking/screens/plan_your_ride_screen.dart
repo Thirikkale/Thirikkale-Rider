@@ -324,27 +324,7 @@ class _PlanYourRideScreenState extends State<PlanYourRideScreen> {
     SnackbarHelper.showErrorSnackBar(context, message);
   }
 
-
-
   // Map interaction methods
-  void _onMapTap(LatLng position) {
-    print('Map tapped at: ${position.latitude}, ${position.longitude}');
-    if (!_isSelectingLocation) {
-      // Just show a marker for general taps
-      setState(() {
-        _markers.clear();
-        _markers.add(Marker(
-          markerId: const MarkerId('tapped_location'),
-          position: position,
-          infoWindow: InfoWindow(
-            title: 'Selected Location',
-            snippet: '${position.latitude}, ${position.longitude}',
-          ),
-        ));
-      });
-    }
-  }
-
   void _onCameraMove(CameraPosition position) {
     if (_isSelectingLocation) {
       // Calculate the actual position where the pin is displayed
@@ -637,7 +617,7 @@ class _PlanYourRideScreenState extends State<PlanYourRideScreen> {
                       });
                       print('Google Map created successfully');
                     },
-                    onTap: _onMapTap,
+                    // onTap: _onMapTap,
                     onCameraMove: _onCameraMove,
                     markers: _markers,
                     initialCameraPosition: CameraPosition(
@@ -812,9 +792,88 @@ class _PlanYourRideScreenState extends State<PlanYourRideScreen> {
           // All buttons in a single column (right side)
           Positioned(
             right: AppDimensions.pageHorizontalPadding,
-            top: 120,
+            top: kToolbarHeight  ,
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
               children: [
+                // Schedule button with text
+                Material(
+                  elevation: 4,
+                  borderRadius: BorderRadius.circular(12),
+                  child: InkWell(
+                    onTap: _toggleSchedule,
+                    borderRadius: BorderRadius.circular(12),
+                    child: Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: AppDimensions.subSectionSpacingDown * 3,
+                        vertical: AppDimensions.subSectionSpacingDown * 3,
+                      ),
+                      decoration: BoxDecoration(
+                        color: _isScheduleNow ? AppColors.primaryBlue : AppColors.white,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            _isScheduleNow ? Icons.access_time : Icons.schedule,
+                            color: _isScheduleNow ? AppColors.white : AppColors.primaryBlue,
+                            size: 20,
+                          ),
+                          SizedBox(width: AppDimensions.subSectionSpacingDown),
+                          Text(
+                            _isScheduleNow ? 'Now' : 'Scheduled',
+                            style: AppTextStyles.bodySmall.copyWith(
+                              color: _isScheduleNow ? AppColors.white : AppColors.primaryBlue,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                SizedBox(height: AppDimensions.subSectionSpacingDown * 2),
+                
+                // Ride type button with text
+                Material(
+                  elevation: 4,
+                  borderRadius: BorderRadius.circular(12),
+                  child: InkWell(
+                    onTap: _toggleRideType,
+                    borderRadius: BorderRadius.circular(12),
+                    child: Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: AppDimensions.subSectionSpacingDown * 3,
+                        vertical: AppDimensions.subSectionSpacingDown * 3,
+                      ),
+                      decoration: BoxDecoration(
+                        color: _isRideSolo ? AppColors.primaryBlue : AppColors.white,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            _isRideSolo ? Icons.person : Icons.people,
+                            color: _isRideSolo ? AppColors.white : AppColors.primaryBlue,
+                            size: 20,
+                          ),
+                          SizedBox(width: AppDimensions.subSectionSpacingDown),
+                          Text(
+                            _isRideSolo ? 'Solo' : 'Shared',
+                            style: AppTextStyles.bodySmall.copyWith(
+                              color: _isRideSolo ? AppColors.white : AppColors.primaryBlue,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                SizedBox(height: AppDimensions.subSectionSpacingDown * 2),
+
                 FloatingActionButton(
                   heroTag: "focus_btn",
                   mini: true,
@@ -822,32 +881,7 @@ class _PlanYourRideScreenState extends State<PlanYourRideScreen> {
                   onPressed: _focusOnCurrentLocation,
                   child: Icon(Icons.my_location, color: AppColors.primaryBlue),
                 ),
-                SizedBox(height: AppDimensions.subSectionSpacingDown * 2),
-                FloatingActionButton(
-                  heroTag: "schedule_btn",
-                  mini: true,
-                  backgroundColor: _isScheduleNow ? AppColors.primaryBlue : AppColors.white,
-                  elevation: 4,
-                  onPressed: _toggleSchedule,
-                  child: Icon(
-                    _isScheduleNow ? Icons.access_time : Icons.schedule,
-                    color: _isScheduleNow ? AppColors.white : AppColors.primaryBlue,
-                    size: 20,
-                  ),
-                ),
-                SizedBox(height: AppDimensions.subSectionSpacingDown * 2),
-                FloatingActionButton(
-                  heroTag: "ride_type_btn",
-                  mini: true,
-                  backgroundColor: _isRideSolo ? AppColors.primaryBlue : AppColors.white,
-                  elevation: 4,
-                  onPressed: _toggleRideType,
-                  child: Icon(
-                    _isRideSolo ? Icons.person : Icons.people,
-                    color: _isRideSolo ? AppColors.white : AppColors.primaryBlue,
-                    size: 20,
-                  ),
-                ),
+                
               ],
             ),
           ),
@@ -976,70 +1010,7 @@ class _PlanYourRideScreenState extends State<PlanYourRideScreen> {
                             onChanged: _onDestinationChanged,
                           ),
                           const SizedBox(height: AppDimensions.sectionSpacing/2),
-                
-                          // Show current selection status - separated units
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              // Schedule status (left side)
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: AppDimensions.widgetSpacing, vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: AppColors.surfaceLight,
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(
-                                      _isScheduleNow ? Icons.access_time : Icons.schedule,
-                                      color: AppColors.primaryBlue,
-                                      size: 18,
-                                    ),
-                                    SizedBox(width: AppDimensions.subSectionSpacingDown * 2),
-                
-                                    Text(
-                                      _isScheduleNow ? 'Now' : 'Scheduled',
-                                      style: AppTextStyles.bodyMedium.copyWith(
-                                        color: AppColors.textPrimary,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              
-                              // Ride type status (right side)
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: AppDimensions.widgetSpacing, vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: AppColors.surfaceLight,
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(
-                                      _isRideSolo ? Icons.person : Icons.people,
-                                      color: AppColors.primaryBlue,
-                                      size: 18,
-                                    ),
-                                    SizedBox(width: AppDimensions.subSectionSpacingDown * 2),
-                                    Text(
-                                      _isRideSolo ? 'Solo Ride' : 'Shared Ride',
-                                      style: AppTextStyles.bodyMedium.copyWith(
-                                        color: AppColors.textPrimary,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                          
-                          SizedBox(height: AppDimensions.sectionSpacing/2),
-                
+
                           SizedBox(
                             width: double.infinity,
                             child: ElevatedButton(
