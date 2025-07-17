@@ -44,81 +44,96 @@ class _PickupTimeScreenState extends State<PickupTimeScreen> {
         title: 'Pickup time',
         showBackButton: true,
       ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(AppDimensions.pageHorizontalPadding),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Date Selection Header
-              Text(
-                'Select a pickup date',
-                style: AppTextStyles.heading2.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: AppDimensions.sectionSpacing),
-
-              // Month/Year Navigation
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  IconButton(
-                    onPressed: () {
-                      setState(() {
-                        if (selectedMonth == 1) {
-                          selectedMonth = 12;
-                          selectedYear--;
-                        } else {
-                          selectedMonth--;
-                        }
-                      });
-                    },
-                    icon: const Icon(Icons.chevron_left),
-                  ),
-                  Text(
-                    _getMonthYearString(),
-                    style: AppTextStyles.bodyLarge.copyWith(
-                      fontWeight: FontWeight.w600,
+      body: Column(
+        children: [
+          // Scrollable content
+          Expanded(
+            child: SingleChildScrollView(
+              child: Padding(
+                padding: const EdgeInsets.all(AppDimensions.pageHorizontalPadding),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Date Selection Header
+                    Text(
+                      'Select a pickup date',
+                      style: AppTextStyles.heading2.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
-                  ),
-                  IconButton(
-                    onPressed: () {
-                      setState(() {
-                        if (selectedMonth == 12) {
-                          selectedMonth = 1;
-                          selectedYear++;
-                        } else {
-                          selectedMonth++;
-                        }
-                      });
-                    },
-                    icon: const Icon(Icons.chevron_right),
-                  ),
-                ],
-              ),
-              const SizedBox(height: AppDimensions.widgetSpacing),
+                    const SizedBox(height: AppDimensions.sectionSpacing),
 
-              // Calendar Grid
-              _buildCalendarGrid(),
-              const SizedBox(height: AppDimensions.sectionSpacing),
+                    // Month/Year Navigation
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        IconButton(
+                          onPressed: () {
+                            setState(() {
+                              if (selectedMonth == 1) {
+                                selectedMonth = 12;
+                                selectedYear--;
+                              } else {
+                                selectedMonth--;
+                              }
+                            });
+                          },
+                          icon: const Icon(Icons.chevron_left),
+                        ),
+                        Text(
+                          _getMonthYearString(),
+                          style: AppTextStyles.bodyLarge.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        IconButton(
+                          onPressed: () {
+                            setState(() {
+                              if (selectedMonth == 12) {
+                                selectedMonth = 1;
+                                selectedYear++;
+                              } else {
+                                selectedMonth++;
+                              }
+                            });
+                          },
+                          icon: const Icon(Icons.chevron_right),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: AppDimensions.widgetSpacing),
 
-              // Time Selection Header
-              Text(
-                'Select a pickup time',
-                style: AppTextStyles.heading2.copyWith(
-                  fontWeight: FontWeight.w600,
+                    // Calendar Grid
+                    _buildCalendarGrid(),
+                    const SizedBox(height: AppDimensions.sectionSpacing),
+
+                    // Time Selection Header
+                    Text(
+                      'Select a pickup time',
+                      style: AppTextStyles.heading2.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: AppDimensions.widgetSpacing),
+
+                    // Time Selection
+                    _buildTimeSelection(),
+                    
+                    const SizedBox(height: AppDimensions.sectionSpacing),
+                  ],
                 ),
               ),
-              const SizedBox(height: AppDimensions.widgetSpacing),
-
-              // Time Selection
-              _buildTimeSelection(),
-              
-              const SizedBox(height: AppDimensions.sectionSpacing),
-
-              // Confirm Button
-              SizedBox(
+            ),
+          ),
+          
+          // Fixed bottom button
+          Container(
+            padding: const EdgeInsets.all(AppDimensions.pageHorizontalPadding),
+            decoration: const BoxDecoration(
+              color: AppColors.white,
+            ),
+            child: SafeArea(
+              child: SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
                   style: AppButtonStyles.primaryButton,
@@ -126,10 +141,9 @@ class _PickupTimeScreenState extends State<PickupTimeScreen> {
                   child: const Text('Confirm'),
                 ),
               ),
-              const SizedBox(height: AppDimensions.widgetSpacing),
-            ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
