@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:thirikkale_rider/core/utils/app_styles.dart';
 import 'package:thirikkale_rider/core/utils/app_dimension.dart';
 import 'package:thirikkale_rider/widgets/common/custom_appbar_name.dart';
@@ -30,7 +31,8 @@ class PickupTimeScreen extends StatefulWidget {
 
 class _PickupTimeScreenState extends State<PickupTimeScreen> {
   DateTime selectedDate = DateTime.now();
-  TimeOfDay selectedTime = TimeOfDay.now();
+  int selectedHour = DateTime.now().hour;
+  int selectedMinute = DateTime.now().minute;
   int selectedMonth = DateTime.now().month;
   int selectedYear = DateTime.now().year;
 
@@ -42,101 +44,91 @@ class _PickupTimeScreenState extends State<PickupTimeScreen> {
         title: 'Pickup time',
         showBackButton: true,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(AppDimensions.pageHorizontalPadding),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Date Selection Header
-            Text(
-              'Select a pickup date',
-              style: AppTextStyles.heading2.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: AppDimensions.sectionSpacing),
-
-            // Month/Year Navigation
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                IconButton(
-                  onPressed: () {
-                    setState(() {
-                      if (selectedMonth == 1) {
-                        selectedMonth = 12;
-                        selectedYear--;
-                      } else {
-                        selectedMonth--;
-                      }
-                    });
-                  },
-                  icon: const Icon(Icons.chevron_left),
-                ),
-                Text(
-                  _getMonthYearString(),
-                  style: AppTextStyles.bodyLarge.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                IconButton(
-                  onPressed: () {
-                    setState(() {
-                      if (selectedMonth == 12) {
-                        selectedMonth = 1;
-                        selectedYear++;
-                      } else {
-                        selectedMonth++;
-                      }
-                    });
-                  },
-                  icon: const Icon(Icons.chevron_right),
-                ),
-              ],
-            ),
-            const SizedBox(height: AppDimensions.widgetSpacing),
-
-            // Calendar Grid
-            _buildCalendarGrid(),
-            const SizedBox(height: AppDimensions.sectionSpacing),
-
-            // Time Selection Header
-            Text(
-              'Select a pickup time',
-              style: AppTextStyles.heading2.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: AppDimensions.widgetSpacing),
-
-            // Time Selection
-            _buildTimeSelection(),
-            
-            const Spacer(),
-
-            // Confirm Button
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primaryBlue,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                onPressed: _confirmPickupTime,
-                child: Text(
-                  'Confirm',
-                  style: AppTextStyles.bodyLarge.copyWith(
-                    color: AppColors.white,
-                    fontWeight: FontWeight.w600,
-                  ),
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(AppDimensions.pageHorizontalPadding),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Date Selection Header
+              Text(
+                'Select a pickup date',
+                style: AppTextStyles.heading2.copyWith(
+                  fontWeight: FontWeight.w600,
                 ),
               ),
-            ),
-            const SizedBox(height: AppDimensions.widgetSpacing),
-          ],
+              const SizedBox(height: AppDimensions.sectionSpacing),
+
+              // Month/Year Navigation
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  IconButton(
+                    onPressed: () {
+                      setState(() {
+                        if (selectedMonth == 1) {
+                          selectedMonth = 12;
+                          selectedYear--;
+                        } else {
+                          selectedMonth--;
+                        }
+                      });
+                    },
+                    icon: const Icon(Icons.chevron_left),
+                  ),
+                  Text(
+                    _getMonthYearString(),
+                    style: AppTextStyles.bodyLarge.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () {
+                      setState(() {
+                        if (selectedMonth == 12) {
+                          selectedMonth = 1;
+                          selectedYear++;
+                        } else {
+                          selectedMonth++;
+                        }
+                      });
+                    },
+                    icon: const Icon(Icons.chevron_right),
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppDimensions.widgetSpacing),
+
+              // Calendar Grid
+              _buildCalendarGrid(),
+              const SizedBox(height: AppDimensions.sectionSpacing),
+
+              // Time Selection Header
+              Text(
+                'Select a pickup time',
+                style: AppTextStyles.heading2.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: AppDimensions.widgetSpacing),
+
+              // Time Selection
+              _buildTimeSelection(),
+              
+              const SizedBox(height: AppDimensions.sectionSpacing),
+
+              // Confirm Button
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  style: AppButtonStyles.primaryButton,
+                  onPressed: _confirmPickupTime,
+                  child: const Text('Confirm'),
+                ),
+              ),
+              const SizedBox(height: AppDimensions.widgetSpacing),
+            ],
+          ),
         ),
       ),
     );
@@ -169,12 +161,12 @@ class _PickupTimeScreenState extends State<PickupTimeScreen> {
                     ))
                 .toList(),
           ),
-          const SizedBox(height: AppDimensions.subSectionSpacingDown),
+          const SizedBox(height: 8),
 
           // Calendar days
           ...List.generate(6, (weekIndex) {
             return Padding(
-              padding: const EdgeInsets.symmetric(vertical: 4.0),
+              padding: const EdgeInsets.symmetric(vertical: 3.0),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: List.generate(7, (dayIndex) {
@@ -244,75 +236,141 @@ class _PickupTimeScreenState extends State<PickupTimeScreen> {
       ),
       child: Row(
         children: [
-          // Hour selection
+          // Time display section
           Expanded(
+            flex: 1,
             child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
-                  selectedTime.hour.toString().padLeft(2, '0'),
-                  style: AppTextStyles.heading1.copyWith(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 32,
-                  ),
-                ),
-                Text(
-                  'Hour',
+                  'Selected Time',
                   style: AppTextStyles.bodySmall.copyWith(
                     color: AppColors.textSecondary,
+                    fontWeight: FontWeight.w600,
                   ),
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      selectedHour.toString().padLeft(2, '0'),
+                      style: AppTextStyles.heading1.copyWith(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 28,
+                      ),
+                    ),
+                    Text(
+                      ':',
+                      style: AppTextStyles.heading1.copyWith(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 28,
+                      ),
+                    ),
+                    Text(
+                      selectedMinute.toString().padLeft(2, '0'),
+                      style: AppTextStyles.heading1.copyWith(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 28,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
           ),
-          Text(
-            ':',
-            style: AppTextStyles.heading1.copyWith(
-              fontWeight: FontWeight.w600,
-              fontSize: 32,
-            ),
-          ),
-          // Minute selection
-          Expanded(
-            child: Column(
-              children: [
-                Text(
-                  selectedTime.minute.toString().padLeft(2, '0'),
-                  style: AppTextStyles.heading1.copyWith(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 32,
-                  ),
-                ),
-                Text(
-                  'Minute',
-                  style: AppTextStyles.bodySmall.copyWith(
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-              ],
-            ),
-          ),
+          
           const SizedBox(width: AppDimensions.widgetSpacing),
-          // AM/PM
-          Column(
-            children: [
-              GestureDetector(
-                onTap: () => _selectTime(),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: AppColors.primaryBlue,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    selectedTime.period == DayPeriod.am ? 'AM' : 'PM',
-                    style: AppTextStyles.bodyMedium.copyWith(
-                      color: AppColors.white,
-                      fontWeight: FontWeight.w600,
+          
+          // Wheel pickers section
+          Expanded(
+            flex: 2,
+            child: SizedBox(
+              height: 120,
+              child: Row(
+                children: [
+                  // Hour picker
+                  Expanded(
+                    child: Column(
+                      children: [
+                        Text(
+                          'Hour',
+                          style: AppTextStyles.bodySmall.copyWith(
+                            color: AppColors.textSecondary,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Expanded(
+                          child: CupertinoPicker(
+                            scrollController: FixedExtentScrollController(
+                              initialItem: selectedHour,
+                            ),
+                            itemExtent: 28,
+                            onSelectedItemChanged: (int index) {
+                              setState(() {
+                                selectedHour = index;
+                              });
+                            },
+                            children: List.generate(24, (index) {
+                              return Center(
+                                child: Text(
+                                  index.toString().padLeft(2, '0'),
+                                  style: AppTextStyles.bodyMedium.copyWith(
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              );
+                            }),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                ),
+                  
+                  const SizedBox(width: 8),
+                  
+                  // Minute picker
+                  Expanded(
+                    child: Column(
+                      children: [
+                        Text(
+                          'Minute',
+                          style: AppTextStyles.bodySmall.copyWith(
+                            color: AppColors.textSecondary,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Expanded(
+                          child: CupertinoPicker(
+                            scrollController: FixedExtentScrollController(
+                              initialItem: selectedMinute,
+                            ),
+                            itemExtent: 28,
+                            onSelectedItemChanged: (int index) {
+                              setState(() {
+                                selectedMinute = index;
+                              });
+                            },
+                            children: List.generate(60, (index) {
+                              return Center(
+                                child: Text(
+                                  index.toString().padLeft(2, '0'),
+                                  style: AppTextStyles.bodyMedium.copyWith(
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              );
+                            }),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
         ],
       ),
@@ -327,25 +385,13 @@ class _PickupTimeScreenState extends State<PickupTimeScreen> {
     return '${months[selectedMonth - 1]} $selectedYear';
   }
 
-  Future<void> _selectTime() async {
-    final TimeOfDay? picked = await showTimePicker(
-      context: context,
-      initialTime: selectedTime,
-    );
-    if (picked != null) {
-      setState(() {
-        selectedTime = picked;
-      });
-    }
-  }
-
   void _confirmPickupTime() {
     final scheduledDateTime = DateTime(
       selectedDate.year,
       selectedDate.month,
       selectedDate.day,
-      selectedTime.hour,
-      selectedTime.minute,
+      selectedHour,
+      selectedMinute,
     );
 
     Navigator.push(

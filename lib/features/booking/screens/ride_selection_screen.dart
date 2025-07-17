@@ -481,20 +481,8 @@ class _RideSelectionScreenState extends State<RideSelectionScreen>
           width: double.infinity,
           child: ElevatedButton(
             onPressed: _bookRide,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primaryBlue,
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-            child: Text(
-              'Book Ride',
-              style: AppTextStyles.button.copyWith(
-                color: AppColors.white,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
+            style: AppButtonStyles.primaryButton,
+            child: const Text('Book Ride'),
           ),
         ),
       ),
@@ -558,18 +546,8 @@ class _RideSelectionScreenState extends State<RideSelectionScreen>
             onPressed: () {
               Navigator.of(context).popUntil((route) => route.isFirst);
             },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primaryBlue,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            child: Text(
-              'Track Ride',
-              style: AppTextStyles.button.copyWith(
-                color: AppColors.white,
-              ),
-            ),
+            style: AppButtonStyles.primaryButton,
+            child: const Text('Track Ride'),
           ),
         ],
       ),

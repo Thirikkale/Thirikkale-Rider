@@ -186,22 +186,12 @@ class _RideReservationScreenState extends State<RideReservationScreen> {
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.lightGrey,
-                          foregroundColor: AppColors.black,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
+                        style: AppButtonStyles.primaryButton.copyWith(
+                          backgroundColor: WidgetStateProperty.all(AppColors.lightGrey),
+                          foregroundColor: WidgetStateProperty.all(AppColors.black),
                         ),
                         onPressed: _reserveRide,
-                        child: Text(
-                          'Reserve a ride',
-                          style: AppTextStyles.bodyLarge.copyWith(
-                            color: AppColors.black,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
+                        child: const Text('Reserve a ride'),
                       ),
                     ),
                     const SizedBox(height: AppDimensions.widgetSpacing),

@@ -103,21 +103,23 @@ class RideOptionsBottomSheet extends StatelessWidget {
             padding: const EdgeInsets.only(bottom: 16, left: 16, right: 16),
             child: SizedBox(
               width: double.infinity,
-              height: 56,
               child: ElevatedButton(
                 onPressed:
                     bookingProvider.canBookRide &&
                             !bookingProvider.isBookingRide
                         ? () => onBookRide(bookingProvider)
                         : null,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primaryBlue,
-                  foregroundColor: AppColors.white,
-                  disabledBackgroundColor: AppColors.lightGrey,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
+                style: AppButtonStyles.primaryButton.copyWith(
+                  backgroundColor: WidgetStateProperty.resolveWith<Color>(
+                    (Set<WidgetState> states) {
+                      if (states.contains(WidgetState.disabled)) {
+                        return AppColors.lightGrey;
+                      }
+                      return AppColors.primaryBlue;
+                    },
                   ),
-                  elevation: 0,
+                  foregroundColor: WidgetStateProperty.all(AppColors.white),
+                  elevation: WidgetStateProperty.all(0),
                 ),
                 child:
                     bookingProvider.isBookingRide

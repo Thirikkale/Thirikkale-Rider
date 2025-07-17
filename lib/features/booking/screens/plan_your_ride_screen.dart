@@ -300,7 +300,8 @@ class _PlanYourRideScreenState extends State<PlanYourRideScreen> {
                   pickupLng: pickupLng,
                   destLat: destLat,
                   destLng: destLng,
-                  initialRideType: selectedRideType, // Pass the selected ride type
+                  initialRideType: selectedRideType,
+                  initialScheduleType: _isScheduleNow ? 'now' : 'scheduled',
                 ),
           ),
         );
@@ -900,13 +901,11 @@ class _PlanYourRideScreenState extends State<PlanYourRideScreen> {
                   left: AppDimensions.pageHorizontalPadding,
                   right: AppDimensions.pageHorizontalPadding,
                   child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: _locationSelectionMode == 'pickup' 
-                        ? AppColors.success
-                        : AppColors.primaryBlue,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                    ),
+                    style: _locationSelectionMode == 'pickup' 
+                      ? AppButtonStyles.primaryButton.copyWith(
+                          backgroundColor: WidgetStateProperty.all(AppColors.success),
+                        )
+                      : AppButtonStyles.primaryButton,
                     onPressed: () {
                       if (_selectedLocation != null) {
                         _finishLocationSelectionManually();
@@ -914,10 +913,6 @@ class _PlanYourRideScreenState extends State<PlanYourRideScreen> {
                     },
                     child: Text(
                       'Confirm ${_locationSelectionMode == 'pickup' ? 'Pickup' : 'Drop-off'} Location',
-                      style: AppTextStyles.bodyLarge.copyWith(
-                        color: AppColors.white, 
-                        fontWeight: FontWeight.bold
-                      ),
                     ),
                   ),
                 ),
@@ -1193,11 +1188,7 @@ class _PlanYourRideScreenState extends State<PlanYourRideScreen> {
                           SizedBox(
                             width: double.infinity,
                             child: ElevatedButton(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.primaryBlue,
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                                padding: const EdgeInsets.symmetric(vertical: 14),
-                              ),
+                              style: AppButtonStyles.primaryButton,
                               onPressed: () async {
                                 if (_pickupController.text.isNotEmpty && _destinationController.text.isNotEmpty) {
                                   // Show confirmation dialog before proceeding
