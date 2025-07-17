@@ -69,7 +69,7 @@ class _PlanYourRideScreenState extends State<PlanYourRideScreen> {
     
     // Initialize with passed parameters
     _initializeWithParameters();
-    
+    _focusOnCurrentLocation();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _initializeLocationProvider();
     });
@@ -643,7 +643,7 @@ class _PlanYourRideScreenState extends State<PlanYourRideScreen> {
           polylineId: const PolylineId('route'),
           points: routeCoords,
           color: AppColors.primaryBlue,
-          width: 4,
+          width: 6,
           startCap: Cap.roundCap,
           endCap: Cap.roundCap,
           jointType: JointType.round,
@@ -708,8 +708,8 @@ class _PlanYourRideScreenState extends State<PlanYourRideScreen> {
     }
 
     // Create custom markers for pickup and destination like in RouteMap
-    final pickupIcon = await CustomMarker.createPillMarker('Pickup here');
-    final destinationIcon = await CustomMarker.createPillMarker('Drop off here');
+    final pickupIcon = await CustomMarker.createPillMarker('Pickup');
+    final destinationIcon = await CustomMarker.createPillMarker('Drop');
 
     final pickupMarker = Marker(
       markerId: const MarkerId('pickup'),

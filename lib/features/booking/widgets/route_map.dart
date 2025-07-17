@@ -83,7 +83,7 @@ class _RouteMapState extends State<RouteMap> {
     final markers = <Marker>{};
 
     if (widget.pickupLat != null && widget.pickupLng != null) {
-      final pickupIcon = await CustomMarker.createPillMarker('Pickup here');
+      final pickupIcon = await CustomMarker.createPillMarker('Pickup');
       markers.add(
         Marker(
           markerId: const MarkerId('pickup'),
@@ -99,7 +99,7 @@ class _RouteMapState extends State<RouteMap> {
     }
 
     if (widget.destLat != null && widget.destLng != null) {
-      final destinationIcon = await CustomMarker.createPillMarker('Drop off here');
+      final destinationIcon = await CustomMarker.createPillMarker('Drop');
       markers.add(
         Marker(
           markerId: const MarkerId('destination'),
@@ -158,7 +158,7 @@ class _RouteMapState extends State<RouteMap> {
             polylineId: const PolylineId('route'),
             points: polylineLatLngs,
             color: AppColors.primaryBlue,
-            width: 3,
+            width: 6,
             startCap: Cap.roundCap,
             endCap: Cap.roundCap,
             jointType: JointType.round,
@@ -200,7 +200,7 @@ class _RouteMapState extends State<RouteMap> {
         LatLng(widget.destLat!, widget.destLng!),
       ],
       color: AppColors.primaryBlue,
-      width: 3,
+      width: 6,
       patterns: [PatternItem.dash(15), PatternItem.gap(8)],
     );
 
