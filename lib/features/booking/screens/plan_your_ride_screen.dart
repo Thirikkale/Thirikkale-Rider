@@ -1,17 +1,21 @@
 import 'dart:async';
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:google_polyline_algorithm/google_polyline_algorithm.dart';
 import 'package:thirikkale_rider/core/providers/location_provider.dart';
 import 'package:thirikkale_rider/core/services/places_api_service.dart';
 import 'package:thirikkale_rider/core/services/location_service.dart';
+import 'package:thirikkale_rider/core/services/direction_service.dart';
 import 'package:thirikkale_rider/core/utils/app_styles.dart';
 import 'package:thirikkale_rider/core/utils/app_dimension.dart';
 import 'package:thirikkale_rider/core/utils/snackbar_helper.dart';
 import 'package:thirikkale_rider/core/utils/dialog_helper.dart';
 import 'package:thirikkale_rider/features/booking/screens/ride_booking_screen.dart';
 import 'package:thirikkale_rider/features/booking/screens/location_search_screen.dart';
+import 'package:thirikkale_rider/features/booking/models/custom_marker.dart';
 import 'package:thirikkale_rider/widgets/common/custom_appbar_name.dart';
 
 class PlanYourRideScreen extends StatefulWidget {
@@ -47,6 +51,7 @@ class _PlanYourRideScreenState extends State<PlanYourRideScreen> {
   String _locationSelectionMode = ''; // 'pickup' or 'destination'
   LatLng? _selectedLocation;
   final Set<Marker> _markers = {};
+  final Set<Polyline> _polylines = {};
   Timer? _geocodingTimer;
   Timer? _autoSelectionTimer;
   
@@ -378,6 +383,11 @@ class _PlanYourRideScreenState extends State<PlanYourRideScreen> {
         print('Address updated: $address');
         print('Pin position coordinates: ${position.latitude}, ${position.longitude}');
         print('Location mode: $_locationSelectionMode');
+        
+        // Calculate and display route if both locations are set
+        if (_selectedPickupCoords != null && _selectedDestinationCoords != null) {
+          _calculateAndDisplayRoute();
+        }
       }
     } catch (e) {
       print('Error updating address from position: $e');
@@ -397,6 +407,11 @@ class _PlanYourRideScreenState extends State<PlanYourRideScreen> {
         
         _showErrorMessage('Using coordinates as location. Address lookup failed.');
         print('Using coordinates as fallback: $coordsAddress');
+        
+        // Calculate and display route if both locations are set
+        if (_selectedPickupCoords != null && _selectedDestinationCoords != null) {
+          _calculateAndDisplayRoute();
+        }
       }
     }
   }
@@ -483,6 +498,11 @@ class _PlanYourRideScreenState extends State<PlanYourRideScreen> {
         print('Selected location for $mode: $address');
         if (coordinates != null) {
           print('Coordinates: ${coordinates.latitude}, ${coordinates.longitude}');
+        }
+        
+        // Calculate and display route if both locations are set
+        if (_selectedPickupCoords != null && _selectedDestinationCoords != null) {
+          _calculateAndDisplayRoute();
         }
       }
     } catch (e) {
@@ -598,6 +618,163 @@ class _PlanYourRideScreenState extends State<PlanYourRideScreen> {
     );
   }
 
+  Future<void> _calculateAndDisplayRoute() async {
+    // Check if we have both pickup and destination coordinates
+    if (_selectedPickupCoords == null || _selectedDestinationCoords == null) {
+      return;
+    }
+
+    try {
+      // Import DirectionService at the top level and use it here
+      final directions = await DirectionsService.getDirections(
+        origin: _selectedPickupCoords!,
+        destination: _selectedDestinationCoords!,
+      );
+
+      if (directions != null) {
+        // Decode the polyline points using google_polyline_algorithm
+        final polylinePoints = decodePolyline(directions.polylinePoints);
+        final List<LatLng> routeCoords = polylinePoints
+            .map((p) => LatLng(p[0].toDouble(), p[1].toDouble()))
+            .toList();
+        
+        // Create polyline
+        final polyline = Polyline(
+          polylineId: const PolylineId('route'),
+          points: routeCoords,
+          color: AppColors.primaryBlue,
+          width: 4,
+          startCap: Cap.roundCap,
+          endCap: Cap.roundCap,
+          jointType: JointType.round,
+          geodesic: true,
+        );
+
+        // Create custom markers for pickup and destination like in RouteMap
+        final pickupIcon = await CustomMarker.createPillMarker('Pickup');
+        final destinationIcon = await CustomMarker.createPillMarker('Drop');
+
+        final pickupMarker = Marker(
+          markerId: const MarkerId('pickup'),
+          position: _selectedPickupCoords!,
+          icon: pickupIcon,
+          infoWindow: InfoWindow(
+            title: 'Pickup Location',
+            snippet: _pickupController.text,
+          ),
+          anchor: const Offset(0.5, 1.0), // Bottom center for pill marker
+        );
+
+        final destinationMarker = Marker(
+          markerId: const MarkerId('destination'),
+          position: _selectedDestinationCoords!,
+          icon: destinationIcon,
+          infoWindow: InfoWindow(
+            title: 'Destination',
+            snippet: _destinationController.text,
+          ),
+          anchor: const Offset(0.5, 1.0), // Bottom center for pill marker
+        );
+
+        // Update the map with route and markers
+        if (mounted) {
+          setState(() {
+            _polylines.clear();
+            _polylines.add(polyline);
+            _markers.clear();
+            _markers.addAll([pickupMarker, destinationMarker]);
+          });
+
+          // Adjust camera to show entire route
+          _fitCameraToRoute(routeCoords);
+        }
+        
+        print('Route displayed with ${routeCoords.length} points');
+        print('Distance: ${directions.distance}, Duration: ${directions.duration}');
+      } else {
+        // Fallback to direct line if directions service fails
+        _showMarkersOnly();
+      }
+    } catch (e) {
+      print('Error calculating route: $e');
+      // Still show markers even if route calculation fails
+      _showMarkersOnly();
+    }
+  }
+
+  void _showMarkersOnly() async {
+    if (_selectedPickupCoords == null || _selectedDestinationCoords == null) {
+      return;
+    }
+
+    // Create custom markers for pickup and destination like in RouteMap
+    final pickupIcon = await CustomMarker.createPillMarker('Pickup here');
+    final destinationIcon = await CustomMarker.createPillMarker('Drop off here');
+
+    final pickupMarker = Marker(
+      markerId: const MarkerId('pickup'),
+      position: _selectedPickupCoords!,
+      icon: pickupIcon,
+      infoWindow: InfoWindow(
+        title: 'Pickup Location',
+        snippet: _pickupController.text,
+      ),
+      anchor: const Offset(0.5, 1.0), // Bottom center for pill marker
+    );
+
+    final destinationMarker = Marker(
+      markerId: const MarkerId('destination'),
+      position: _selectedDestinationCoords!,
+      icon: destinationIcon,
+      infoWindow: InfoWindow(
+        title: 'Destination',
+        snippet: _destinationController.text,
+      ),
+      anchor: const Offset(0.5, 1.0), // Bottom center for pill marker
+    );
+
+    if (mounted) {
+      setState(() {
+        _markers.clear();
+        _markers.addAll([pickupMarker, destinationMarker]);
+      });
+    }
+  }
+
+  void _fitCameraToRoute(List<LatLng> routeCoords) async {
+    if (routeCoords.isEmpty) return;
+
+    try {
+      final controller = await _mapController.future;
+      
+      // Calculate bounds
+      double minLat = routeCoords.first.latitude;
+      double maxLat = routeCoords.first.latitude;
+      double minLng = routeCoords.first.longitude;
+      double maxLng = routeCoords.first.longitude;
+
+      for (final coord in routeCoords) {
+        minLat = math.min(minLat, coord.latitude);
+        maxLat = math.max(maxLat, coord.latitude);
+        minLng = math.min(minLng, coord.longitude);
+        maxLng = math.max(maxLng, coord.longitude);
+      }
+
+      // Add padding
+      const padding = 0.01;
+      final bounds = LatLngBounds(
+        southwest: LatLng(minLat - padding, minLng - padding),
+        northeast: LatLng(maxLat + padding, maxLng + padding),
+      );
+
+      await controller.animateCamera(
+        CameraUpdate.newLatLngBounds(bounds, 100),
+      );
+    } catch (e) {
+      print('Error fitting camera to route: $e');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -620,6 +797,7 @@ class _PlanYourRideScreenState extends State<PlanYourRideScreen> {
                     // onTap: _onMapTap,
                     onCameraMove: _onCameraMove,
                     markers: _markers,
+                    polylines: _polylines,
                     initialCameraPosition: CameraPosition(
                       target: locationProvider.currentLocation != null
                           ? LatLng(
@@ -792,13 +970,13 @@ class _PlanYourRideScreenState extends State<PlanYourRideScreen> {
           // All buttons in a single column (right side)
           Positioned(
             right: AppDimensions.pageHorizontalPadding,
-            top: kToolbarHeight  ,
+            bottom: kToolbarHeight + 255  ,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 // Schedule button with text
                 Material(
-                  elevation: 4,
+                  elevation: 2,
                   borderRadius: BorderRadius.circular(12),
                   child: InkWell(
                     onTap: _toggleSchedule,
@@ -833,11 +1011,11 @@ class _PlanYourRideScreenState extends State<PlanYourRideScreen> {
                     ),
                   ),
                 ),
-                SizedBox(height: AppDimensions.subSectionSpacingDown * 2),
+                SizedBox(height: AppDimensions.widgetSpacing),
                 
                 // Ride type button with text
                 Material(
-                  elevation: 4,
+                  elevation: 2,
                   borderRadius: BorderRadius.circular(12),
                   child: InkWell(
                     onTap: _toggleRideType,
@@ -872,12 +1050,13 @@ class _PlanYourRideScreenState extends State<PlanYourRideScreen> {
                     ),
                   ),
                 ),
-                SizedBox(height: AppDimensions.subSectionSpacingDown * 2),
+                SizedBox(height: AppDimensions.widgetSpacing - 5),
 
                 FloatingActionButton(
                   heroTag: "focus_btn",
                   mini: true,
                   backgroundColor: AppColors.white,
+                  elevation: 2,
                   onPressed: _focusOnCurrentLocation,
                   child: Icon(Icons.my_location, color: AppColors.primaryBlue),
                 ),

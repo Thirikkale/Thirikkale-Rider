@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'dart:ui' as ui;
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:google_polyline_algorithm/google_polyline_algorithm.dart';
 import 'package:thirikkale_rider/core/services/direction_service.dart';
 import 'package:thirikkale_rider/core/utils/app_styles.dart';
+import 'package:thirikkale_rider/features/booking/models/custom_marker.dart';
 
 class RouteMap extends StatefulWidget {
   final String pickupAddress;
@@ -79,97 +79,11 @@ class _RouteMapState extends State<RouteMap> {
     }
   }
 
-  Future<BitmapDescriptor> _createCircleMarker(Color color, String text) async {
-    final recorder = ui.PictureRecorder();
-    final canvas = Canvas(recorder);
-    const size = 100.0;
-
-    final paint = Paint()
-      ..color = color
-      ..style = PaintingStyle.fill;
-    canvas.drawCircle(Offset(size / 2, size / 2), size / 2 - 2, paint);
-
-    final borderPaint = Paint()
-      ..color = Colors.white
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 4.0;
-    canvas.drawCircle(Offset(size / 2, size / 2), size / 2 - 2, borderPaint);
-
-    final textPainter = TextPainter(
-      text: TextSpan(
-        text: text,
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 25,
-          fontWeight: FontWeight.w900,
-        ),
-      ),
-      textDirection: TextDirection.ltr,
-    );
-
-    textPainter.layout();
-    textPainter.paint(
-      canvas,
-      Offset((size - textPainter.width) / 2, (size - textPainter.height) / 2),
-    );
-
-    final picture = recorder.endRecording();
-    final image = await picture.toImage(size.toInt(), size.toInt());
-    final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
-
-    return BitmapDescriptor.fromBytes(bytes!.buffer.asUint8List());
-  }
-
-  Future<BitmapDescriptor> _createSquareMarker(Color color, String text) async {
-    final recorder = ui.PictureRecorder();
-    final canvas = Canvas(recorder);
-    const size = 100.0;
-
-    final paint = Paint()
-      ..color = color
-      ..style = PaintingStyle.fill;
-    final rect = RRect.fromRectAndRadius(
-      Rect.fromLTWH(4, 4, size - 8, size - 8),
-      const Radius.circular(8),
-    );
-    canvas.drawRRect(rect, paint);
-
-    final borderPaint = Paint()
-      ..color = Colors.white
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 4.0;
-    canvas.drawRRect(rect, borderPaint);
-
-    final textPainter = TextPainter(
-      text: TextSpan(
-        text: text,
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 25,
-          fontWeight: FontWeight.w900,
-        ),
-      ),
-      textDirection: TextDirection.ltr,
-    );
-
-    textPainter.layout();
-    textPainter.paint(
-      canvas,
-      Offset((size - textPainter.width) / 2, (size - textPainter.height) / 2),
-    );
-
-    final picture = recorder.endRecording();
-    final image = await picture.toImage(size.toInt(), size.toInt());
-    final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
-
-    return BitmapDescriptor.fromBytes(bytes!.buffer.asUint8List());
-  }
-
   Future<void> _createMarkers() async {
     final markers = <Marker>{};
 
     if (widget.pickupLat != null && widget.pickupLng != null) {
-      final pickupIcon = await _createCircleMarker(AppColors.primaryBlue, 'P');
+      final pickupIcon = await CustomMarker.createPillMarker('Pickup here');
       markers.add(
         Marker(
           markerId: const MarkerId('pickup'),
@@ -179,24 +93,19 @@ class _RouteMapState extends State<RouteMap> {
             title: 'Pickup Location',
             snippet: widget.pickupAddress,
           ),
-          anchor: const Offset(0.5, 0.5),
+          anchor: const Offset(0.5, 1.0), // Bottom center for pill marker
         ),
       );
     }
 
     if (widget.destLat != null && widget.destLng != null) {
-      final destinationIcon =
-          await _createSquareMarker(AppColors.primaryBlue, 'D');
+      final destinationIcon = await CustomMarker.createPillMarker('Drop off here');
       markers.add(
         Marker(
           markerId: const MarkerId('destination'),
           position: LatLng(widget.destLat!, widget.destLng!),
           icon: destinationIcon,
-          infoWindow: InfoWindow(
-            title: 'Destination',
-            snippet: widget.destinationAddress,
-          ),
-          anchor: const Offset(0.5, 0.5),
+          anchor: const Offset(0.5, 1.0), // Bottom center for pill marker
         ),
       );
     }
