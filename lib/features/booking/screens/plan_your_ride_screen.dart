@@ -905,9 +905,9 @@ class _PlanYourRideScreenState extends State<PlanYourRideScreen> {
                   left: AppDimensions.pageHorizontalPadding,
                   right: AppDimensions.pageHorizontalPadding,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(
+                    padding: EdgeInsets.symmetric(
                       horizontal: AppDimensions.pageHorizontalPadding,
-                      vertical: 12,
+                      vertical: AppDimensions.subSectionSpacingDown/3 ,
                     ),
                     decoration: BoxDecoration(
                       color:

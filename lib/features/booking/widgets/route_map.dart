@@ -14,6 +14,7 @@ class RouteMap extends StatefulWidget {
   final double? destLat;
   final double? destLng;
   final double bottomPadding;
+  final bool showBackButton;
 
   const RouteMap({
     super.key,
@@ -24,6 +25,7 @@ class RouteMap extends StatefulWidget {
     this.destLat,
     this.destLng,
     this.bottomPadding = 0,
+    this.showBackButton = true,
   });
 
   @override
@@ -296,31 +298,33 @@ class _RouteMapState extends State<RouteMap> {
           zoomControlsEnabled: false,
           mapToolbarEnabled: false,
         ),
-        Positioned(
-          top: 16,
-          left: 16,
-          child: SafeArea(
-            child: Container(
-              decoration: BoxDecoration(
-                color: AppColors.white,
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.1),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: IconButton(
-                onPressed: () => Navigator.of(context).pop(),
-                icon: const Icon(Icons.arrow_back),
-                color: AppColors.textPrimary,
-                iconSize: 24,
+        // Back button (only show if showBackButton is true)
+        if (widget.showBackButton)
+          Positioned(
+            top: 16,
+            left: 16,
+            child: SafeArea(
+              child: Container(
+                decoration: BoxDecoration(
+                  color: AppColors.white,
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.1),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: IconButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  icon: const Icon(Icons.arrow_back),
+                  color: AppColors.textPrimary,
+                  iconSize: 24,
+                ),
               ),
             ),
           ),
-        ),
         Positioned(
           bottom: widget.bottomPadding + 20,
           right: 16,
