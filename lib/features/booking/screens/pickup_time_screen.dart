@@ -3,7 +3,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:thirikkale_rider/core/utils/app_styles.dart';
 import 'package:thirikkale_rider/core/utils/app_dimension.dart';
 import 'package:thirikkale_rider/widgets/common/custom_appbar_name.dart';
-import 'package:thirikkale_rider/features/booking/screens/ride_reservation_screen.dart';
+import 'package:thirikkale_rider/features/booking/screens/ride_summary_screen.dart';
 
 class PickupTimeScreen extends StatefulWidget {
   final String pickupAddress;
@@ -411,7 +411,7 @@ class _PickupTimeScreenState extends State<PickupTimeScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => RideReservationScreen(
+        builder: (context) => RideSummaryScreen(
           pickupAddress: widget.pickupAddress,
           destinationAddress: widget.destinationAddress,
           pickupLat: widget.pickupLat,

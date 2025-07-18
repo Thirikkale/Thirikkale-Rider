@@ -6,6 +6,7 @@ import 'package:thirikkale_rider/features/booking/widgets/Route_map.dart';
 import 'package:thirikkale_rider/features/booking/widgets/ride_options_bottom_sheet.dart';
 import 'package:thirikkale_rider/features/booking/widgets/payment_method_bottom_sheet.dart';
 import 'package:thirikkale_rider/features/booking/screens/pickup_time_screen.dart';
+import 'package:thirikkale_rider/features/booking/screens/ride_summary_screen.dart';
 
 class RideBookingScreen extends StatefulWidget {
   final String pickupAddress;
@@ -219,18 +220,23 @@ class _RideBookingScreenState extends State<RideBookingScreen> {
       }
 
       print('Proceeding with immediate ride booking');
-      // For immediate rides, proceed with booking
-      await bookingProvider.bookRide();
-
+      // For immediate rides, navigate to summary screen
       if (mounted) {
-        // Show success message
-        SnackbarHelper.showSuccessSnackBar(
+        Navigator.push(
           context,
-          'Ride booked successfully! Driver will arrive in ${bookingProvider.selectedVehicle?.estimatedTime ?? "a few minutes"}',
+          MaterialPageRoute(
+            builder: (context) => RideSummaryScreen(
+              pickupAddress: widget.pickupAddress,
+              destinationAddress: widget.destinationAddress,
+              pickupLat: widget.pickupLat,
+              pickupLng: widget.pickupLng,
+              destLat: widget.destLat,
+              destLng: widget.destLng,
+              scheduledDateTime: DateTime.now(), // For immediate rides, use current time
+              rideType: widget.initialRideType,
+            ),
+          ),
         );
-
-        // Navigate to tracking screen or go back
-        Navigator.pop(context);
       }
     } catch (e) {
       if (mounted) {

@@ -14,6 +14,7 @@ class RideBookingProvider extends ChangeNotifier {
   VehicleOption? _selectedVehicle;
   String _selectedPaymentMethod = 'cash';
   String _scheduleType = 'now';
+  DateTime? _scheduledDateTime;
 
   // Available options
   final List<VehicleOption> _vehicleOptions = VehicleOption.getDefaultOptions();
@@ -39,6 +40,7 @@ class RideBookingProvider extends ChangeNotifier {
   VehicleOption? get selectedVehicle => _selectedVehicle;
   String get selectedPaymentMethod => _selectedPaymentMethod;
   String get scheduleType => _scheduleType;
+  DateTime? get scheduledDateTime => _scheduledDateTime;
 
   List<VehicleOption> get vehicleOptions => _vehicleOptions;
 
@@ -158,6 +160,11 @@ class RideBookingProvider extends ChangeNotifier {
 
   void setScheduleType(String type) {
     _scheduleType = type;
+    notifyListeners();
+  }
+
+  void setScheduledDateTime(DateTime? dateTime) {
+    _scheduledDateTime = dateTime;
     notifyListeners();
   }
 
@@ -282,6 +289,7 @@ class RideBookingProvider extends ChangeNotifier {
     _selectedVehicle = null;
     _selectedPaymentMethod = 'cash';
     _scheduleType = 'now';
+    _scheduledDateTime = null;
     _isLoadingRoute = false;
     _isBookingRide = false;
     _estimatedDuration = null;
@@ -294,6 +302,7 @@ class RideBookingProvider extends ChangeNotifier {
     _selectedVehicle = null;
     _selectedPaymentMethod = 'cash';
     _scheduleType = 'now';
+    _scheduledDateTime = null;
     _estimatedPrice = null;
     notifyListeners();
   }
