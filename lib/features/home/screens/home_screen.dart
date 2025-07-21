@@ -8,6 +8,7 @@ import 'package:thirikkale_rider/widgets/common/section_header.dart';
 import 'package:thirikkale_rider/widgets/bottom_navbar.dart';
 import 'package:thirikkale_rider/features/services/screens/services_screen.dart';
 import 'package:thirikkale_rider/features/booking/screens/plan_your_ride_screen.dart';
+import 'package:thirikkale_rider/features/home/screens/ride_option_detail_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -65,19 +66,21 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  // Helper method to build explore option cards
-  List<Widget> _buildExploreCards(BuildContext context, List<Map<String, String>> options) {
-    final cards = <Widget>[];
-    
-    for (int i = 0; i < options.length; i++) {
-      final option = options[i];
-      
-      cards.add(
-        ExploreOptionCard(
+  // Helper method to navigate to RideOptionDetailScreen
+  void _navigateToRideDetail(BuildContext context, Map<String, String> option) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => RideOptionDetailScreen(
           image: option['image']!,
-          title: option['title']!,
+          title: option['detailTitle'] ?? option['title']!,
           subtitle: option['subtitle']!,
-          onTap: () {
+          description: option['description']!,
+          buttonText: option['buttonText']!,
+          onChooseOption: () {
+            // Navigate back and then to plan your ride
+            Navigator.pop(context);
+            
             // Map option titles to ride types
             String rideType = 'Solo'; // default
             if (option['title']!.contains('Shared')) {
@@ -91,6 +94,26 @@ class HomeScreen extends StatelessWidget {
             }
             
             _navigateToPlanYourRide(context, rideType);
+          },
+        ),
+      ),
+    );
+  }
+
+  // Helper method to build explore option cards
+  List<Widget> _buildExploreCards(BuildContext context, List<Map<String, String>> options) {
+    final cards = <Widget>[];
+    
+    for (int i = 0; i < options.length; i++) {
+      final option = options[i];
+      
+      cards.add(
+        ExploreOptionCard(
+          image: option['image']!,
+          title: option['title']!,
+          subtitle: option['subtitle']!,
+          onTap: () {
+            _navigateToRideDetail(context, option);
           },
         ),
       );
@@ -228,23 +251,7 @@ class HomeScreen extends StatelessWidget {
                             horizontal: AppDimensions.pageHorizontalPadding,
                           ),
                           scrollDirection: Axis.horizontal,
-                          children: [
-                            ExploreOptionCard(
-                              image: 'assets/images/option_cards/tuk_ride.png',
-                              title: 'Zip Through Traffic',
-                              subtitle:
-                                  'Your quickest way to get around the city',
-                              onTap: () => _navigateToPlanYourRide(context, 'Tuk'),
-                            ),
-                            const SizedBox(width: 16.0),
-                            ExploreOptionCard(
-                              image: 'assets/images/option_cards/rush_ride.png',
-                              title: 'Rush Hour Hero',
-                              subtitle:
-                                  'Your fastest route through city traffic',
-                              onTap: () => _navigateToPlanYourRide(context, 'Rush'),
-                            ),
-                          ],
+                          children: _buildExploreCards(context, beatTrafficOptions),
                         ),
                       ),
                     ],
