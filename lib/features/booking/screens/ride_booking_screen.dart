@@ -36,7 +36,7 @@ class RideBookingScreen extends StatefulWidget {
 
 class _RideBookingScreenState extends State<RideBookingScreen> {
   // Add a state variable to hold the sheet's current height in pixels
-  double _sheetHeight = 0;
+  double _sheetHeight =8;
 
   @override
   void initState() {

@@ -10,48 +10,181 @@ import 'package:thirikkale_rider/features/services/screens/services_screen.dart'
 import 'package:thirikkale_rider/features/booking/screens/plan_your_ride_screen.dart';
 import 'package:thirikkale_rider/features/home/screens/ride_option_detail_screen.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
-  // Explore Options Data
-  static const List<Map<String, String>> exploreOptions = [
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  int _selectedRideTypeIndex = 0; // 0 = Solo, 1 = Shared
+
+  // Solo ride options
+  static const List<Map<String, dynamic>> soloRideOptions = [
     {
-      'image': 'assets/images/option_cards/shared_ride.png',
-      'title': 'Shared Rides',
-      'subtitle': 'Split fares, reduce traffic congestion',
-      'detailTitle': 'Shared Rides',
-      'description': 'Join other riders going your way and split the cost. Shared rides are an eco-friendly and budget-friendly way to travel while meeting new people.',
-      'buttonText': 'Choose Shared',
+      'icon': 'assets/icons/vehicles/ride.png',
+      'title': 'Ride',
+      'rideType': 'Solo',
+      'isPromo': false,
     },
     {
-      'image': 'assets/images/option_cards/women_only.png',
+      'icon': 'assets/icons/vehicles/scheduledRide.png',
+      'title': 'Scheduled',
+      'rideType': 'Solo',
+      'schedule': 'Scheduled',
+      'isPromo': false,
+    },
+    {
+      'icon': 'assets/icons/vehicles/tuk.png',
+      'title': 'Tuk',
+      'rideType': 'Tuk',
+      'isPromo': true,
+    },
+    {
+      'icon': 'assets/icons/vehicles/rush.png',
+      'title': 'Rush',
+      'rideType': 'Rush',
+      'isPromo': false,
+    },
+    {
+      'icon': 'assets/icons/vehicles/primeRide.png',
+      'title': 'Prime',
+      'rideType': 'Prime',
+      'isPromo': false,
+    },
+  ];
+
+  // Shared ride options
+  static const List<Map<String, dynamic>> sharedRideOptions = [
+    {
+      'icon': 'assets/icons/vehicles/shared_car.png',
+      'title': 'Shared',
+      'rideType': 'Shared',
+      'isPromo': false,
+    },
+    {
+      'icon': 'assets/icons/vehicles/scheduledRide.png',
+      'title': 'Scheduled',
+      'rideType': 'Shared',
+      'schedule': 'Scheduled',
+      'isPromo': false,
+    },
+    {
+      'icon': 'assets/icons/vehicles/squad.png',
+      'title': 'Squad',
+      'rideType': 'Squad',
+      'isPromo': false,
+    },
+    {
+      'icon': 'assets/icons/vehicles/ride.png',
       'title': 'Women Only',
-      'subtitle': 'Ride comfortably',
-      'detailTitle': 'Women Only',
-      'description': 'Travel with peace of mind in our women-only rides. Safe, comfortable, and secure transportation designed specifically for women.',
+      'rideType': 'Women Only',
+      'isPromo': false,
+    },
+  ];
+
+  // Get current ride options based on selected tab
+  List<Map<String, dynamic>> get _currentRideOptions {
+    return _selectedRideTypeIndex == 0 ? soloRideOptions : sharedRideOptions;
+  }
+
+  // Method to handle tab change
+  void _onRideTypeChanged(int index) {
+    setState(() {
+      _selectedRideTypeIndex = index;
+    });
+  }
+
+  // Solo Explore Options Data
+  static const List<Map<String, String>> soloExploreOptions = [
+    {
+      'image': 'assets/images/option_cards/solo_ride.png',
+      'title': 'Standard Ride',
+      'subtitle': 'Affordable everyday rides',
+      'detailTitle': 'Standard Solo Ride',
+      'description': 'Comfortable and reliable rides for your daily transportation needs. Available now or schedule for later. Perfect for short to medium distance trips.',
+      'buttonText': 'Choose Standard',
+    },
+    {
+      'image': 'assets/images/option_cards/solo_prime.png',
+      'title': 'Prime',
+      'subtitle': 'Premium cars with top drivers',
+      'detailTitle': 'Prime Solo Experience',
+      'description': 'Premium vehicles with highly-rated professional drivers. Scheduled rides available. Perfect for business meetings, airport transfers, and special occasions.',
+      'buttonText': 'Choose Prime',
+    },
+  ];
+
+  // Shared Explore Options Data
+  static const List<Map<String, String>> sharedExploreOptions = [
+    {
+      'image': 'assets/images/option_cards/shared_ride.png',
+      'title': 'Shared Ride',
+      'subtitle': 'Split fare with other riders',
+      'detailTitle': 'Shared Ride Service',
+      'description': 'Share your ride with others going in the same direction and split the cost. Scheduled rides available for regular commutes. Eco-friendly and budget-friendly option.',
+      'buttonText': 'Join Shared',
+    },
+    {
+      'image': 'assets/images/option_cards/shared_women.png',
+      'title': 'Women Only',
+      'subtitle': 'Safe rides for women passengers',
+      'detailTitle': 'Women Only Shared Ride',
+      'description': 'Shared rides exclusively for women passengers with female or verified drivers. Scheduled options available for regular commutes. Safe and comfortable environment.',
       'buttonText': 'Choose Women Only',
     },
   ];
 
-  // Beat the Traffic Data
-  static const List<Map<String, String>> beatTrafficOptions = [
+  // Solo Beat the Traffic Data
+  static const List<Map<String, String>> soloBeatTrafficOptions = [
     {
-      'image': 'assets/images/option_cards/tuk_ride.png',
-      'title': 'Zip Through Traffic',
-      'subtitle': 'Your quickest way to get around the city',
-      'detailTitle': 'Ride in an Tuk',
-      'description': 'With Thirikkale Tuk, a driver will pick you up at your doorstep and take you, in a tuk, wherever you want to go in your city. Estimated prices are displayed up front.',
-      'buttonText': 'Choose Tuk',
-    },
-    {
-      'image': 'assets/images/option_cards/rush_ride.png',
-      'title': 'Rush Hour Hero',
-      'subtitle': 'Your fastest route through city traffic',
-      'detailTitle': 'Rush Hour Hero',
-      'description': 'Beat the rush hour traffic with our special rush hour service. Get priority routes and faster pickup times when you need it most.',
+      'image': 'assets/images/option_cards/solo_rush.png',
+      'title': 'Rush',
+      'subtitle': 'Fast routes during peak hours',
+      'detailTitle': 'Rush Solo Service',
+      'description': 'Priority rides with optimized routes during rush hours. Higher fare but guaranteed faster arrival times. Scheduled rides available for regular office commutes.',
       'buttonText': 'Choose Rush',
     },
+    {
+      'image': 'assets/images/option_cards/solo_tuk.png',
+      'title': 'Tuk',
+      'subtitle': 'Quick and affordable three-wheeler',
+      'detailTitle': 'Tuk Solo Ride',
+      'description': 'Fast and economical three-wheeler rides perfect for navigating through traffic. Instant booking available. Great for short trips and quick errands.',
+      'buttonText': 'Choose Tuk',
+    },
   ];
+
+  // Shared Beat the Traffic Data
+  static const List<Map<String, String>> sharedBeatTrafficOptions = [
+    {
+      'image': 'assets/images/option_cards/shared_squad.png',
+      'title': 'Squad',
+      'subtitle': 'Large group sharing (4-6 people)',
+      'detailTitle': 'Squad Shared Ride',
+      'description': 'Larger vehicles for group travel with 4-6 passengers. Perfect for office teams, friends, or family groups. Scheduled rides available for regular group commutes.',
+      'buttonText': 'Book Squad',
+    },
+    {
+      'image': 'assets/images/option_cards/shared_scheduled.png',
+      'title': 'Scheduled',
+      'subtitle': 'Pre-planned shared rides',
+      'detailTitle': 'Scheduled Shared Ride',
+      'description': 'Book shared rides in advance for your regular commutes. Perfect for daily office trips with cost-effective shared transportation. Plan your rides ahead of time.',
+      'buttonText': 'Schedule Ride',
+    },
+  ];
+
+  // Get current explore options based on selected tab
+  List<Map<String, String>> get _currentExploreOptions {
+    return _selectedRideTypeIndex == 0 ? soloExploreOptions : sharedExploreOptions;
+  }
+
+  // Get current beat traffic options based on selected tab
+  List<Map<String, String>> get _currentBeatTrafficOptions {
+    return _selectedRideTypeIndex == 0 ? soloBeatTrafficOptions : sharedBeatTrafficOptions;
+  }
 
   // Helper method to navigate to PlanYourRideScreen with parameters
   void _navigateToPlanYourRide(BuildContext context, String rideType, {String? schedule}) {
@@ -81,16 +214,22 @@ class HomeScreen extends StatelessWidget {
             // Navigate back and then to plan your ride
             Navigator.pop(context);
             
-            // Map option titles to ride types
-            String rideType = 'Solo'; // default
-            if (option['title']!.contains('Shared')) {
+            // Map option titles to ride types based on current tab
+            String rideType;
+            if (_selectedRideTypeIndex == 1) {
+              // If on shared tab, always use 'Shared' as ride type
               rideType = 'Shared';
-            } else if (option['title']!.contains('Women')) {
-              rideType = 'Women Only';
-            } else if (option['title']!.contains('Rush')) {
-              rideType = 'Rush';
-            } else if (option['title']!.contains('Tuk')) {
-              rideType = 'Tuk';
+            } else {
+              // If on solo tab, map specific ride types
+              if (option['title']!.contains('Prime')) {
+                rideType = 'Prime';
+              } else if (option['title']!.contains('Rush')) {
+                rideType = 'Rush';
+              } else if (option['title']!.contains('Tuk')) {
+                rideType = 'Tuk';
+              } else {
+                rideType = 'Solo'; // default for solo tab
+              }
             }
             
             _navigateToPlanYourRide(context, rideType);
@@ -134,7 +273,10 @@ class HomeScreen extends StatelessWidget {
       body: SafeArea(
         child: Column(
           children: [
-            const RideTypeTabs(),
+            RideTypeTabs(
+              initialSelectedIndex: _selectedRideTypeIndex,
+              onTabChanged: _onRideTypeChanged,
+            ),
 
             Expanded(
               child: SingleChildScrollView(
@@ -177,37 +319,26 @@ class HomeScreen extends StatelessWidget {
                       // Quick ride options
                       SizedBox(
                         height: 120,
-                        child: ListView(
+                        child: ListView.separated(
                           padding: const EdgeInsets.symmetric(
                             horizontal: AppDimensions.pageHorizontalPadding,
                           ),
                           scrollDirection: Axis.horizontal,
-                          children: [
-                            RideOptionCard(
-                              icon: 'assets/icons/vehicles/tuk.png',
-                              title: 'Tuk',
-                              isPromo: true,
-                              onTap: () => _navigateToPlanYourRide(context, 'Tuk'),
-                            ),
-                            const SizedBox(width: 16),
-                            RideOptionCard(
-                              icon: 'assets/icons/vehicles/scheduledRide.png',
-                              title: 'Scheduled',
-                              onTap: () => _navigateToPlanYourRide(context, 'Solo', schedule: 'Scheduled'),
-                            ),
-                            const SizedBox(width: 16),
-                            RideOptionCard(
-                              icon: 'assets/icons/vehicles/ride.png',
-                              title: 'Ride',
-                              onTap: () => _navigateToPlanYourRide(context, 'Solo'),
-                            ),
-                            const SizedBox(width: 16),
-                            RideOptionCard(
-                              icon: 'assets/icons/vehicles/rush.png',
-                              title: 'Rush',
-                              onTap: () => _navigateToPlanYourRide(context, 'Rush'),
-                            ),
-                          ],
+                          itemCount: _currentRideOptions.length,
+                          separatorBuilder: (context, index) => const SizedBox(width: 16),
+                          itemBuilder: (context, index) {
+                            final option = _currentRideOptions[index];
+                            return RideOptionCard(
+                              icon: option['icon'],
+                              title: option['title'],
+                              isPromo: option['isPromo'] ?? false,
+                              onTap: () => _navigateToPlanYourRide(
+                                context,
+                                option['rideType'],
+                                schedule: option['schedule'],
+                              ),
+                            );
+                          },
                         ),
                       ),
 
@@ -229,7 +360,7 @@ class HomeScreen extends StatelessWidget {
                             horizontal: AppDimensions.pageHorizontalPadding,
                           ),
                           scrollDirection: Axis.horizontal,
-                          children: _buildExploreCards(context, exploreOptions),
+                          children: _buildExploreCards(context, _currentExploreOptions),
                         ),
                       ),
 
@@ -251,7 +382,7 @@ class HomeScreen extends StatelessWidget {
                             horizontal: AppDimensions.pageHorizontalPadding,
                           ),
                           scrollDirection: Axis.horizontal,
-                          children: _buildExploreCards(context, beatTrafficOptions),
+                          children: _buildExploreCards(context, _currentBeatTrafficOptions),
                         ),
                       ),
                     ],
