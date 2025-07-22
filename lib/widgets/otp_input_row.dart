@@ -22,6 +22,7 @@ class OtpInputRow extends StatelessWidget {
             maxLength: 1,
             style: AppTextStyles.heading3,
             decoration: InputDecoration(
+              contentPadding: EdgeInsets.zero,
               counterText: '',
               filled: true,
               fillColor: AppColors.lightGrey,
