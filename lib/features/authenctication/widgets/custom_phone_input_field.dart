@@ -30,6 +30,7 @@ class _CustomPhoneInputFieldState extends State<CustomPhoneInputField> {
       validator: widget.validator,
       keyboardType: TextInputType.phone,
       cursorColor: AppColors.primaryBlue,
+      style: const TextStyle(fontWeight: FontWeight.w600),
       onChanged: (value) {
         // Extract clean number and pass it to parent
         if (widget.onChanged != null) {
@@ -51,10 +52,16 @@ class _CustomPhoneInputFieldState extends State<CustomPhoneInputField> {
           fontWeight: FontWeight.w500,
         ),
         labelText: widget.label,
-        labelStyle: const TextStyle(color: AppColors.grey),
+        labelStyle: const TextStyle(
+          color: AppColors.grey,
+          fontWeight: FontWeight.w500,
+        ),
         floatingLabelStyle: const TextStyle(color: AppColors.primaryBlue),
         hintText: 'Enter your phone number',
-        hintStyle: const TextStyle(color: AppColors.grey),
+        hintStyle: const TextStyle(
+          color: AppColors.grey,
+          fontWeight: FontWeight.w500,
+        ),
         border: const OutlineInputBorder(
           borderRadius: BorderRadius.all(Radius.circular(8)),
         ),

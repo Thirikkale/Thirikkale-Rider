@@ -17,9 +17,10 @@ class _TermsAndPrivacyScreenState extends State<TermsAndPrivacyScreen> {
   bool _isAgreed = false;
 
   void _navigateToNextScreen() {
-    Navigator.of(
-      context,
-    ).push(NoAnimationPageRoute(builder: (context) => const HomeScreen()));
+    Navigator.of(context).pushAndRemoveUntil(
+      NoAnimationPageRoute(builder: (context) => const HomeScreen()),
+      (route) => false,
+    );
   }
 
   @override
@@ -37,7 +38,7 @@ class _TermsAndPrivacyScreenState extends State<TermsAndPrivacyScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(height: 24),
+              const SizedBox(height: 14),
               // Title
               const Text(
                 "Accept Thirikkale's Terms & Review Privacy Notice",
