@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:thirikkale_rider/config/routes.dart';
+import 'package:thirikkale_rider/core/providers/auth_provider.dart';
 import 'package:thirikkale_rider/core/utils/app_dimension.dart';
 import 'package:thirikkale_rider/features/account/screens/settings/settings_screens.dart';
 import 'package:thirikkale_rider/features/account/widgets/account_info_tile.dart';
@@ -6,9 +9,14 @@ import 'package:thirikkale_rider/features/account/widgets/sign_out_btn.dart';
 import 'package:thirikkale_rider/widgets/common/custom_appbar_name.dart';
 import 'package:thirikkale_rider/widgets/common/section_subheader.dart';
 
-class SettingsScreen extends StatelessWidget {
+class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
 
+  @override
+  State<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -87,8 +95,8 @@ class SettingsScreen extends StatelessWidget {
               ),
 
               const SizedBox(height: AppDimensions.subSectionSpacing),
-              
-              SectionSubheader(title: "Safety Setting"),           
+
+              SectionSubheader(title: "Safety Setting"),
 
               AccountInfoTile(
                 icon: Icons.shield_outlined,
@@ -134,10 +142,47 @@ class SettingsScreen extends StatelessWidget {
               const SizedBox(height: AppDimensions.sectionSpacing),
 
               Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 5,
+                padding: const EdgeInsets.symmetric(horizontal: 5),
+                child: SignOutBtn(
+                  onPressed: () async {
+                    final shouldLogout = await showDialog<bool>(
+                      context: context,
+                      builder:
+                          (context) => AlertDialog(
+                            title: const Text("Confirm Logout"),
+                            content: const Text(
+                              "Are you sure you want to sign out?",
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(context, false),
+                                child: const Text("Cancel"),
+                              ),
+                              TextButton(
+                                onPressed: () => Navigator.pop(context, true),
+                                child: const Text("Sign Out"),
+                              ),
+                            ],
+                          ),
+                    );
+
+                    if (shouldLogout == true) {
+                      if (!context.mounted) return;
+                      final authProvider = Provider.of<AuthProvider>(
+                        context,
+                        listen: false,
+                      );
+                      await authProvider.logout();
+                      if (!context.mounted) return;
+
+                      Navigator.pushNamedAndRemoveUntil(
+                        context,
+                        AppRoutes.initial,
+                        (route) => false,
+                      );
+                    }
+                  },
                 ),
-                child: SignOutBtn(onPressed: () {}),
               ),
             ],
           ),
