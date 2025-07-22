@@ -6,6 +6,7 @@ import 'package:thirikkale_rider/core/utils/app_dimension.dart';
 import 'package:thirikkale_rider/core/utils/snackbar_helper.dart';
 import 'package:thirikkale_rider/widgets/common/custom_appbar_name.dart';
 import 'package:thirikkale_rider/features/booking/widgets/route_map.dart';
+import 'package:thirikkale_rider/features/booking/screens/ride_tracking_screen.dart';
 
 class RideSummaryScreen extends StatefulWidget {
   final String pickupAddress;
@@ -464,19 +465,26 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
       await bookingProvider.bookRide();
 
       if (mounted) {
-        final now = DateTime.now();
-        final isImmediate = widget.scheduledDateTime.difference(now).inMinutes < 5;
+        final selectedVehicle = bookingProvider.selectedVehicle;
+        final estimatedPrice = (selectedVehicle?.price ?? 0).toInt();
         
-        // Show success message
-        SnackbarHelper.showSuccessSnackBar(
+        // Navigate to ride tracking screen
+        Navigator.pushReplacement(
           context,
-          isImmediate 
-            ? 'Ride booked successfully! Driver will arrive in ${bookingProvider.selectedVehicle?.estimatedTime ?? "a few minutes"}'
-            : 'Ride scheduled successfully! You will receive a confirmation shortly.',
+          MaterialPageRoute(
+            builder: (context) => RideTrackingScreen(
+              pickupAddress: widget.pickupAddress,
+              destinationAddress: widget.destinationAddress,
+              pickupLat: widget.pickupLat,
+              pickupLng: widget.pickupLng,
+              destLat: widget.destLat,
+              destLng: widget.destLng,
+              scheduledDateTime: widget.scheduledDateTime,
+              rideType: widget.rideType,
+              estimatedPrice: estimatedPrice,
+            ),
+          ),
         );
-
-        // Navigate back to the main screen
-        Navigator.of(context).popUntil((route) => route.isFirst);
       }
     } catch (e) {
       if (mounted) {
