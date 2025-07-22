@@ -6,14 +6,17 @@ import 'package:thirikkale_rider/core/utils/navigation_utils.dart';
 import 'package:thirikkale_rider/core/utils/snackbar_helper.dart';
 import 'package:thirikkale_rider/features/authenctication/screens/name_registration_screen.dart';
 import 'package:thirikkale_rider/features/authenctication/widgets/sign_navigation_button_row.dart';
+import 'package:thirikkale_rider/features/home/screens/home_screen.dart';
 import 'package:thirikkale_rider/widgets/common/custom_appbar.dart';
 import 'package:thirikkale_rider/widgets/otp_input_row.dart';
 
 class OtpVerificationScreen extends StatefulWidget {
+  final String verificationId;
   final String phoneNumber;
 
   const OtpVerificationScreen({
     super.key,
+    required this.verificationId,
     required this.phoneNumber,
   });
 
@@ -89,41 +92,70 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
     return _otpControllers.every((controller) => controller.text.isNotEmpty);
   }
 
-  // Verify OTP
-  void _verifyOtp() async {
-    if (!_isFormValid) return;
+  // Get OTP code from controllers
+  String get _otpCode {
+    return _otpControllers.map((controller) => controller.text).join();
+  }
 
-    final otp = _otpControllers.map((c) => c.text).join();
+  // Verify OTP
+  void _verifyOTP() async {
+    if (!_isFormValid) {
+      SnackbarHelper.showErrorSnackBar(
+        context,
+        "Please enter the complete verification code",
+      );
+      return;
+    }
+
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
-    final success = await authProvider.verifyOTP(otp);
+    // First verify the OTP
+    final verified = await authProvider.verifyOTP(
+      widget.verificationId,
+      _otpCode,
+    );
 
-    if (success && mounted) {
-      // OTP verified successfully, now check if user exists in backend
-      final userExists = await authProvider.checkUserExists();
-      
-      if (mounted) {
-        if (userExists) {
-          // User exists and is logged in, navigate to main app
-          Navigator.pushNamedAndRemoveUntil(
+    // Check if widget is still mounted before using context
+    if (!mounted) return;
+
+    if (verified) {
+      // Now check user registration status
+      final statusResult = await authProvider.checkUserRegistrationStatus();
+
+      // Check if widget is still mounted before using context
+      if (!mounted) return;
+
+      if (statusResult['success'] == true) {
+        if (statusResult['isAutoLogin'] == true) {
+          // Existing user with complete profile
+          final firstName = authProvider.firstName ?? 'Rider';
+
+          SnackbarHelper.showSuccessSnackBar(
             context,
-            '/home',
+            'Welcome back, $firstName!',
+          );
+
+          Navigator.of(context).pushAndRemoveUntil(
+            NoAnimationPageRoute(builder: (context) => HomeScreen()),
             (route) => false,
           );
         } else {
-          // User needs to register, navigate to name registration
           Navigator.of(context).push(
             NoAnimationPageRoute(
               builder: (context) => const NameRegistrationScreen(),
             ),
           );
         }
+      } else {
+        SnackbarHelper.showErrorSnackBar(
+          context,
+          statusResult['error'] ?? 'Failed to check registration status',
+        );
       }
-    } else if (mounted) {
-      // Show error message
+    } else {
       SnackbarHelper.showErrorSnackBar(
         context,
-        authProvider.errorMessage ?? 'Verification failed',
+        authProvider.errorMessage ?? 'Invalid verification code',
       );
     }
   }
@@ -184,7 +216,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
 
                 return SignNavigationButtonRow(
                   onBack: () => Navigator.pop(context),
-                  onNext: _isFormValid ? _verifyOtp : null,
+                  onNext: _isFormValid ? _verifyOTP : null,
                   nextEnabled: _isFormValid && !authProvider.isLoading,
                 );
               },

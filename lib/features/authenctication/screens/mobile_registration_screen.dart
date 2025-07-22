@@ -19,6 +19,8 @@ class MobileRegistrationScreen extends StatefulWidget {
 class _MobileRegistrationScreenState extends State<MobileRegistrationScreen> {
   final TextEditingController _phoneController = TextEditingController();
   String _cleanPhoneNumber = '';
+  // ignore: unused_field
+  bool _isLocalLoading = false;
 
   String? _validatePhoneNumber(String? value) {
     if (_cleanPhoneNumber.isEmpty) {
@@ -48,31 +50,62 @@ class _MobileRegistrationScreenState extends State<MobileRegistrationScreen> {
       return;
     }
 
-    final fullNumber = '+94${_phoneController.text}';
+    // Start local loading
+    setState(() {
+      _isLocalLoading = true;
+    });
+
+    final fullNumber = '+94 ${_phoneController.text}';
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
-    await authProvider.sendOTP(
-      phoneNumber: fullNumber,
-      onCodeSent: (verificationId, resendToken) {
-        if (mounted) {
-          Navigator.of(context).push(
-            NoAnimationPageRoute(
-              builder: (context) => OtpVerificationScreen(
-                phoneNumber: fullNumber,
+    try {
+      await authProvider.sendOTP(
+        phoneNumber: fullNumber,
+        onCodeSent: (verificationId, resendToken) {
+          setState(() {
+            _isLocalLoading = false; // Stop local loading
+          });
+
+          if (mounted) {
+            // Set the verified phone number in provider
+            authProvider.setVerifiedPhoneNumber(fullNumber);
+
+            Navigator.of(context).push(
+              NoAnimationPageRoute(
+                builder:
+                    (context) => OtpVerificationScreen(
+                      verificationId: verificationId,
+                      phoneNumber: fullNumber,
+                    ),
               ),
-            ),
-          );
-        }
-      },
-      onVerificationFailed: (error) {
-        if (mounted) {
-          SnackbarHelper.showErrorSnackBar(
-            context,
-            "Verification failed: ${error.message}",
-          );
-        }
-      },
-    );
+            );
+          }
+        },
+        onVerificationFailed: (error) {
+          setState(() {
+            _isLocalLoading = false; // Stop local loading
+          });
+
+          if (mounted) {
+            SnackbarHelper.showErrorSnackBar(
+              context,
+              "Verification failed: ${error.message}",
+            );
+          }
+        },
+      );
+    } catch (e) {
+      setState(() {
+        _isLocalLoading = false;
+      });
+
+      if (mounted) {
+        SnackbarHelper.showErrorSnackBar(
+          context,
+          "An error occurred. Please try again.",
+        );
+      }
+    }
   }
 
   @override
@@ -121,7 +154,7 @@ class _MobileRegistrationScreenState extends State<MobileRegistrationScreen> {
                       validator: _validatePhoneNumber,
                       onChanged: (cleanNumber) {
                         setState(() {
-                          _cleanPhoneNumber = cleanNumber; 
+                          _cleanPhoneNumber = cleanNumber;
                           print('Phone number changed: +94$cleanNumber');
                           // Store clean number
                         });

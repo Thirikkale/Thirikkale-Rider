@@ -1,4 +1,7 @@
+import 'dart:convert';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:http/http.dart' as http;
+import 'package:thirikkale_rider/core/config/api_config.dart';
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -93,5 +96,75 @@ class AuthService {
   Future<bool> isPhoneNumberValid(String phoneNumber) async {
     // You can add additional phone number validation logic here
     return phoneNumber.isNotEmpty && phoneNumber.startsWith('+');
+  }
+
+  // Refresh JWT token using refresh token
+  Future<Map<String, dynamic>> refreshToken(String refreshToken) async {
+    try {
+      print('🔄 Refreshing JWT token...');
+
+      final response = await http
+          .post(
+            Uri.parse(ApiConfig.refreshToken),
+            headers: ApiConfig.defaultHeaders,
+            body: jsonEncode({'refreshToken': refreshToken}),
+          )
+          .timeout(const Duration(seconds: 30));
+
+      print('📨 Refresh token response status: ${response.statusCode}');
+      print('📄 Refresh token response body: ${response.body}');
+
+      final responseData = jsonDecode(response.body);
+
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        return {'success': true, 'data': responseData};
+      } else {
+        return {
+          'success': false,
+          'error': responseData['message'] ?? 'Token refresh failed',
+          'statusCode': response.statusCode,
+        };
+      }
+    } catch (e) {
+      print('❌ Token refresh error: $e');
+      return {'success': false, 'error': 'Token refresh failed: $e'};
+    }
+  }
+
+  // Logout and clear tokens
+  Future<Map<String, dynamic>> logout(String accessToken) async {
+    try {
+      print('🚪 Logging out...');
+
+      final response = await http
+          .post(
+            Uri.parse(ApiConfig.logout),
+            headers: {
+              ...ApiConfig.defaultHeaders,
+              'Authorization': 'Bearer $accessToken',
+            },
+          )
+          .timeout(const Duration(seconds: 30));
+
+      print('📨 Logout response status: ${response.statusCode}');
+
+      // Sign out from Firebase as well
+      await _auth.signOut();
+
+      return {
+        'success': response.statusCode >= 200 && response.statusCode < 300,
+        'message': 'Logged out successfully',
+      };
+    } catch (e) {
+      print('❌ Logout error: $e');
+      // Still sign out from Firebase even if backend call fails
+      await _auth.signOut();
+      return {'success': true, 'message': 'Logged out locally'};
+    }
+  }
+
+  // Sign out from Firebase
+  Future<void> signOut() async {
+    await _auth.signOut();
   }
 }

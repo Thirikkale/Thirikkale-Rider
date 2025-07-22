@@ -1,6 +1,8 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:provider/provider.dart';
+import 'package:thirikkale_rider/core/providers/auth_provider.dart';
 import 'package:thirikkale_rider/core/utils/app_styles.dart';
 import 'package:thirikkale_rider/core/utils/navigation_utils.dart';
 import 'package:thirikkale_rider/core/utils/snackbar_helper.dart';
@@ -21,6 +23,7 @@ class PhotoVerificationScreen extends StatefulWidget {
 class _PhotoVerificationScreenState extends State<PhotoVerificationScreen> {
   bool _cameraPermissionGranted = false;
   File? _capturedImage;
+  bool _isUploading = false;
 
   @override
   void initState() {
@@ -41,23 +44,249 @@ class _PhotoVerificationScreenState extends State<PhotoVerificationScreen> {
       if (!_cameraPermissionGranted) return;
     }
 
-    // Navigate to full-screen camera and wait for the result
-    final File? imageFile = await Navigator.of(context).push<File>(
-      MaterialPageRoute(builder: (context) => const FullScreenCameraPage()),
-    );
+    if (!mounted) return;
 
-    // If a photo was captured, update the state
-    if (imageFile != null && mounted) {
-      setState(() {
-        _capturedImage = imageFile;
-      });
+    try {
+      // Navigate to full-screen camera and wait for the result
+      final File? imageFile = await Navigator.of(context).push<File>(
+        MaterialPageRoute(builder: (context) => const FullScreenCameraPage()),
+      );
+
+      // If a photo was captured, update the state
+      if (imageFile != null && mounted) {
+        setState(() {
+          _capturedImage = imageFile;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        SnackbarHelper.showErrorSnackBar(context, "Failed to open camera: $e");
+      }
+    }
+  }
+
+  Future<void> _uploadPhoto() async {
+    if (_capturedImage == null) {
+      SnackbarHelper.showErrorSnackBar(context, "Please take a photo first");
+      return;
+    }
+
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+
+    setState(() {
+      _isUploading = true;
+    });
+
+    try {
+      // Try to upload for gender detection first
+      final result = await authProvider.uploadGenderDetection(_capturedImage!);
+
+      if (!mounted) return;
+
+      if (result['success'] == true) {
+        SnackbarHelper.showSuccessSnackBar(
+          context,
+          "Photo uploaded successfully!",
+        );
+        _navigateToNextScreen();
+      } else {
+        // If gender detection fails, try profile photo upload as fallback
+        final profileResult = await authProvider.uploadProfilePhoto(
+          _capturedImage!,
+        );
+
+        if (profileResult['success'] == true) {
+          SnackbarHelper.showSuccessSnackBar(
+            context,
+            "Profile photo uploaded successfully!",
+          );
+          _navigateToNextScreen();
+        } else {
+          throw Exception(
+            result['error'] ?? profileResult['error'] ?? 'Upload failed',
+          );
+        }
+      }
+    } catch (e) {
+      if (!mounted) return;
+
+      print('❌ Upload error: $e');
+      SnackbarHelper.showErrorSnackBar(
+        context,
+        "Upload failed. Please try again or continue without uploading.",
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isUploading = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _skipPhotoUpload() async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+
+    setState(() {
+      _isUploading = true;
+    });
+
+    try {
+      final result = await authProvider.skipGenderDetection();
+
+      if (!mounted) return;
+
+      // Handle both success and empty response cases
+      if (result['success'] == true || result.isEmpty) {
+        SnackbarHelper.showInfoSnackBar(
+          context,
+          "You can add your profile photo later from account settings",
+        );
+        _navigateToNextScreen();
+      } else {
+        throw Exception(result['error'] ?? 'Failed to skip photo upload');
+      }
+    } catch (e) {
+      if (!mounted) return;
+
+      print('❌ Skip error: $e');
+      // If skip fails, still allow user to continue
+      SnackbarHelper.showInfoSnackBar(
+        context,
+        "Continuing without photo verification",
+      );
+      _navigateToNextScreen();
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isUploading = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _uploadProfilePhoto() async {
+    if (_capturedImage == null) {
+      SnackbarHelper.showErrorSnackBar(context, "Please take a photo first");
+      return;
+    }
+
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+
+    setState(() {
+      _isUploading = true;
+    });
+
+    try {
+      final result = await authProvider.uploadProfilePhoto(_capturedImage!);
+
+      if (!mounted) return;
+
+      if (result['success'] == true) {
+        SnackbarHelper.showSuccessSnackBar(
+          context,
+          "Profile photo uploaded successfully!",
+        );
+        _navigateToNextScreen();
+      } else {
+        throw Exception(result['error'] ?? 'Upload failed');
+      }
+    } catch (e) {
+      if (!mounted) return;
+
+      print('❌ Profile photo upload error: $e');
+      SnackbarHelper.showErrorSnackBar(context, "Upload failed: $e");
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isUploading = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _uploadForGenderDetection() async {
+    if (_capturedImage == null) {
+      SnackbarHelper.showErrorSnackBar(context, "Please take a photo first");
+      return;
+    }
+
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+
+    setState(() {
+      _isUploading = true;
+    });
+
+    try {
+      final result = await authProvider.uploadGenderDetection(_capturedImage!);
+
+      if (!mounted) return;
+
+      if (result['success'] == true) {
+        SnackbarHelper.showSuccessSnackBar(
+          context,
+          "Photo verification completed!",
+        );
+        _navigateToNextScreen();
+      } else {
+        throw Exception(result['error'] ?? 'Gender detection failed');
+      }
+    } catch (e) {
+      if (!mounted) return;
+
+      print('❌ Gender detection error: $e');
+      SnackbarHelper.showErrorSnackBar(context, "Verification failed: $e");
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isUploading = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _skipGenderDetection() async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+
+    setState(() {
+      _isUploading = true;
+    });
+
+    try {
+      final result = await authProvider.skipGenderDetection();
+
+      if (!mounted) return;
+
+      // Handle both success and empty response cases
+      if (result['success'] == true || result.isEmpty) {
+        SnackbarHelper.showInfoSnackBar(
+          context,
+          "You can add your profile photo later from account settings",
+        );
+        _navigateToNextScreen();
+      } else {
+        throw Exception(result['error'] ?? 'Failed to skip gender detection');
+      }
+    } catch (e) {
+      if (!mounted) return;
+
+      print('❌ Skip gender detection error: $e');
+      // Allow user to continue even if skip fails
+      SnackbarHelper.showInfoSnackBar(
+        context,
+        "Continuing without photo verification",
+      );
+      _navigateToNextScreen();
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isUploading = false;
+        });
+      }
     }
   }
 
   void _navigateToNextScreen() {
-    if (_capturedImage == null) {
-      SnackbarHelper.showInfoSnackBar(context, "You can add your profile photo later from your account settings");
-    }
     Navigator.of(context).push(
       NoAnimationPageRoute(builder: (context) => const TermsAndPrivacyScreen()),
     );
@@ -71,7 +300,7 @@ class _PhotoVerificationScreenState extends State<PhotoVerificationScreen> {
           'assets/images/thirikkale_primary_logo.png',
           height: 32.0,
         ),
-        onSkip: _navigateToNextScreen,
+        onSkip: _skipPhotoUpload,
       ),
       body: SingleChildScrollView(
         child: Padding(
@@ -104,7 +333,7 @@ class _PhotoVerificationScreenState extends State<PhotoVerificationScreen> {
               const PhotoGuidelines(),
               const SizedBox(height: 24),
 
-              // Display either the captured images or a place holder
+              // Display either the captured images or a placeholder
               ProfileImagePreview(
                 capturedImage: _capturedImage,
                 cameraPermissionGranted: _cameraPermissionGranted,
@@ -126,24 +355,58 @@ class _PhotoVerificationScreenState extends State<PhotoVerificationScreen> {
                 ),
               ),
               const SizedBox(height: 24),
+
+              // Take Photo Button
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: _openFullScreenCamera,
+                  onPressed: _isUploading ? null : _openFullScreenCamera,
                   style: AppButtonStyles.primaryButton,
                   child: const Text('Take Photo'),
                 ),
               ),
 
-              // Show continue button if we have a photo
+              // Show upload and continue buttons if we have a photo
               if (_capturedImage != null) ...[
                 const SizedBox(height: 16),
+
+                // Upload Photo Button (combines both profile and gender detection)
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: _navigateToNextScreen,
+                    onPressed: _isUploading ? null : _uploadPhoto,
                     style: AppButtonStyles.secondaryButton,
-                    child: const Text('Continue with This Photo'),
+                    child:
+                        _isUploading
+                            ? const Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                      Colors.white,
+                                    ),
+                                  ),
+                                ),
+                                SizedBox(width: 8),
+                                Text('Uploading...'),
+                              ],
+                            )
+                            : const Text('Upload Photo'),
+                  ),
+                ),
+
+                const SizedBox(height: 12),
+
+                // Continue without uploading
+                SizedBox(
+                  width: double.infinity,
+                  child: TextButton(
+                    onPressed: _isUploading ? null : _navigateToNextScreen,
+                    child: const Text('Continue without uploading'),
                   ),
                 ),
               ],

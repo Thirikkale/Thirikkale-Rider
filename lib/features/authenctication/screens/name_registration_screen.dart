@@ -25,6 +25,16 @@ class _NameRegistrationScreenState extends State<NameRegistrationScreen> {
     super.initState();
     _firstNameController.addListener(_validateForm);
     _lastNameController.addListener(_validateForm);
+
+    // Pre-populate fields if names already exist in provider
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    if (authProvider.firstName != null && authProvider.firstName != 'Rider') {
+      _firstNameController.text = authProvider.firstName!;
+    }
+    if (authProvider.lastName != null && authProvider.lastName != 'User') {
+      _lastNameController.text = authProvider.lastName!;
+    }
+    _validateForm();
   }
 
   @override
@@ -42,31 +52,49 @@ class _NameRegistrationScreenState extends State<NameRegistrationScreen> {
     });
   }
 
-  void _navigateToPhotoVerification() async {
+  void _completeProfile() async {
     if (!_isFormValid) return;
 
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    
-    // Register user with backend
-    final success = await authProvider.registerUser(
-      firstName: _firstNameController.text.trim(),
-      lastName: _lastNameController.text.trim(),
+
+    final firstName = _firstNameController.text.trim();
+    final lastName = _lastNameController.text.trim();
+
+    // Store name in provider first
+    authProvider.setUserName(firstName, lastName);
+
+    if (!mounted) return;
+
+    // Complete the profile with names using the new API endpoint
+    final success = await authProvider.completeRiderProfile(
+      firstName: firstName,
+      lastName: lastName,
     );
 
-    if (success && mounted) {
-      // Registration successful, navigate to next step
-      Navigator.of(context).push(
-        NoAnimationPageRoute(
-          builder: (context) => const PhotoVerificationScreen(),
-        ),
+    if (!mounted) return;
+
+    if (success) {
+      // Navigate to photo verification
+      SnackbarHelper.showSuccessSnackBar(
+        context,
+        'Name registration completed.',
       );
-    } else if (mounted) {
-      // Show error
+      _navigateToPhotoVerification();
+    } else {
       SnackbarHelper.showErrorSnackBar(
         context,
-        authProvider.errorMessage ?? 'Registration failed',
+        'Profile completion failed. Please try again.',
       );
     }
+  }
+
+  void _navigateToPhotoVerification() {
+    // Registration successful, navigate to next step
+    Navigator.of(context).push(
+      NoAnimationPageRoute(
+        builder: (context) => const PhotoVerificationScreen(),
+      ),
+    );
   }
 
   @override
@@ -93,19 +121,25 @@ class _NameRegistrationScreenState extends State<NameRegistrationScreen> {
               style: Theme.of(context).textTheme.bodyLarge,
             ),
             const SizedBox(height: 14),
-            CustomInputFieldLabel(label: "First Name", controller: _firstNameController,),
+            CustomInputFieldLabel(
+              label: "First Name",
+              controller: _firstNameController,
+            ),
             const SizedBox(height: 16),
-            CustomInputFieldLabel(label: "Last Name", controller: _lastNameController,),
+            CustomInputFieldLabel(
+              label: "Last Name",
+              controller: _lastNameController,
+            ),
             const Spacer(),
             Consumer<AuthProvider>(
               builder: (context, authProvider, child) {
                 if (authProvider.isLoading) {
                   return const Center(child: CircularProgressIndicator());
                 }
-                
+
                 return SignNavigationButtonRow(
                   onBack: () => Navigator.pop(context),
-                  onNext: _isFormValid ? _navigateToPhotoVerification : null,
+                  onNext: _isFormValid ? _completeProfile : null,
                   nextEnabled: _isFormValid,
                 );
               },
