@@ -7,6 +7,7 @@ import 'package:thirikkale_rider/core/utils/snackbar_helper.dart';
 import 'package:thirikkale_rider/features/authenctication/screens/otp_verification_screen.dart';
 import 'package:thirikkale_rider/features/authenctication/widgets/custom_phone_input_field.dart';
 import 'package:thirikkale_rider/widgets/common/custom_appbar.dart';
+import 'package:thirikkale_rider/widgets/custom_modern_loading_overlay.dart';
 
 class MobileRegistrationScreen extends StatefulWidget {
   const MobileRegistrationScreen({super.key});
@@ -116,90 +117,94 @@ class _MobileRegistrationScreenState extends State<MobileRegistrationScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: CustomAppBar(
-        centerWidget: Image.asset(
-          'assets/images/primary_logo.png',
-          height: 32.0,
-        ),
-      ),
-      body: SingleChildScrollView(
-        child: GestureDetector(
-          onTap: () => FocusScope.of(context).unfocus(),
-          child: Column(
-            children: [
-              // Top image
-              Image.asset(
-                'assets/images/mobile_registration_bg.png',
-                width: double.infinity,
-                height: 250,
-                fit: BoxFit.cover,
-              ),
+    return Consumer<AuthProvider>(
+      builder: (context, authProvider, child) {
+        final isLoading = _isLocalLoading || authProvider.isLoading;
 
-              // Scrollable content
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24.0),
+        return ModernLoadingOverlay(
+          isLoading: isLoading,
+          message: "Sending verification code...",
+          style: LoadingStyle.dots,
+
+          child: Scaffold(
+            appBar: CustomAppBar(
+              centerWidget: Image.asset(
+                'assets/images/primary_logo.png',
+                height: 32.0,
+              ),
+            ),
+            body: SingleChildScrollView(
+              child: GestureDetector(
+                onTap: () => FocusScope.of(context).unfocus(),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const SizedBox(height: 32),
-                    Text(
-                      'Enter your mobile number',
-                      style: Theme.of(context).textTheme.headlineMedium,
+                    // Top image
+                    Image.asset(
+                      'assets/images/mobile_registration_bg.png',
+                      width: double.infinity,
+                      height: 250,
+                      fit: BoxFit.cover,
                     ),
-                    const SizedBox(height: 24),
-                    // Input field
-                    CustomPhoneInputField(
-                      controller: _phoneController,
-                      validator: _validatePhoneNumber,
-                      onChanged: (cleanNumber) {
-                        setState(() {
-                          _cleanPhoneNumber = cleanNumber;
-                          print('Phone number changed: +94$cleanNumber');
-                          // Store clean number
-                        });
-                      },
+
+                    // Scrollable content
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const SizedBox(height: 32),
+                          Text(
+                            'Enter your mobile number',
+                            style: Theme.of(context).textTheme.headlineMedium,
+                          ),
+                          const SizedBox(height: 24),
+                          // Input field
+                          CustomPhoneInputField(
+                            controller: _phoneController,
+                            validator: _validatePhoneNumber,
+                            onChanged: (cleanNumber) {
+                              setState(() {
+                                _cleanPhoneNumber = cleanNumber;
+                                print('Phone number changed: +94$cleanNumber');
+                                // Store clean number
+                              });
+                            },
+                          ),
+                          const SizedBox(height: 32),
+                        ],
+                      ),
+                    ),
+
+                    // Bottom button
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                      child: SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: _isFormValid ? _sendOTP : null,
+                          style: AppButtonStyles.primaryButton.copyWith(
+                            backgroundColor:
+                                WidgetStateProperty.resolveWith<Color>((
+                                  Set<WidgetState> states,
+                                ) {
+                                  if (states.contains(WidgetState.disabled)) {
+                                    return AppColors.lightGrey;
+                                  }
+                                  return AppColors.primaryBlue;
+                                }),
+                          ),
+                          child: const Text('Continue'),
+                        ),
+                      ),
                     ),
                     const SizedBox(height: 32),
                   ],
                 ),
               ),
-
-              // Bottom button
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                child: Consumer<AuthProvider>(
-                  builder: (context, authProvider, child) {
-                    if (authProvider.isLoading) {
-                      return const Center(child: CircularProgressIndicator());
-                    }
-
-                    return SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: _isFormValid ? _sendOTP : null,
-                        style: AppButtonStyles.primaryButton.copyWith(
-                          backgroundColor:
-                              WidgetStateProperty.resolveWith<Color>((
-                                Set<WidgetState> states,
-                              ) {
-                                if (states.contains(WidgetState.disabled)) {
-                                  return AppColors.lightGrey;
-                                }
-                                return AppColors.primaryBlue;
-                              }),
-                        ),
-                        child: const Text('Continue'),
-                      ),
-                    );
-                  },
-                ),
-              ),
-              const SizedBox(height: 32),
-            ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }
