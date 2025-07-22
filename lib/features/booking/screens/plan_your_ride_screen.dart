@@ -75,6 +75,32 @@ class _PlanYourRideScreenState extends State<PlanYourRideScreen> {
     });
   }
 
+  void _showLocationPermissionDialog() {
+    showDialog(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Location Permission Required'),
+            content: const Text(
+              'Please enable location permission to use the map features.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () async {
+                  Navigator.pop(context);
+                  await LocationService.openLocationSettings();
+                },
+                child: const Text('Settings'),
+              ),
+            ],
+          ),
+    );
+  }
+
   Future<void> _checkLocationServices() async {
     try {
       // Check if location services are enabled
@@ -92,6 +118,7 @@ class _PlanYourRideScreenState extends State<PlanYourRideScreen> {
 
       if (permission == LocationPermission.denied ||
           permission == LocationPermission.deniedForever) {
+        _showLocationPermissionDialog();
         _showErrorMessage(
           'Location permission is required. Please grant location access.',
         );
@@ -907,7 +934,7 @@ class _PlanYourRideScreenState extends State<PlanYourRideScreen> {
                   child: Container(
                     padding: EdgeInsets.symmetric(
                       horizontal: AppDimensions.pageHorizontalPadding,
-                      vertical: AppDimensions.subSectionSpacingDown/3 ,
+                      vertical: AppDimensions.subSectionSpacingDown / 3,
                     ),
                     decoration: BoxDecoration(
                       color:
