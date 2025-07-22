@@ -121,7 +121,14 @@ class SettingsScreen extends StatelessWidget {
               AccountInfoTile(
                 icon: Icons.tune_outlined,
                 title: "Ride preferences",
-                onTap: () {},
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const PreferencesScreen(),
+                    ),
+                  );
+                },
               ),
 
               const SizedBox(height: AppDimensions.sectionSpacing),
