@@ -2,7 +2,7 @@ class ApiConfig {
   // Base URLs - Update this IP address to your backend server's IP
   // IMPORTANT: Replace 'YOUR_BACKEND_IP' with the actual IP address of your backend device
   // Example: 'http://192.168.1.100:8081/user-service/api/v1'
-  static const String baseUrl = 'http://192.168.98.69:8081/user-service/api/v1';
+  static const String baseUrl = 'http://192.168.202.103:8081/user-service/api/v1';
   static const String authBaseUrl = '$baseUrl/auth';
   static const String ridersBaseUrl = '$baseUrl/riders';
   
