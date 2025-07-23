@@ -5,6 +5,8 @@ import 'package:thirikkale_rider/core/utils/snackbar_helper.dart';
 import 'package:thirikkale_rider/features/booking/widgets/Route_map.dart';
 import 'package:thirikkale_rider/features/booking/widgets/ride_options_bottom_sheet.dart';
 import 'package:thirikkale_rider/features/booking/widgets/payment_method_bottom_sheet.dart';
+import 'package:thirikkale_rider/features/booking/screens/pickup_time_screen.dart';
+import 'package:thirikkale_rider/features/booking/screens/ride_summary_screen.dart';
 
 class RideBookingScreen extends StatefulWidget {
   final String pickupAddress;
@@ -13,6 +15,8 @@ class RideBookingScreen extends StatefulWidget {
   final double? pickupLng;
   final double? destLat;
   final double? destLng;
+  final String? initialRideType;
+  final String? initialScheduleType;
 
   const RideBookingScreen({
     super.key,
@@ -22,6 +26,8 @@ class RideBookingScreen extends StatefulWidget {
     this.pickupLng,
     this.destLat,
     this.destLng,
+    this.initialRideType,
+    this.initialScheduleType,
   });
 
   @override
@@ -30,7 +36,7 @@ class RideBookingScreen extends StatefulWidget {
 
 class _RideBookingScreenState extends State<RideBookingScreen> {
   // Add a state variable to hold the sheet's current height in pixels
-  double _sheetHeight = 0;
+  double _sheetHeight =8;
 
   @override
   void initState() {
@@ -50,6 +56,24 @@ class _RideBookingScreenState extends State<RideBookingScreen> {
       context,
       listen: false,
     );
+    
+    // Debug: Print what we're initializing with
+    print('Initializing booking with:');
+    print('  - initialRideType: ${widget.initialRideType}');
+    print('  - initialScheduleType: ${widget.initialScheduleType}');
+    
+    // Set schedule type FIRST if provided
+    if (widget.initialScheduleType != null) {
+      print('Setting schedule type to: ${widget.initialScheduleType}');
+      bookingProvider.setScheduleType(widget.initialScheduleType!);
+    }
+    
+    // Set initial vehicle selection if we have a ride type
+    if (widget.initialRideType != null) {
+      bookingProvider.setInitialVehicleByRideType(widget.initialRideType);
+    }
+    
+    // Then set trip details, preserving the vehicle selection if we set one
     bookingProvider.setTripDetails(
       pickup: widget.pickupAddress,
       destination: widget.destinationAddress,
@@ -57,7 +81,13 @@ class _RideBookingScreenState extends State<RideBookingScreen> {
       pickupLng: widget.pickupLng,
       destLat: widget.destLat,
       destLng: widget.destLng,
+      preserveVehicleSelection: widget.initialRideType != null, // Preserve if we have initial ride type
     );
+    
+    // Debug: Print final state
+    print('Final booking provider state:');
+    print('  - scheduleType: ${bookingProvider.scheduleType}');
+    print('  - selectedVehicle: ${bookingProvider.selectedVehicle?.name}');
   }
 
   @override
@@ -163,17 +193,50 @@ class _RideBookingScreenState extends State<RideBookingScreen> {
 
   void _handleBookRide(RideBookingProvider bookingProvider) async {
     try {
-      await bookingProvider.bookRide();
+      // Debug: Print the current schedule type
+      print('Current schedule type: ${bookingProvider.scheduleType}');
+      
+      // Check if the ride is scheduled
+      if (bookingProvider.scheduleType != 'now') {
+        print('Navigating to pickup time screen for scheduled ride');
+        // Navigate to pickup time screen for scheduled rides
+        if (mounted) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => PickupTimeScreen(
+                pickupAddress: widget.pickupAddress,
+                destinationAddress: widget.destinationAddress,
+                pickupLat: widget.pickupLat,
+                pickupLng: widget.pickupLng,
+                destLat: widget.destLat,
+                destLng: widget.destLng,
+                initialRideType: widget.initialRideType,
+              ),
+            ),
+          );
+        }
+        return;
+      }
 
+      print('Proceeding with immediate ride booking');
+      // For immediate rides, navigate to summary screen
       if (mounted) {
-        // Show success message
-        SnackbarHelper.showSuccessSnackBar(
+        Navigator.push(
           context,
-          'Ride booked successfully! Driver will arrive in ${bookingProvider.selectedVehicle?.estimatedTime ?? "a few minutes"}',
+          MaterialPageRoute(
+            builder: (context) => RideSummaryScreen(
+              pickupAddress: widget.pickupAddress,
+              destinationAddress: widget.destinationAddress,
+              pickupLat: widget.pickupLat,
+              pickupLng: widget.pickupLng,
+              destLat: widget.destLat,
+              destLng: widget.destLng,
+              scheduledDateTime: DateTime.now(), // For immediate rides, use current time
+              rideType: widget.initialRideType,
+            ),
+          ),
         );
-
-        // Navigate to tracking screen or go back
-        Navigator.pop(context);
       }
     } catch (e) {
       if (mounted) {

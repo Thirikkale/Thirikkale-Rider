@@ -14,6 +14,7 @@ class RideBookingProvider extends ChangeNotifier {
   VehicleOption? _selectedVehicle;
   String _selectedPaymentMethod = 'cash';
   String _scheduleType = 'now';
+  DateTime? _scheduledDateTime;
 
   // Available options
   final List<VehicleOption> _vehicleOptions = VehicleOption.getDefaultOptions();
@@ -28,6 +29,11 @@ class RideBookingProvider extends ChangeNotifier {
   String? _estimatedDistance;
   double? _estimatedPrice;
 
+  // Promotion information
+  bool _hasPromotion = false;
+  String? _promotionText;
+  double _promotionDiscountPercentage = 0.0;
+
   // Getters
   String get pickupAddress => _pickupAddress;
   String get destinationAddress => _destinationAddress;
@@ -39,6 +45,7 @@ class RideBookingProvider extends ChangeNotifier {
   VehicleOption? get selectedVehicle => _selectedVehicle;
   String get selectedPaymentMethod => _selectedPaymentMethod;
   String get scheduleType => _scheduleType;
+  DateTime? get scheduledDateTime => _scheduledDateTime;
 
   List<VehicleOption> get vehicleOptions => _vehicleOptions;
 
@@ -49,6 +56,11 @@ class RideBookingProvider extends ChangeNotifier {
   String? get estimatedDuration => _estimatedDuration;
   String? get estimatedDistance => _estimatedDistance;
   double? get estimatedPrice => _estimatedPrice;
+
+  // Promotion getters
+  bool get hasPromotion => _hasPromotion;
+  String? get promotionText => _promotionText;
+  double get promotionDiscountPercentage => _promotionDiscountPercentage;
 
   bool get canBookRide => 
       _selectedVehicle != null && 
@@ -69,6 +81,7 @@ class RideBookingProvider extends ChangeNotifier {
     double? pickupLng,
     double? destLat,
     double? destLng,
+    bool preserveVehicleSelection = false,
   }) async {
     _isSettingTrip = true;
     notifyListeners();
@@ -83,11 +96,13 @@ class RideBookingProvider extends ChangeNotifier {
     _destLat = destLat;
     _destLng = destLng;
 
-    // Reset previous selections when trip details change
-    _selectedVehicle = null;
+    // Reset previous selections when trip details change, unless preserving
+    if (!preserveVehicleSelection) {
+      _selectedVehicle = null;
+      _estimatedPrice = null;
+    }
     _estimatedDuration = null;
     _estimatedDistance = null;
-    _estimatedPrice = null;
 
     _isSettingTrip = false;
     notifyListeners();
@@ -109,6 +124,45 @@ class RideBookingProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  void setInitialVehicleByRideType(String? rideType) {
+    if (rideType == null) return;
+    
+    // Map ride type to vehicle option ID
+    String vehicleId;
+    switch (rideType.toLowerCase()) {
+      case 'tuk':
+        vehicleId = 'tuk';
+        break;
+      case 'ride':
+      case 'solo':
+        vehicleId = 'ride';
+        break;
+      case 'rush':
+        vehicleId = 'rush';
+        break;
+      case 'prime':
+      case 'prime ride':
+        vehicleId = 'primeRide';
+        break;
+      case 'shared':
+        // For shared rides, we could use a different logic or default to ride
+        vehicleId = 'ride';
+        break;
+      default:
+        // Default to ride if unknown type
+        vehicleId = 'ride';
+        break;
+    }
+    
+    // Find and select the corresponding vehicle option
+    final vehicle = _vehicleOptions.firstWhere(
+      (option) => option.id == vehicleId,
+      orElse: () => _vehicleOptions.first, // Fallback to first option
+    );
+    
+    selectVehicle(vehicle);
+  }
+
   void setPaymentMethod(String method) {
     _selectedPaymentMethod = method;
     notifyListeners();
@@ -117,6 +171,42 @@ class RideBookingProvider extends ChangeNotifier {
   void setScheduleType(String type) {
     _scheduleType = type;
     notifyListeners();
+  }
+
+  void setScheduledDateTime(DateTime? dateTime) {
+    _scheduledDateTime = dateTime;
+    notifyListeners();
+  }
+
+  // Promotion methods
+  void setPromotion({
+    required bool hasPromotion,
+    String? promotionText,
+    double discountPercentage = 0.0,
+  }) {
+    _hasPromotion = hasPromotion;
+    _promotionText = promotionText;
+    _promotionDiscountPercentage = discountPercentage;
+    notifyListeners();
+  }
+
+  Future<void> fetchAvailablePromotions() async {
+    // Simulate fetching promotions from API
+    await Future.delayed(const Duration(milliseconds: 500));
+    
+    // For demo purposes, let's randomly apply a 2% promotion
+    // In real app, this would be based on user eligibility, payment method, etc.
+    final hasPromo = DateTime.now().millisecondsSinceEpoch % 3 == 0; // Random condition
+    
+    if (hasPromo) {
+      setPromotion(
+        hasPromotion: true,
+        promotionText: '2% promotion applied',
+        discountPercentage: 2.0,
+      );
+    } else {
+      setPromotion(hasPromotion: false);
+    }
   }
 
   void setLoadingRoute(bool loading) {
@@ -240,6 +330,7 @@ class RideBookingProvider extends ChangeNotifier {
     _selectedVehicle = null;
     _selectedPaymentMethod = 'cash';
     _scheduleType = 'now';
+    _scheduledDateTime = null;
     _isLoadingRoute = false;
     _isBookingRide = false;
     _estimatedDuration = null;
@@ -252,6 +343,7 @@ class RideBookingProvider extends ChangeNotifier {
     _selectedVehicle = null;
     _selectedPaymentMethod = 'cash';
     _scheduleType = 'now';
+    _scheduledDateTime = null;
     _estimatedPrice = null;
     notifyListeners();
   }

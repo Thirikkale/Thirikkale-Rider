@@ -125,7 +125,7 @@ class _FullScreenCameraPageState extends State<FullScreenCameraPage> with Widget
   @override
   Widget build(BuildContext context) {
     // Full immersive mode
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+    // SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
 
     return Scaffold(
       backgroundColor: Colors.black,

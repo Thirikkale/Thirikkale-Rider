@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'dart:ui' as ui;
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:google_polyline_algorithm/google_polyline_algorithm.dart';
 import 'package:thirikkale_rider/core/services/direction_service.dart';
 import 'package:thirikkale_rider/core/utils/app_styles.dart';
+import 'package:thirikkale_rider/features/booking/models/custom_marker.dart';
 
 class RouteMap extends StatefulWidget {
   final String pickupAddress;
@@ -14,6 +14,7 @@ class RouteMap extends StatefulWidget {
   final double? destLat;
   final double? destLng;
   final double bottomPadding;
+  final bool showBackButton;
 
   const RouteMap({
     super.key,
@@ -24,6 +25,7 @@ class RouteMap extends StatefulWidget {
     this.destLat,
     this.destLng,
     this.bottomPadding = 0,
+    this.showBackButton = true,
   });
 
   @override
@@ -79,97 +81,11 @@ class _RouteMapState extends State<RouteMap> {
     }
   }
 
-  Future<BitmapDescriptor> _createCircleMarker(Color color, String text) async {
-    final recorder = ui.PictureRecorder();
-    final canvas = Canvas(recorder);
-    const size = 100.0;
-
-    final paint = Paint()
-      ..color = color
-      ..style = PaintingStyle.fill;
-    canvas.drawCircle(Offset(size / 2, size / 2), size / 2 - 2, paint);
-
-    final borderPaint = Paint()
-      ..color = Colors.white
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 4.0;
-    canvas.drawCircle(Offset(size / 2, size / 2), size / 2 - 2, borderPaint);
-
-    final textPainter = TextPainter(
-      text: TextSpan(
-        text: text,
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 25,
-          fontWeight: FontWeight.w900,
-        ),
-      ),
-      textDirection: TextDirection.ltr,
-    );
-
-    textPainter.layout();
-    textPainter.paint(
-      canvas,
-      Offset((size - textPainter.width) / 2, (size - textPainter.height) / 2),
-    );
-
-    final picture = recorder.endRecording();
-    final image = await picture.toImage(size.toInt(), size.toInt());
-    final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
-
-    return BitmapDescriptor.fromBytes(bytes!.buffer.asUint8List());
-  }
-
-  Future<BitmapDescriptor> _createSquareMarker(Color color, String text) async {
-    final recorder = ui.PictureRecorder();
-    final canvas = Canvas(recorder);
-    const size = 100.0;
-
-    final paint = Paint()
-      ..color = color
-      ..style = PaintingStyle.fill;
-    final rect = RRect.fromRectAndRadius(
-      Rect.fromLTWH(4, 4, size - 8, size - 8),
-      const Radius.circular(8),
-    );
-    canvas.drawRRect(rect, paint);
-
-    final borderPaint = Paint()
-      ..color = Colors.white
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 4.0;
-    canvas.drawRRect(rect, borderPaint);
-
-    final textPainter = TextPainter(
-      text: TextSpan(
-        text: text,
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 25,
-          fontWeight: FontWeight.w900,
-        ),
-      ),
-      textDirection: TextDirection.ltr,
-    );
-
-    textPainter.layout();
-    textPainter.paint(
-      canvas,
-      Offset((size - textPainter.width) / 2, (size - textPainter.height) / 2),
-    );
-
-    final picture = recorder.endRecording();
-    final image = await picture.toImage(size.toInt(), size.toInt());
-    final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
-
-    return BitmapDescriptor.fromBytes(bytes!.buffer.asUint8List());
-  }
-
   Future<void> _createMarkers() async {
     final markers = <Marker>{};
 
     if (widget.pickupLat != null && widget.pickupLng != null) {
-      final pickupIcon = await _createCircleMarker(AppColors.primaryBlue, 'P');
+      final pickupIcon = await CustomMarker.createPillMarker('Pickup');
       markers.add(
         Marker(
           markerId: const MarkerId('pickup'),
@@ -179,24 +95,19 @@ class _RouteMapState extends State<RouteMap> {
             title: 'Pickup Location',
             snippet: widget.pickupAddress,
           ),
-          anchor: const Offset(0.5, 0.5),
+          anchor: const Offset(0.5, 1.0), // Bottom center for pill marker
         ),
       );
     }
 
     if (widget.destLat != null && widget.destLng != null) {
-      final destinationIcon =
-          await _createSquareMarker(AppColors.primaryBlue, 'D');
+      final destinationIcon = await CustomMarker.createPillMarker('Drop');
       markers.add(
         Marker(
           markerId: const MarkerId('destination'),
           position: LatLng(widget.destLat!, widget.destLng!),
           icon: destinationIcon,
-          infoWindow: InfoWindow(
-            title: 'Destination',
-            snippet: widget.destinationAddress,
-          ),
-          anchor: const Offset(0.5, 0.5),
+          anchor: const Offset(0.5, 1.0), // Bottom center for pill marker
         ),
       );
     }
@@ -249,7 +160,7 @@ class _RouteMapState extends State<RouteMap> {
             polylineId: const PolylineId('route'),
             points: polylineLatLngs,
             color: AppColors.primaryBlue,
-            width: 3,
+            width: 6,
             startCap: Cap.roundCap,
             endCap: Cap.roundCap,
             jointType: JointType.round,
@@ -291,7 +202,7 @@ class _RouteMapState extends State<RouteMap> {
         LatLng(widget.destLat!, widget.destLng!),
       ],
       color: AppColors.primaryBlue,
-      width: 3,
+      width: 6,
       patterns: [PatternItem.dash(15), PatternItem.gap(8)],
     );
 
@@ -387,31 +298,33 @@ class _RouteMapState extends State<RouteMap> {
           zoomControlsEnabled: false,
           mapToolbarEnabled: false,
         ),
-        Positioned(
-          top: 16,
-          left: 16,
-          child: SafeArea(
-            child: Container(
-              decoration: BoxDecoration(
-                color: AppColors.white,
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.1),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: IconButton(
-                onPressed: () => Navigator.of(context).pop(),
-                icon: const Icon(Icons.arrow_back),
-                color: AppColors.textPrimary,
-                iconSize: 24,
+        // Back button (only show if showBackButton is true)
+        if (widget.showBackButton)
+          Positioned(
+            top: 16,
+            left: 16,
+            child: SafeArea(
+              child: Container(
+                decoration: BoxDecoration(
+                  color: AppColors.white,
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.1),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: IconButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  icon: const Icon(Icons.arrow_back),
+                  color: AppColors.textPrimary,
+                  iconSize: 24,
+                ),
               ),
             ),
           ),
-        ),
         Positioned(
           bottom: widget.bottomPadding + 20,
           right: 16,

@@ -2,14 +2,27 @@ import 'package:flutter/material.dart';
 import 'package:thirikkale_rider/core/utils/app_styles.dart';
 
 class RideTypeTabs extends StatefulWidget {
-  const RideTypeTabs({super.key});
+  final ValueChanged<int>? onTabChanged;
+  final int initialSelectedIndex;
+
+  const RideTypeTabs({
+    super.key,
+    this.onTabChanged,
+    this.initialSelectedIndex = 0,
+  });
 
   @override
   State<RideTypeTabs> createState() => _RideTypeTabsState();
 }
 
 class _RideTypeTabsState extends State<RideTypeTabs> {
-  int _selectedTabIndex = 0;
+  late int _selectedTabIndex;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedTabIndex = widget.initialSelectedIndex;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -35,6 +48,8 @@ class _RideTypeTabsState extends State<RideTypeTabs> {
           setState(() {
             _selectedTabIndex = index;
           });
+          // Call the callback if provided
+          widget.onTabChanged?.call(index);
         },
         child: Column(
           mainAxisSize: MainAxisSize.min,
