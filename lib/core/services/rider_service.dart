@@ -363,7 +363,7 @@ class RiderService {
       // Add file
       request.files.add(
         await http.MultipartFile.fromPath(
-          'file',
+          'selfie',
           imageFile.path,
           filename: fileName,
           contentType: MediaType.parse(mimeType),
@@ -430,7 +430,7 @@ class RiderService {
 
       request.files.add(
         await http.MultipartFile.fromPath(
-          'file',
+          'selfie',
           imageFile.path,
           filename: fileName,
           contentType: MediaType.parse(mimeType),
