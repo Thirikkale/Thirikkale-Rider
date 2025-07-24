@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:thirikkale_rider/features/authenctication/screens/auth_wrapper.dart';
 import 'package:thirikkale_rider/features/account/screens/settings_screen.dart';
 import 'package:thirikkale_rider/features/authenctication/screens/get_started_screen.dart';
 import 'package:thirikkale_rider/features/authenctication/screens/mobile_registration_screen.dart';
@@ -10,6 +11,7 @@ import 'package:thirikkale_rider/features/services/screens/services_screen.dart'
 
 class AppRoutes {
   static const String initial = '/';
+  static const String getStarted = '/get-started';
   static const String mobileRegistration = '/mobile-registration';
   static const String nameRegistration = '/name-registration';
   static const String termsAndPrivacy = '/terms-and-privacy';
@@ -20,7 +22,8 @@ class AppRoutes {
 
   static Map<String, WidgetBuilder> getRoutes() {
     return {
-      initial: (context) => const GetStartedScreen(),
+      initial: (context) => const AuthWrapper(),
+      getStarted: (context) => const GetStartedScreen(),
       mobileRegistration: (context) => const MobileRegistrationScreen(),
       nameRegistration: (context) => const NameRegistrationScreen(),
       termsAndPrivacy: (context) => const TermsAndPrivacyScreen(),
