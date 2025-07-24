@@ -125,7 +125,7 @@ class _FullScreenCameraPageState extends State<FullScreenCameraPage> with Widget
   @override
   Widget build(BuildContext context) {
     // Full immersive mode
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+    // SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
 
     return Scaffold(
       backgroundColor: Colors.black,
@@ -219,7 +219,7 @@ class _FullScreenCameraPageState extends State<FullScreenCameraPage> with Widget
                   padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                   margin: const EdgeInsets.symmetric(horizontal: 40),
                   decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.5),
+                    color: Colors.black.withValues(alpha: 0.5),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: const Text(
@@ -245,7 +245,7 @@ class FaceOverlayPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final Paint guidelinePaint = Paint()
-      ..color = Colors.white.withOpacity(0.8)
+      ..color = Colors.white.withValues(alpha: 0.8)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2;
     

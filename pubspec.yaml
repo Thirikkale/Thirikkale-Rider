@@ -41,12 +41,20 @@ dependencies:
   provider: ^6.1.5
   firebase_core: ^3.14.0
   camera: ^0.11.1
-  permission_handler: ^12.0.0+1
   http: ^1.4.0
   flutter_multi_formatter: ^2.13.7
+  flutter_svg: ^2.2.0
+  flutter_credit_card: ^4.0.1
+  flutter_dotenv: ^5.2.1
+  geocoding: ^4.0.0
+  geolocator: ^14.0.2
+  google_maps: ^8.1.1
+  google_polyline_algorithm: ^3.1.0
+  google_maps_flutter: ^2.12.3
   http_parser: ^4.1.2
   path: ^1.9.1
   shared_preferences: ^2.5.3
+  permission_handler: ^12.0.1
 
 dev_dependencies:
   flutter_test:
@@ -97,6 +105,10 @@ flutter:
   assets:
     - assets/lotties/
     - assets/images/
+    - assets/icons/vehicles/
+    - assets/images/option_cards/
+    - assets/images/service_cards/
+    - .env
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

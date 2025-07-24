@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:thirikkale_rider/features/authenctication/screens/auth_wrapper.dart';
+import 'package:thirikkale_rider/features/account/screens/settings_screen.dart';
 import 'package:thirikkale_rider/features/authenctication/screens/get_started_screen.dart';
 import 'package:thirikkale_rider/features/authenctication/screens/mobile_registration_screen.dart';
 import 'package:thirikkale_rider/features/authenctication/screens/name_registration_screen.dart';
 import 'package:thirikkale_rider/features/authenctication/screens/splash_screen.dart';
 import 'package:thirikkale_rider/features/authenctication/screens/terms_and_privacy_screen.dart';
 import 'package:thirikkale_rider/features/home/screens/home_screen.dart';
+import 'package:thirikkale_rider/features/services/screens/services_screen.dart';
 
 class AppRoutes {
   static const String initial = '/';
@@ -15,8 +17,8 @@ class AppRoutes {
   static const String termsAndPrivacy = '/terms-and-privacy';
   static const String splashScreen = '/splash-screen';
   static const String home = '/home';
-  static const String authTest = '/auth-test';
-  
+  static const String settings = '/settings';
+  static const String service = '/service';
 
   static Map<String, WidgetBuilder> getRoutes() {
     return {
@@ -27,6 +29,8 @@ class AppRoutes {
       termsAndPrivacy: (context) => const TermsAndPrivacyScreen(),
       splashScreen: (context) => const SplashScreen(),
       home: (context) => const HomeScreen(),
+      settings: (context) => const SettingsScreen(),
+      service: (context) => const ServicesScreen(),
     };
   }
 }

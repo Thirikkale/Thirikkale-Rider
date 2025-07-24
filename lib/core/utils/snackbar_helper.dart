@@ -37,6 +37,9 @@ class SnackbarHelper {
     Duration duration = const Duration(seconds: 3),
     VoidCallback? onDismiss,
   }) {
+    // Clear any existing snackbars first to prevent stacking
+    ScaffoldMessenger.of(context).clearSnackBars();
+    
     final snackBar = SnackBar(
       content: Row(
         children: [

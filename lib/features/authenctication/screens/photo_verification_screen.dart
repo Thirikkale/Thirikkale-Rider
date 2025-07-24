@@ -360,63 +360,85 @@ class _PhotoVerificationScreenState extends State<PhotoVerificationScreen> {
                       child: const Text('Learn More'),
                     ),
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 8),
 
-                  // Take Photo Button
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: _isUploading ? null : _openFullScreenCamera,
-                      style: AppButtonStyles.primaryButton,
-                      child: const Text('Take Photo'),
+                  if (_capturedImage == null) ...[
+                    // Take Photo Button
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: _isUploading ? null : _openFullScreenCamera,
+                        style: AppButtonStyles.primaryButton,
+                        child: const Text('Take Photo'),
+                      ),
                     ),
-                  ),
-
-                  // Show upload and continue buttons if we have a photo
-                  if (_capturedImage != null) ...[
-                    const SizedBox(height: 16),
-
-                    // Upload Photo Button (combines both profile and gender detection)
+                  ] else ...[
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
                         onPressed: _isUploading ? null : _uploadPhoto,
-                        style: AppButtonStyles.secondaryButton,
-                        child:
-                            _isUploading
-                                ? const Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    SizedBox(
-                                      width: 20,
-                                      height: 20,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        valueColor:
-                                            AlwaysStoppedAnimation<Color>(
-                                              Colors.white,
-                                            ),
-                                      ),
-                                    ),
-                                    SizedBox(width: 8),
-                                    Text('Uploading...'),
-                                  ],
-                                )
-                                : const Text('Upload Photo'),
+                        style: AppButtonStyles.primaryButton,
+                        child: const Text('Upload Photo'),
                       ),
                     ),
 
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 16),
 
-                    // Continue without uploading
                     SizedBox(
                       width: double.infinity,
-                      child: TextButton(
-                        onPressed: _isUploading ? null : _navigateToNextScreen,
-                        child: const Text('Continue without uploading'),
+                      child: ElevatedButton(
+                        onPressed: _isUploading ? null : _openFullScreenCamera,
+                        style: AppButtonStyles.secondaryButton,
+                        child: const Text('Retake Photo'),
                       ),
                     ),
                   ],
+
+                  // // Show upload and continue buttons if we have a photo
+                  // if (_capturedImage != null) ...[
+                  //   const SizedBox(height: 16),
+
+                  //   // Upload Photo Button (combines both profile and gender detection)
+                  //   SizedBox(
+                  //     width: double.infinity,
+                  //     child: ElevatedButton(
+                  //       onPressed: _isUploading ? null : _uploadPhoto,
+                  //       style: AppButtonStyles.secondaryButton,
+                  //       child:
+                  //           _isUploading
+                  //               ? const Row(
+                  //                 mainAxisAlignment: MainAxisAlignment.center,
+                  //                 children: [
+                  //                   SizedBox(
+                  //                     width: 20,
+                  //                     height: 20,
+                  //                     child: CircularProgressIndicator(
+                  //                       strokeWidth: 2,
+                  //                       valueColor:
+                  //                           AlwaysStoppedAnimation<Color>(
+                  //                             Colors.white,
+                  //                           ),
+                  //                     ),
+                  //                   ),
+                  //                   SizedBox(width: 8),
+                  //                   Text('Uploading...'),
+                  //                 ],
+                  //               )
+                  //               : const Text('Upload Photo'),
+                  //     ),
+                  //   ),
+
+                  //   const SizedBox(height: 12),
+
+                  //   // Continue without uploading
+                  //   SizedBox(
+                  //     width: double.infinity,
+                  //     child: TextButton(
+                  //       onPressed: _isUploading ? null : _navigateToNextScreen,
+                  //       child: const Text('Continue without uploading'),
+                  //     ),
+                  //   ),
+                  // ],
                   const SizedBox(height: 24),
                 ],
               ),

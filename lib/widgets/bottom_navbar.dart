@@ -13,7 +13,10 @@ class BottomNavbar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final double bottomPadding = MediaQuery.of(context).padding.bottom;
+
     return Container(
+      height: kBottomNavigationBarHeight + 8 + bottomPadding,
       decoration: const BoxDecoration(
         color: AppColors.white,
         boxShadow: [
@@ -36,12 +39,12 @@ class BottomNavbar extends StatelessWidget {
         selectedItemColor: AppColors.primaryBlue,
         unselectedItemColor: AppColors.grey,
         selectedLabelStyle: const TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.w500,
+          fontSize: 12.5,
+          fontWeight: FontWeight.w700,
         ),
         unselectedLabelStyle: const TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.normal,
+          fontSize: 12.5,
+          fontWeight: FontWeight.w500,
         ),
         elevation: 0,
         items: const [
@@ -92,7 +95,7 @@ class BottomNavbar extends StatelessWidget {
         destinationScreen = const HomeScreen();
     }
 
-    Navigator.pushReplacement(
+    Navigator.push(
       context,
       NoAnimationPageRoute(builder: (context) => destinationScreen),
     );

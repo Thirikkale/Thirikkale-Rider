@@ -39,6 +39,8 @@ class AuthProvider extends ChangeNotifier {
   String? _idToken;
   String? _firebaseUid;
 
+  String? _verifiedEmail;
+
   String? _accessToken;
   String? _refreshToken;
   String? _tokenType;
@@ -77,6 +79,7 @@ class AuthProvider extends ChangeNotifier {
   String? get refreshToken => _refreshToken;
   String? get userType => _userType;
   String? get profilePictureUrl => _profilePictureUrl;
+  String? get verifiedEmail => _verifiedEmail;
 
   bool get hasValidJWTToken {
     if (_accessToken == null || _tokenExpiresAt == null) return false;
@@ -99,6 +102,14 @@ class AuthProvider extends ChangeNotifier {
   String get displayPhoneNumber {
     if (_verifiedPhoneNumber != null) {
       return _verifiedPhoneNumber!;
+    }
+    return 'Not provided';
+  }
+
+  // Get display email
+  String get displayEmail {
+    if (_verifiedEmail != null) {
+      return _verifiedEmail!;
     }
     return 'Not provided';
   }
