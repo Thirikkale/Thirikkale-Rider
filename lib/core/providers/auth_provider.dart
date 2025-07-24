@@ -897,7 +897,7 @@ class AuthProvider extends ChangeNotifier {
         _firstName = tokenData['firstName'];
         _lastName = tokenData['lastName'];
         _verifiedPhoneNumber = tokenData['phoneNumber'];
-        _riderId = tokenData['driverId'];
+        _riderId = tokenData['riderId'];
         _profilePictureUrl = tokenData['profilePictureUrl'];
 
         if (tokenData['tokenExpiresAt'] != null) {
