@@ -177,7 +177,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                       Navigator.pushNamedAndRemoveUntil(
                         context,
-                        AppRoutes.initial,
+                        AppRoutes.getStarted,
                         (route) => false,
                       );
                     }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:thirikkale_rider/core/utils/app_dimension.dart';
 import 'package:thirikkale_rider/features/home/widgets/destination_search_bar.dart';
 import 'package:thirikkale_rider/features/home/widgets/explore_option_card.dart';
@@ -268,129 +269,132 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      bottomNavigationBar: BottomNavbar(currentIndex: 0),
-      body: SafeArea(
-        child: Column(
-          children: [
-            RideTypeTabs(
-              initialSelectedIndex: _selectedRideTypeIndex,
-              onTabChanged: _onRideTypeChanged,
-            ),
-
-            Expanded(
-              child: SingleChildScrollView(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    vertical: AppDimensions.pageVerticalPadding,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Padding(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: AppDimensions.pageHorizontalPadding,
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle.dark,
+      child: Scaffold(
+        bottomNavigationBar: BottomNavbar(currentIndex: 0),
+        body: SafeArea(
+          child: Column(
+            children: [
+              RideTypeTabs(
+                initialSelectedIndex: _selectedRideTypeIndex,
+                onTabChanged: _onRideTypeChanged,
+              ),
+      
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      vertical: AppDimensions.pageVerticalPadding,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Padding(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: AppDimensions.pageHorizontalPadding,
+                          ),
+                          child: DestinationSearchBar(),
                         ),
-                        child: DestinationSearchBar(),
-                      ),
-
-                      const SizedBox(height: 24),
-
-                      Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: AppDimensions.pageHorizontalPadding,
-                        ),
-                        child: SectionHeader(
-                          title: "Quick Options",
-                          actionText: "See all",
-                          onActionTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const ServicesScreen(),
-                              ),
-                            );
-                            // Handle see all tap
-                          },
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Quick ride options
-                      SizedBox(
-                        height: 120,
-                        child: ListView.separated(
+      
+                        const SizedBox(height: 24),
+      
+                        Padding(
                           padding: const EdgeInsets.symmetric(
                             horizontal: AppDimensions.pageHorizontalPadding,
                           ),
-                          scrollDirection: Axis.horizontal,
-                          itemCount: _currentRideOptions.length,
-                          separatorBuilder: (context, index) => const SizedBox(width: 16),
-                          itemBuilder: (context, index) {
-                            final option = _currentRideOptions[index];
-                            return RideOptionCard(
-                              icon: option['icon'],
-                              title: option['title'],
-                              isPromo: option['isPromo'] ?? false,
-                              onTap: () => _navigateToPlanYourRide(
+                          child: SectionHeader(
+                            title: "Quick Options",
+                            actionText: "See all",
+                            onActionTap: () {
+                              Navigator.push(
                                 context,
-                                option['rideType'],
-                                schedule: option['schedule'],
-                              ),
-                            );
-                          },
+                                MaterialPageRoute(
+                                  builder: (context) => const ServicesScreen(),
+                                ),
+                              );
+                              // Handle see all tap
+                            },
+                          ),
                         ),
-                      ),
-
-                      const SizedBox(height: 24),
-
-                      const Padding(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: AppDimensions.pageHorizontalPadding,
+                        const SizedBox(height: 16),
+      
+                        // Quick ride options
+                        SizedBox(
+                          height: 120,
+                          child: ListView.separated(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: AppDimensions.pageHorizontalPadding,
+                            ),
+                            scrollDirection: Axis.horizontal,
+                            itemCount: _currentRideOptions.length,
+                            separatorBuilder: (context, index) => const SizedBox(width: 16),
+                            itemBuilder: (context, index) {
+                              final option = _currentRideOptions[index];
+                              return RideOptionCard(
+                                icon: option['icon'],
+                                title: option['title'],
+                                isPromo: option['isPromo'] ?? false,
+                                onTap: () => _navigateToPlanYourRide(
+                                  context,
+                                  option['rideType'],
+                                  schedule: option['schedule'],
+                                ),
+                              );
+                            },
+                          ),
                         ),
-                        child: SectionHeader(title: 'Explore Options'),
-                      ),
-
-                      const SizedBox(height: 16),
-
-                      SizedBox(
-                        height: 180,
-                        child: ListView(
-                          padding: const EdgeInsets.symmetric(
+      
+                        const SizedBox(height: 24),
+      
+                        const Padding(
+                          padding: EdgeInsets.symmetric(
                             horizontal: AppDimensions.pageHorizontalPadding,
                           ),
-                          scrollDirection: Axis.horizontal,
-                          children: _buildExploreCards(context, _currentExploreOptions),
+                          child: SectionHeader(title: 'Explore Options'),
                         ),
-                      ),
-
-                      const SizedBox(height: 24),
-
-                      const Padding(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: AppDimensions.pageHorizontalPadding,
+      
+                        const SizedBox(height: 16),
+      
+                        SizedBox(
+                          height: 180,
+                          child: ListView(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: AppDimensions.pageHorizontalPadding,
+                            ),
+                            scrollDirection: Axis.horizontal,
+                            children: _buildExploreCards(context, _currentExploreOptions),
+                          ),
                         ),
-                        child: SectionHeader(title: 'Beat the Traffic'),
-                      ),
-
-                      const SizedBox(height: 16),
-
-                      SizedBox(
-                        height: 180,
-                        child: ListView(
-                          padding: const EdgeInsets.symmetric(
+      
+                        const SizedBox(height: 24),
+      
+                        const Padding(
+                          padding: EdgeInsets.symmetric(
                             horizontal: AppDimensions.pageHorizontalPadding,
                           ),
-                          scrollDirection: Axis.horizontal,
-                          children: _buildExploreCards(context, _currentBeatTrafficOptions),
+                          child: SectionHeader(title: 'Beat the Traffic'),
                         ),
-                      ),
-                    ],
+      
+                        const SizedBox(height: 16),
+      
+                        SizedBox(
+                          height: 180,
+                          child: ListView(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: AppDimensions.pageHorizontalPadding,
+                            ),
+                            scrollDirection: Axis.horizontal,
+                            children: _buildExploreCards(context, _currentBeatTrafficOptions),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
