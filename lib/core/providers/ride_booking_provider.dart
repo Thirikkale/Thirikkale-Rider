@@ -1,23 +1,58 @@
+
 import 'package:flutter/material.dart';
 import 'package:thirikkale_rider/features/booking/models/vehicle_option.dart';
 
 class RideBookingProvider extends ChangeNotifier {
+  // Expose default vehicle options for UI
+  List<VehicleOption> get vehicleOptions => VehicleOption.getDefaultOptions();
+  // For backward compatibility with UI code
+  VehicleOption? get selectedVehicle => _vehicleType;
   // Trip details
+  String _rideId = '';
   String _pickupAddress = '';
   String _destinationAddress = '';
   double? _pickupLat;
   double? _pickupLng;
   double? _destLat;
   double? _destLng;
+  DateTime? _estimatedPickupTime;
+  DateTime? _actualPickupTime;
+  DateTime? _estimatedDropoffTime;
+  DateTime? _actualDropoffTime;
+  double? _estimatedPrice; // estimated fare
+  double? _actualPrice; // actual fare
+  double? _estimatedDuration;
+  double? _actualDuration;
+  double? _estimatedDistance;
+  double? _actualDistance;
 
-  // Selected options
-  VehicleOption? _selectedVehicle;
-  String _selectedPaymentMethod = 'cash';
-  String _scheduleType = 'now';
+   // Default ride type
+  bool _isSolo = true;
+  bool _isRideScheduled = false;
+  bool _isWomenOnly = false;
+  bool _isShared= false;
+
+  // for scheduled rides (_isRideScheduled = true)
   DateTime? _scheduledDateTime;
 
+  //cancellation details
+  DateTime? _cancellationTime;
+  String? _cancellationReason;
+
+  // for shared rides
+  int? _participantCount = 1;
+  double? _individualShare = 100.00;
+  final DateTime? _joinedAt = DateTime.now();
+
+  // Selected options
+  VehicleOption? _vehicleType; // vehicle type, (Tuk, Ride, Rush, Prime, Squad)
+  String _selectedPaymentMethod = 'cash';
+
+  // payment details
+  String? _paymentId;
+
   // Available options
-  final List<VehicleOption> _vehicleOptions = VehicleOption.getDefaultOptions();
+  // final List<VehicleOption> _vehicleOptions = VehicleOption.getDefaultOptions();
 
   // Loading states
   bool _isLoadingRoute = false;
@@ -25,55 +60,241 @@ class RideBookingProvider extends ChangeNotifier {
   bool _isSettingTrip = false;
 
   // Trip information
-  String? _estimatedDuration;
-  String? _estimatedDistance;
-  double? _estimatedPrice;
-
+ 
+  // final List<VehicleOption> _vehicleOptions = [
+  //   VehicleOption(
+  //     id: 'tuk',
+  //     name: 'Tuk',
+  //     description: 'Affordable auto rickshaw ride',
+  //     price: 30.0,
+  //     estimatedTime: '10-15 min',
+  //     capacity: 3,
+  //     features: ['Open air', 'Economical'],
+  //     iconAsset: 'assets/icons/tuk.png',
+  //   ),
+  //   VehicleOption(
+  //     id: 'ride',
+  //     name: 'Ride',
+  //     description: 'Standard car ride',
+  //     price: 50.0,
+  //     estimatedTime: '8-12 min',
+  //     capacity: 4,
+  //     features: ['AC', 'Comfortable'],
+  //     iconAsset: 'assets/icons/ride.png',
+  //   ),
+  //   VehicleOption(
+  //     id: 'rush',
+  //     name: 'Rush',
+  //     description: 'Fast and premium ride',
+  //     price: 80.0,
+  //     estimatedTime: '5-8 min',
+  //     capacity: 4,
+  //     features: ['Priority', 'Premium'],
+  //     iconAsset: 'assets/icons/rush.png',
+  //   ),
+  //   VehicleOption(
+  //     id: 'prime',
+  //     name: 'Prime',
+  //     description: 'Luxury car ride',
+  //     price: 120.0,
+  //     estimatedTime: '5-10 min',
+  //     capacity: 4,
+  //     features: ['Luxury', 'Spacious'],
+  //     iconAsset: 'assets/icons/prime.png',
+  //   ),
+  //   VehicleOption(
+  //     id: 'squad',
+  //     name: 'Squad',
+  //     description: 'Group ride for up to 6',
+  //     price: 150.0,
+  //     estimatedTime: '12-18 min',
+  //     capacity: 6,
+  //     features: ['Group', 'Spacious'],
+  //     iconAsset: 'assets/icons/squad.png',
+  //   ),
+  // ];
+  
   // Promotion information
   bool _hasPromotion = false;
   String? _promotionText;
   double _promotionDiscountPercentage = 0.0;
+  // Promotion getters
+  bool get hasPromotion => _hasPromotion;
+  String? get promotionText => _promotionText;
+  double get promotionDiscountPercentage => _promotionDiscountPercentage;
+
+  // (removed duplicate _sharedRideId)
 
   // Getters
+  String get rideId => _rideId;
   String get pickupAddress => _pickupAddress;
   String get destinationAddress => _destinationAddress;
   double? get pickupLat => _pickupLat;
   double? get pickupLng => _pickupLng;
   double? get destLat => _destLat;
   double? get destLng => _destLng;
-
-  VehicleOption? get selectedVehicle => _selectedVehicle;
-  String get selectedPaymentMethod => _selectedPaymentMethod;
-  String get scheduleType => _scheduleType;
+  DateTime? get estimatedPickupTime => _estimatedPickupTime;
+  DateTime? get actualPickupTime => _actualPickupTime;
+  DateTime? get estimatedDropoffTime => _estimatedDropoffTime;
+  DateTime? get actualDropoffTime => _actualDropoffTime;
+  double? get estimatedPrice => _estimatedPrice;
+  double? get actualPrice => _actualPrice;
+  double? get estimatedDuration => _estimatedDuration;
+  double? get actualDuration => _actualDuration;
+  double? get estimatedDistance => _estimatedDistance;
+  double? get actualDistance => _actualDistance;
+  VehicleOption? get vehicleType => _vehicleType;
+  bool get isSolo => _isSolo;
+  bool get isRideScheduled => _isRideScheduled;
+  bool get isWomenOnly => _isWomenOnly;
+  bool get isShared => _isShared;
   DateTime? get scheduledDateTime => _scheduledDateTime;
-
-  List<VehicleOption> get vehicleOptions => _vehicleOptions;
-
+  DateTime? get cancellationTime => _cancellationTime;
+  String? get cancellationReason => _cancellationReason;
+  int get participantCount => _participantCount ?? 1;
+  double get individualShare => _individualShare ?? 100.00;
+  DateTime get joinedAt => _joinedAt ?? DateTime.now();
+  String get selectedPaymentMethod => _selectedPaymentMethod;
+  String? get paymentId => _paymentId;
   bool get isLoadingRoute => _isLoadingRoute;
   bool get isBookingRide => _isBookingRide;
   bool get isSettingTrip => _isSettingTrip;
+  // Setters
+  set rideId(String value) {
+    _rideId = value;
+    notifyListeners();
+  }
+  set pickupAddress(String value) {
+    _pickupAddress = value;
+    notifyListeners();
+  }
+  set destinationAddress(String value) {
+    _destinationAddress = value;
+    notifyListeners();
+  }
+  set pickupLat(double? value) {
+    _pickupLat = value;
+    notifyListeners();
+  }
+  set pickupLng(double? value) {
+    _pickupLng = value;
+    notifyListeners();
+  }
+  set destLat(double? value) {
+    _destLat = value;
+    notifyListeners();
+  }
+  set destLng(double? value) {
+    _destLng = value;
+    notifyListeners();
+  }
+  set estimatedPickupTime(DateTime? value) {
+    _estimatedPickupTime = value;
+    notifyListeners();
+  }
+  set actualPickupTime(DateTime? value) {
+    _actualPickupTime = value;
+    notifyListeners();
+  }
+  set estimatedDropoffTime(DateTime? value) {
+    _estimatedDropoffTime = value;
+    notifyListeners();
+  }
+  set actualDropoffTime(DateTime? value) {
+    _actualDropoffTime = value;
+    notifyListeners();
+  }
+  set estimatedPrice(double? value) {
+    _estimatedPrice = value;
+    notifyListeners();
+  }
+  set actualPrice(double? value) {
+    _actualPrice = value;
+    notifyListeners();
+  }
+  set estimatedDuration(double? value) {
+    _estimatedDuration = value;
+    notifyListeners();
+  }
+  set actualDuration(double? value) {
+    _actualDuration = value;
+    notifyListeners();
+  }
+  set estimatedDistance(double? value) {
+    _estimatedDistance = value;
+    notifyListeners();
+  }
+  set actualDistance(double? value) {
+    _actualDistance = value;
+    notifyListeners();
+  }
+  // set vehicleType removed; use setSelectVehicle instead
+  set isRideScheduled(bool value) {
+    _isRideScheduled = value;
+    notifyListeners();
+  }
+  set isWomenOnly(bool value) {
+    _isWomenOnly = value;
+    notifyListeners();
+  }
+  set isShared(bool value) {
+    _isShared = value;
+    notifyListeners();
+  }
+  set cancellationTime(DateTime? value) {
+    _cancellationTime = value;
+    notifyListeners();
+  }
+  set cancellationReason(String? value) {
+    _cancellationReason = value;
+    notifyListeners();
+  }
+  set participantCount(int value) {
+    _participantCount = value;
+    notifyListeners();
+  }
+  set individualShare(double value) {
+    _individualShare = value;
+    notifyListeners();
+  }
+  set vehicleType(VehicleOption? value) {
+    _vehicleType = value;
+    notifyListeners();
+  }
+  set selectedPaymentMethod(String value) {
+    _selectedPaymentMethod = value;
+    notifyListeners();
+  }
+  set paymentId(String? value) {
+    _paymentId = value;
+    notifyListeners();
+  }
+  set isLoadingRoute(bool value) {
+    _isLoadingRoute = value;
+    notifyListeners();
+  }
+  set isBookingRide(bool value) {
+    _isBookingRide = value;
+    notifyListeners();
+  }
+  set isSettingTrip(bool value) {
+    _isSettingTrip = value;
+    notifyListeners();
+  }
 
-  String? get estimatedDuration => _estimatedDuration;
-  String? get estimatedDistance => _estimatedDistance;
-  double? get estimatedPrice => _estimatedPrice;
-
-  // Promotion getters
-  bool get hasPromotion => _hasPromotion;
-  String? get promotionText => _promotionText;
-  double get promotionDiscountPercentage => _promotionDiscountPercentage;
-
-  bool get canBookRide => 
-      _selectedVehicle != null && 
-      _pickupAddress.isNotEmpty && 
+  bool get canBookRide => // Computed properties
+      _vehicleType != null &&
+      _pickupAddress.isNotEmpty &&
       _destinationAddress.isNotEmpty;
 
   bool get hasValidLocations =>
-      _pickupLat != null && 
-      _pickupLng != null && 
-      _destLat != null && 
+      _pickupLat != null &&
+      _pickupLng != null &&
+      _destLat != null &&
       _destLng != null;
 
   // Methods
+  // Setting trip ride details
   Future<void> setTripDetails({
     required String pickup,
     required String destination,
@@ -81,7 +302,7 @@ class RideBookingProvider extends ChangeNotifier {
     double? pickupLng,
     double? destLat,
     double? destLng,
-    bool preserveVehicleSelection = false,
+    bool preserveVehicleSelection = true,
   }) async {
     _isSettingTrip = true;
     notifyListeners();
@@ -98,7 +319,7 @@ class RideBookingProvider extends ChangeNotifier {
 
     // Reset previous selections when trip details change, unless preserving
     if (!preserveVehicleSelection) {
-      _selectedVehicle = null;
+      _vehicleType = null;
       _estimatedPrice = null;
     }
     _estimatedDuration = null;
@@ -112,69 +333,82 @@ class RideBookingProvider extends ChangeNotifier {
     String? duration,
     String? distance,
   }) {
-    _estimatedDuration = duration;
-    _estimatedDistance = distance;
-    _updateVehiclePrices();
-    notifyListeners();
-  }
-
-  void selectVehicle(VehicleOption vehicle) {
-    _selectedVehicle = vehicle;
-    _estimatedPrice = vehicle.price;
-    notifyListeners();
-  }
-
-  void setInitialVehicleByRideType(String? rideType) {
-    if (rideType == null) return;
-    
-    // Map ride type to vehicle option ID
-    String vehicleId;
-    switch (rideType.toLowerCase()) {
-      case 'tuk':
-        vehicleId = 'tuk';
-        break;
-      case 'ride':
-      case 'solo':
-        vehicleId = 'ride';
-        break;
-      case 'rush':
-        vehicleId = 'rush';
-        break;
-      case 'prime':
-      case 'prime ride':
-        vehicleId = 'primeRide';
-        break;
-      case 'shared':
-        // For shared rides, we could use a different logic or default to ride
-        vehicleId = 'ride';
-        break;
-      default:
-        // Default to ride if unknown type
-        vehicleId = 'ride';
-        break;
+    // Parse and update estimated duration
+    if (duration != null && duration.isNotEmpty) {
+      final parsedDuration = double.tryParse(duration);
+      if (parsedDuration != null && parsedDuration > 0) {
+        _estimatedDuration = parsedDuration;
+      } else {
+        _estimatedDuration = null;
+      }
+    } else {
+      _estimatedDuration = null;
     }
-    
-    // Find and select the corresponding vehicle option
-    final vehicle = _vehicleOptions.firstWhere(
-      (option) => option.id == vehicleId,
-      orElse: () => _vehicleOptions.first, // Fallback to first option
-    );
-    
-    selectVehicle(vehicle);
+
+    // Parse and update estimated distance
+    if (distance != null && distance.isNotEmpty) {
+      final parsedDistance = double.tryParse(distance);
+      if (parsedDistance != null && parsedDistance > 0) {
+        _estimatedDistance = parsedDistance;
+        _updateVehiclePrice(distance: _estimatedDistance!, isActual: false);
+      } else {
+        _estimatedDistance = null;
+        _estimatedPrice = null;
+      }
+    } else {
+      _estimatedDistance = null;
+      _estimatedPrice = null;
+    }
+
+    notifyListeners();
+  }
+
+  void setSelectVehicle(VehicleOption vehicle) {
+    _vehicleType = vehicle;
+    _estimatedPrice = vehicle.defaultPricePerUnit;
+    _isSolo = true;
+    _isRideScheduled = false;
+    _isWomenOnly = false;
+    _isShared= false;
+    notifyListeners();
+  }
+
+  // setting if shared or solo
+  void setRideType(String? rideType) {
+    if (rideType == null) {
+      _isSolo = true;
+      return;
+    }
+    // Set _isSolo based on rideType
+    if (rideType.toLowerCase() == 'shared') {
+      _isSolo = false;
+    } else {
+      _isSolo = true;
+    }
+    notifyListeners();
+    // Optionally, set vehicleType here if needed
   }
 
   void setPaymentMethod(String method) {
-    _selectedPaymentMethod = method;
-    notifyListeners();
+    // Only allow 'cash', 'card', or 'wallet'
+    const allowedMethods = ['cash', 'card', 'wallet'];
+    if (allowedMethods.contains(method.toLowerCase())) {
+      _selectedPaymentMethod = method.toLowerCase();
+      notifyListeners();
+    } else {
+      _selectedPaymentMethod = "cash"; // Default to cash if invalid method
+    }
   }
 
-  void setScheduleType(String type) {
-    _scheduleType = type;
+  void setScheduleType(bool rideType) {
+    // Set _isRideScheduled based on rideType
+    _isRideScheduled = rideType;
     notifyListeners();
+    // Removed: _scheduleType is not defined
   }
 
   void setScheduledDateTime(DateTime? dateTime) {
-    _scheduledDateTime = dateTime;
+    _scheduledDateTime = dateTime ?? DateTime.now();
     notifyListeners();
   }
 
@@ -191,22 +425,7 @@ class RideBookingProvider extends ChangeNotifier {
   }
 
   Future<void> fetchAvailablePromotions() async {
-    // Simulate fetching promotions from API
-    await Future.delayed(const Duration(milliseconds: 500));
-    
-    // For demo purposes, let's randomly apply a 2% promotion
-    // In real app, this would be based on user eligibility, payment method, etc.
-    final hasPromo = DateTime.now().millisecondsSinceEpoch % 3 == 0; // Random condition
-    
-    if (hasPromo) {
-      setPromotion(
-        hasPromotion: true,
-        promotionText: '2% promotion applied',
-        discountPercentage: 2.0,
-      );
-    } else {
-      setPromotion(hasPromotion: false);
-    }
+    // Promotion logic removed (fields not defined)
   }
 
   void setLoadingRoute(bool loading) {
@@ -214,9 +433,33 @@ class RideBookingProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  void _updateVehiclePrices() {
-    // You can implement dynamic pricing based on distance/duration here
-    // For now, using default prices from VehicleOption.getDefaultOptions()
+    // Dynamic pricing: 1st KM uses default price, rest uses FACTOR * default price per KM
+  void _updateVehiclePrice({
+    required double distance,
+    required bool isActual,
+  }) {
+    const double priceFactor = 0.8;
+
+    if (_vehicleType != null) {
+      final double basePrice = _vehicleType!.defaultPricePerUnit;
+      double price;
+      if (distance <= 1.0) {
+        price = basePrice;
+      } else {
+        price = basePrice + ((distance - 1.0) * basePrice * priceFactor);
+      }
+      if (isActual) {
+        _actualPrice = price;
+      } else {
+        _estimatedPrice = price;
+      }
+    } else {
+      if (isActual) {
+        _actualPrice = null;
+      } else {
+        _estimatedPrice = null;
+      }
+    }
   }
 
   // Booking methods
@@ -272,11 +515,10 @@ class RideBookingProvider extends ChangeNotifier {
     // For example: storing booking in local database, sending notifications, etc.
     
     print('Ride booked successfully!');
-    print('Vehicle: ${_selectedVehicle?.name}');
+    print('Vehicle: ${_vehicleType?.name}');
     print('Pickup: $_pickupAddress');
     print('Destination: $_destinationAddress');
     print('Payment: $_selectedPaymentMethod');
-    print('Schedule: $_scheduleType');
   }
 
   void _handleBookingError(dynamic error) {
@@ -290,9 +532,8 @@ class RideBookingProvider extends ChangeNotifier {
     return {
       'pickup': _pickupAddress,
       'destination': _destinationAddress,
-      'vehicle': _selectedVehicle?.toMap(),
+      'vehicle': _vehicleType?.toMap(),
       'paymentMethod': _selectedPaymentMethod,
-      'scheduleType': _scheduleType,
       'estimatedDuration': _estimatedDuration,
       'estimatedDistance': _estimatedDistance,
       'estimatedPrice': _estimatedPrice,
@@ -307,44 +548,57 @@ class RideBookingProvider extends ChangeNotifier {
     if (_isBookingRide) {
       return 'Booking...';
     }
-    
-    if (_selectedVehicle != null) {
-      if (_scheduleType == 'now') {
-        return 'Book ${_selectedVehicle!.name}';
-      } else {
-        return 'Schedule ${_selectedVehicle!.name}';
-      }
+    if (_vehicleType != null) {
+      return 'Book ${_vehicleType!.name}';
     }
-    
     return 'Select a Vehicle';
   }
 
   // Reset methods
   void reset() {
+    _rideId = '';
     _pickupAddress = '';
     _destinationAddress = '';
     _pickupLat = null;
     _pickupLng = null;
     _destLat = null;
     _destLng = null;
-    _selectedVehicle = null;
-    _selectedPaymentMethod = 'cash';
-    _scheduleType = 'now';
+    _estimatedPickupTime = null;
+    _actualPickupTime = null;
+    _estimatedDropoffTime = null;
+    _actualDropoffTime = null;
+    _estimatedPrice = null;
+    _actualPrice = null;
+    _estimatedDuration = null;
+    _actualDuration = null;
+    _estimatedDistance = null;
+    _actualDistance = null;
+    _isSolo = true;
+    _isRideScheduled = false;
+    _isWomenOnly = false;
+    _isShared = false;
     _scheduledDateTime = null;
+    _cancellationTime = null;
+    _cancellationReason = null;
+    _participantCount = 1;
+    _individualShare = 100.00;
+    // _joinedAt is final and should not be reset
+    _vehicleType = null;
+    _selectedPaymentMethod = 'cash';
+    _paymentId = null;
     _isLoadingRoute = false;
     _isBookingRide = false;
-    _estimatedDuration = null;
-    _estimatedDistance = null;
-    _estimatedPrice = null;
+    _isSettingTrip = false;
+    _hasPromotion = false;
+    _promotionText = null;
+    _promotionDiscountPercentage = 0.0;
     notifyListeners();
   }
 
   void resetSelections() {
-    _selectedVehicle = null;
+    _vehicleType = null;
     _selectedPaymentMethod = 'cash';
-    _scheduleType = 'now';
-    _scheduledDateTime = null;
-    _estimatedPrice = null;
+    
     notifyListeners();
   }
 
@@ -358,7 +612,7 @@ class RideBookingProvider extends ChangeNotifier {
       return 'Please select destination';
     }
     
-    if (_selectedVehicle == null) {
+    if (_vehicleType == null) {
       return 'Please select a vehicle';
     }
     
@@ -374,9 +628,8 @@ class RideBookingProvider extends ChangeNotifier {
     print('=== RideBookingProvider State ===');
     print('Pickup: $_pickupAddress ($_pickupLat, $_pickupLng)');
     print('Destination: $_destinationAddress ($_destLat, $_destLng)');
-    print('Selected Vehicle: ${_selectedVehicle?.name ?? 'None'}');
+    print('Selected Vehicle: ${_vehicleType?.name ?? 'None'}');
     print('Payment Method: $_selectedPaymentMethod');
-    print('Schedule Type: $_scheduleType');
     print('Can Book: $canBookRide');
     print('Is Booking: $_isBookingRide');
     print('=================================');
@@ -390,7 +643,7 @@ extension VehicleOptionExtension on VehicleOption {
       'id': id,
       'name': name,
       'description': description,
-      'price': price,
+      'defaultPricePerUnit': defaultPricePerUnit,
       'estimatedTime': estimatedTime,
       'capacity': capacity,
       'features': features,
