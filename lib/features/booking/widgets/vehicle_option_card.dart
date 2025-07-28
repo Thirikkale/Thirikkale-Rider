@@ -91,7 +91,7 @@ class VehicleOptionCard extends StatelessWidget {
 
               // Price
               Text(
-                'Rs.${vehicle.price.toInt()}',
+                'Rs.${vehicle.defaultPricePerUnit.toInt()}',
                 style: AppTextStyles.bodyLarge.copyWith(
                   fontWeight: FontWeight.w700,
                   color:

@@ -6,19 +6,26 @@ import 'package:thirikkale_rider/features/services/widgets/ride_service_card.dar
 import 'package:thirikkale_rider/widgets/bottom_navbar.dart';
 import 'package:thirikkale_rider/widgets/common/custom_appbar_name.dart';
 import 'package:thirikkale_rider/features/booking/screens/plan_your_ride_screen.dart';
+import 'package:provider/provider.dart';
+import 'package:thirikkale_rider/core/providers/ride_booking_provider.dart';
 
 class ServicesScreen extends StatelessWidget {
   const ServicesScreen({super.key});
 
-  // Helper method to navigate to PlanYourRideScreen with parameters
+  // Helper method to set provider variables and navigate to PlanYourRideScreen
   void _navigateToPlanYourRide(BuildContext context, String rideType, {String? schedule}) {
+    final provider = Provider.of<RideBookingProvider>(context, listen: false);
+    provider.setRideType(rideType);
+    provider.isRideScheduled = (schedule == 'Scheduled');
+    if (schedule == 'Scheduled') {
+      provider.setScheduledDateTime(DateTime.now().add(const Duration(hours: 1)));
+    } else {
+      provider.setScheduledDateTime(null);
+    }
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => PlanYourRideScreen(
-          initialRideType: rideType,
-          initialSchedule: schedule ?? 'Now',
-        ),
+        builder: (context) => const PlanYourRideScreen(),
       ),
     );
   }

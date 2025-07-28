@@ -70,7 +70,7 @@ class RideOptionsBottomSheet extends StatelessWidget {
         return VehicleOptionCard(
           vehicle: vehicle,
           isSelected: bookingProvider.selectedVehicle?.id == vehicle.id,
-          onTap: () => bookingProvider.selectVehicle(vehicle),
+          onTap: () => bookingProvider.setSelectVehicle(vehicle),
         );
       },
     );

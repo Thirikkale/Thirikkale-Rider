@@ -22,9 +22,7 @@ class DestinationSearchBar extends StatelessWidget {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => const PlanYourRideScreen(
-                  initialSchedule: 'Now',
-                ),
+                builder: (context) => const PlanYourRideScreen(),
               ),
             );
           },
