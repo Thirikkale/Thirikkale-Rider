@@ -10,6 +10,8 @@ import 'package:thirikkale_rider/widgets/bottom_navbar.dart';
 import 'package:thirikkale_rider/features/services/screens/services_screen.dart';
 import 'package:thirikkale_rider/features/booking/screens/plan_your_ride_screen.dart';
 import 'package:thirikkale_rider/features/home/screens/ride_option_detail_screen.dart';
+import 'package:provider/provider.dart';
+import 'package:thirikkale_rider/core/providers/ride_booking_provider.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -28,6 +30,11 @@ class _HomeScreenState extends State<HomeScreen> {
       'title': 'Ride',
       'rideType': 'Solo',
       'isPromo': false,
+      'flags': {
+        'isSolo': true,
+        'isRideScheduled': false,
+        'isWomenOnly': false
+      }
     },
     {
       'icon': 'assets/icons/vehicles/scheduledRide.png',
@@ -35,24 +42,44 @@ class _HomeScreenState extends State<HomeScreen> {
       'rideType': 'Solo',
       'schedule': 'Scheduled',
       'isPromo': false,
+      'flags': {
+        'isSolo': true,
+        'isRideScheduled': true,
+        'isWomenOnly': false
+      }
     },
     {
       'icon': 'assets/icons/vehicles/tuk.png',
       'title': 'Tuk',
       'rideType': 'Tuk',
       'isPromo': true,
+      'flags': {
+        'isSolo': true,
+        'isRideScheduled': false,
+        'isWomenOnly': false,
+      }
     },
     {
       'icon': 'assets/icons/vehicles/rush.png',
       'title': 'Rush',
       'rideType': 'Rush',
       'isPromo': false,
+      'flags': {
+        'isSolo': true,
+        'isRideScheduled': false,
+        'isWomenOnly': false,
+      }
     },
     {
       'icon': 'assets/icons/vehicles/primeRide.png',
       'title': 'Prime',
       'rideType': 'Prime',
       'isPromo': false,
+      'flags': {
+        'isSolo': true,
+        'isRideScheduled': false,
+        'isWomenOnly': false,
+      }
     },
   ];
 
@@ -63,6 +90,11 @@ class _HomeScreenState extends State<HomeScreen> {
       'title': 'Shared',
       'rideType': 'Shared',
       'isPromo': false,
+      'flags': {
+        'isSolo': false,
+        'isRideScheduled': false,
+        'isWomenOnly': false
+      }
     },
     {
       'icon': 'assets/icons/vehicles/scheduledRide.png',
@@ -70,18 +102,33 @@ class _HomeScreenState extends State<HomeScreen> {
       'rideType': 'Shared',
       'schedule': 'Scheduled',
       'isPromo': false,
+      'flags': {
+        'isSolo': false,
+        'isRideScheduled': true,
+        'isWomenOnly': false
+      }
     },
     {
       'icon': 'assets/icons/vehicles/squad.png',
       'title': 'Squad',
       'rideType': 'Squad',
       'isPromo': false,
+      'flags': {
+        'isSolo': false,
+        'isRideScheduled': false,
+        'isWomenOnly': false,
+      }
     },
     {
       'icon': 'assets/icons/vehicles/ride.png',
       'title': 'Women Only',
       'rideType': 'Women Only',
       'isPromo': false,
+      'flags': {
+        'isSolo': false,
+        'isRideScheduled': false,
+        'isWomenOnly': true,
+      }
     },
   ];
 
@@ -98,7 +145,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   // Solo Explore Options Data
-  static const List<Map<String, String>> soloExploreOptions = [
+  static const List<Map<String, dynamic>> soloExploreOptions = [
     {
       'image': 'assets/images/option_cards/solo_ride.png',
       'title': 'Standard Ride',
@@ -106,6 +153,11 @@ class _HomeScreenState extends State<HomeScreen> {
       'detailTitle': 'Standard Solo Ride',
       'description': 'Comfortable and reliable rides for your daily transportation needs. Available now or schedule for later. Perfect for short to medium distance trips.',
       'buttonText': 'Choose Standard',
+      'flags': {
+        'isSolo': true,
+        'isRideScheduled': false,
+        'isWomenOnly': false
+      }
     },
     {
       'image': 'assets/images/option_cards/solo_prime.png',
@@ -114,11 +166,16 @@ class _HomeScreenState extends State<HomeScreen> {
       'detailTitle': 'Prime Solo Experience',
       'description': 'Premium vehicles with highly-rated professional drivers. Scheduled rides available. Perfect for business meetings, airport transfers, and special occasions.',
       'buttonText': 'Choose Prime',
+      'flags': {
+        'isSolo': true,
+        'isRideScheduled': false,
+        'isWomenOnly': false
+      }
     },
   ];
 
   // Shared Explore Options Data
-  static const List<Map<String, String>> sharedExploreOptions = [
+  static const List<Map<String, dynamic>> sharedExploreOptions = [
     {
       'image': 'assets/images/option_cards/shared_ride.png',
       'title': 'Shared Ride',
@@ -126,6 +183,11 @@ class _HomeScreenState extends State<HomeScreen> {
       'detailTitle': 'Shared Ride Service',
       'description': 'Share your ride with others going in the same direction and split the cost. Scheduled rides available for regular commutes. Eco-friendly and budget-friendly option.',
       'buttonText': 'Join Shared',
+      'flags': {
+        'isSolo': false,
+        'isRideScheduled': false,
+        'isWomenOnly': false
+      }
     },
     {
       'image': 'assets/images/option_cards/shared_women.png',
@@ -134,11 +196,16 @@ class _HomeScreenState extends State<HomeScreen> {
       'detailTitle': 'Women Only Shared Ride',
       'description': 'Shared rides exclusively for women passengers with female or verified drivers. Scheduled options available for regular commutes. Safe and comfortable environment.',
       'buttonText': 'Choose Women Only',
+      'flags': {
+        'isSolo': false,
+        'isRideScheduled': false,
+        'isWomenOnly': true
+      }
     },
   ];
 
   // Solo Beat the Traffic Data
-  static const List<Map<String, String>> soloBeatTrafficOptions = [
+  static const List<Map<String, dynamic>> soloBeatTrafficOptions = [
     {
       'image': 'assets/images/option_cards/solo_rush.png',
       'title': 'Rush',
@@ -146,6 +213,11 @@ class _HomeScreenState extends State<HomeScreen> {
       'detailTitle': 'Rush Solo Service',
       'description': 'Priority rides with optimized routes during rush hours. Higher fare but guaranteed faster arrival times. Scheduled rides available for regular office commutes.',
       'buttonText': 'Choose Rush',
+      'flags': {
+        'isSolo': true,
+        'isRideScheduled': false,
+        'isWomenOnly': false
+      }
     },
     {
       'image': 'assets/images/option_cards/solo_tuk.png',
@@ -154,11 +226,16 @@ class _HomeScreenState extends State<HomeScreen> {
       'detailTitle': 'Tuk Solo Ride',
       'description': 'Fast and economical three-wheeler rides perfect for navigating through traffic. Instant booking available. Great for short trips and quick errands.',
       'buttonText': 'Choose Tuk',
+      'flags': {
+        'isSolo': true,
+        'isRideScheduled': false,
+        'isWomenOnly': false
+      }
     },
   ];
 
   // Shared Beat the Traffic Data
-  static const List<Map<String, String>> sharedBeatTrafficOptions = [
+  static const List<Map<String, dynamic>> sharedBeatTrafficOptions = [
     {
       'image': 'assets/images/option_cards/shared_squad.png',
       'title': 'Squad',
@@ -166,6 +243,11 @@ class _HomeScreenState extends State<HomeScreen> {
       'detailTitle': 'Squad Shared Ride',
       'description': 'Larger vehicles for group travel with 4-6 passengers. Perfect for office teams, friends, or family groups. Scheduled rides available for regular group commutes.',
       'buttonText': 'Book Squad',
+      'flags': {
+        'isSolo': false,
+        'isRideScheduled': false,
+        'isWomenOnly': false
+      }
     },
     {
       'image': 'assets/images/option_cards/shared_scheduled.png',
@@ -174,34 +256,57 @@ class _HomeScreenState extends State<HomeScreen> {
       'detailTitle': 'Scheduled Shared Ride',
       'description': 'Book shared rides in advance for your regular commutes. Perfect for daily office trips with cost-effective shared transportation. Plan your rides ahead of time.',
       'buttonText': 'Schedule Ride',
+      'flags': {
+        'isSolo': false,
+        'isRideScheduled': true,
+        'isWomenOnly': false
+      }
     },
   ];
 
   // Get current explore options based on selected tab
-  List<Map<String, String>> get _currentExploreOptions {
+  List<Map<String, dynamic>> get _currentExploreOptions {
     return _selectedRideTypeIndex == 0 ? soloExploreOptions : sharedExploreOptions;
   }
 
   // Get current beat traffic options based on selected tab
-  List<Map<String, String>> get _currentBeatTrafficOptions {
+  List<Map<String, dynamic>> get _currentBeatTrafficOptions {
     return _selectedRideTypeIndex == 0 ? soloBeatTrafficOptions : sharedBeatTrafficOptions;
   }
 
   // Helper method to navigate to PlanYourRideScreen with parameters
-  void _navigateToPlanYourRide(BuildContext context, String rideType, {String? schedule}) {
+  void _navigateToPlanYourRide(BuildContext context, String rideType, {String? schedule, Map<String, dynamic>? flags}) {
+    // Set flags in provider before navigation
+    if (flags != null) {
+      final provider = Provider.of<RideBookingProvider>(context, listen: false);
+      provider.setOptions(
+        isSolo: flags['isSolo'] ?? true,
+        isRideScheduled: flags['isRideScheduled'] ?? false,
+        isWomenOnly: flags['isWomenOnly'] ?? false,
+      );
+    }
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => PlanYourRideScreen(
-          initialRideType: rideType,
-          initialSchedule: schedule ?? 'Now',
         ),
       ),
     );
   }
 
   // Helper method to navigate to RideOptionDetailScreen
-  void _navigateToRideDetail(BuildContext context, Map<String, String> option) {
+  void _navigateToRideDetail(BuildContext context, Map<String, dynamic> option) {
+    // Set flags in provider before navigation
+    final flags = option['flags'] as Map<String, dynamic>?;
+    if (flags != null) {
+      final provider = Provider.of<RideBookingProvider>(context, listen: false);
+      provider.setOptions(
+        isSolo: flags['isSolo'] ?? true,
+        isRideScheduled: flags['isRideScheduled'] ?? false,
+        isWomenOnly: flags['isWomenOnly'] ?? false,
+      );
+    }
+
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -214,7 +319,7 @@ class _HomeScreenState extends State<HomeScreen> {
           onChooseOption: () {
             // Navigate back and then to plan your ride
             Navigator.pop(context);
-            
+
             // Map option titles to ride types based on current tab
             String rideType;
             if (_selectedRideTypeIndex == 1) {
@@ -232,7 +337,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 rideType = 'Solo'; // default for solo tab
               }
             }
-            
+
             _navigateToPlanYourRide(context, rideType);
           },
         ),
@@ -241,7 +346,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   // Helper method to build explore option cards
-  List<Widget> _buildExploreCards(BuildContext context, List<Map<String, String>> options) {
+  List<Widget> _buildExploreCards(BuildContext context, List<Map<String, dynamic>> options) {
     final cards = <Widget>[];
     
     for (int i = 0; i < options.length; i++) {
@@ -335,11 +440,12 @@ class _HomeScreenState extends State<HomeScreen> {
                                 icon: option['icon'],
                                 title: option['title'],
                                 isPromo: option['isPromo'] ?? false,
-                                onTap: () => _navigateToPlanYourRide(
-                                  context,
-                                  option['rideType'],
-                                  schedule: option['schedule'],
-                                ),
+                              onTap: () => _navigateToPlanYourRide(
+                                context,
+                                option['rideType'],
+                                schedule: option['schedule'],
+                                flags: option['flags'] as Map<String, dynamic>?,
+                              ),
                               );
                             },
                           ),

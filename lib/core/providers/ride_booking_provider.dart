@@ -30,7 +30,6 @@ class RideBookingProvider extends ChangeNotifier {
   bool _isSolo = true;
   bool _isRideScheduled = false;
   bool _isWomenOnly = false;
-  bool _isShared= false;
 
   // for scheduled rides (_isRideScheduled = true)
   DateTime? _scheduledDateTime;
@@ -67,27 +66,7 @@ class RideBookingProvider extends ChangeNotifier {
   //     name: 'Tuk',
   //     description: 'Affordable auto rickshaw ride',
   //     price: 30.0,
-  //     estimatedTime: '10-15 min',
-  //     capacity: 3,
-  //     features: ['Open air', 'Economical'],
-  //     iconAsset: 'assets/icons/tuk.png',
-  //   ),
-  //   VehicleOption(
-  //     id: 'ride',
-  //     name: 'Ride',
-  //     description: 'Standard car ride',
-  //     price: 50.0,
-  //     estimatedTime: '8-12 min',
-  //     capacity: 4,
-  //     features: ['AC', 'Comfortable'],
-  //     iconAsset: 'assets/icons/ride.png',
-  //   ),
-  //   VehicleOption(
-  //     id: 'rush',
-  //     name: 'Rush',
-  //     description: 'Fast and premium ride',
-  //     price: 80.0,
-  //     estimatedTime: '5-8 min',
+  // Removed duplicate methods for setting ride type and schedule type
   //     capacity: 4,
   //     features: ['Priority', 'Premium'],
   //     iconAsset: 'assets/icons/rush.png',
@@ -147,7 +126,6 @@ class RideBookingProvider extends ChangeNotifier {
   bool get isSolo => _isSolo;
   bool get isRideScheduled => _isRideScheduled;
   bool get isWomenOnly => _isWomenOnly;
-  bool get isShared => _isShared;
   DateTime? get scheduledDateTime => _scheduledDateTime;
   DateTime? get cancellationTime => _cancellationTime;
   String? get cancellationReason => _cancellationReason;
@@ -235,10 +213,6 @@ class RideBookingProvider extends ChangeNotifier {
   }
   set isWomenOnly(bool value) {
     _isWomenOnly = value;
-    notifyListeners();
-  }
-  set isShared(bool value) {
-    _isShared = value;
     notifyListeners();
   }
   set cancellationTime(DateTime? value) {
@@ -366,12 +340,20 @@ class RideBookingProvider extends ChangeNotifier {
   void setSelectVehicle(VehicleOption vehicle) {
     _vehicleType = vehicle;
     _estimatedPrice = vehicle.defaultPricePerUnit;
-    _isSolo = true;
-    _isRideScheduled = false;
-    _isWomenOnly = false;
-    _isShared= false;
     notifyListeners();
   }
+
+  // set options
+  void setOptions({
+    bool? isSolo,
+    bool? isRideScheduled,
+    bool? isWomenOnly,
+    }) {
+    _isSolo = isSolo ?? true;
+    _isRideScheduled = isRideScheduled ?? false;
+    _isWomenOnly = isWomenOnly ?? false;
+    notifyListeners();
+    }
 
   // setting if shared or solo
   void setRideType(String? rideType) {
@@ -576,7 +558,6 @@ class RideBookingProvider extends ChangeNotifier {
     _isSolo = true;
     _isRideScheduled = false;
     _isWomenOnly = false;
-    _isShared = false;
     _scheduledDateTime = null;
     _cancellationTime = null;
     _cancellationReason = null;

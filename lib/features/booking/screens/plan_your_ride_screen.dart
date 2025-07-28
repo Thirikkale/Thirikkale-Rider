@@ -17,20 +17,10 @@ import 'package:thirikkale_rider/features/booking/screens/ride_booking_screen.da
 import 'package:thirikkale_rider/features/booking/screens/location_search_screen.dart';
 import 'package:thirikkale_rider/features/booking/models/custom_marker.dart';
 import 'package:thirikkale_rider/widgets/common/custom_appbar_name.dart';
+import 'package:thirikkale_rider/core/providers/ride_booking_provider.dart';
 
 class PlanYourRideScreen extends StatefulWidget {
-  final String? initialRideType;
-  final String? initialSchedule;
-  final String? initialPickupAddress;
-  final String? initialDestinationAddress;
-
-  const PlanYourRideScreen({
-    super.key,
-    this.initialRideType,
-    this.initialSchedule,
-    this.initialPickupAddress,
-    this.initialDestinationAddress,
-  });
+  const PlanYourRideScreen({super.key});
 
   @override
   State<PlanYourRideScreen> createState() => _PlanYourRideScreenState();
@@ -44,8 +34,6 @@ class _PlanYourRideScreenState extends State<PlanYourRideScreen> {
 
   int locatorHeightFromAbove = 30;
 
-  String? selectedRideType;
-  String? selectedSchedule;
   bool _mapLoading = true;
   bool _isSelectingLocation = false;
   String _locationSelectionMode = ''; // 'pickup' or 'destination'
@@ -55,10 +43,6 @@ class _PlanYourRideScreenState extends State<PlanYourRideScreen> {
   Timer? _geocodingTimer;
   Timer? _autoSelectionTimer;
 
-  // New state variables for floating buttons
-  bool _isScheduleNow = true; // true for "Now", false for "Schedule"
-  bool _isRideSolo = true; // true for "Solo", false for "Shared"
-
   // Store selected coordinates from map
   LatLng? _selectedPickupCoords;
   LatLng? _selectedDestinationCoords;
@@ -66,15 +50,13 @@ class _PlanYourRideScreenState extends State<PlanYourRideScreen> {
   @override
   void initState() {
     super.initState();
-
-    // Initialize with passed parameters
     _initializeWithParameters();
     _focusOnCurrentLocation();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _initializeLocationProvider();
     });
   }
-
+  // TODO: update to hsow the bottom sheet
   void _showLocationPermissionDialog() {
     showDialog(
       context: context,
@@ -100,7 +82,7 @@ class _PlanYourRideScreenState extends State<PlanYourRideScreen> {
           ),
     );
   }
-
+  
   Future<void> _checkLocationServices() async {
     try {
       // Check if location services are enabled
@@ -134,32 +116,13 @@ class _PlanYourRideScreenState extends State<PlanYourRideScreen> {
   }
 
   void _initializeWithParameters() {
-    // Set initial ride type
-    if (widget.initialRideType != null) {
-      final rideType = widget.initialRideType!.toLowerCase();
-      selectedRideType = widget.initialRideType; // Store the original ride type
-      _isRideSolo =
-          rideType == 'solo' ||
-          rideType == 'ride' ||
-          rideType == 'tuk' ||
-          rideType == 'rush';
-      // If it's 'shared', then _isRideSolo will be false
+    // Use provider values for initial addresses
+    final bookingProvider = Provider.of<RideBookingProvider>(context, listen: false);
+    if (bookingProvider.pickupAddress.isNotEmpty) {
+      _pickupController.text = bookingProvider.pickupAddress;
     }
-
-    // Set initial schedule
-    if (widget.initialSchedule != null) {
-      final schedule = widget.initialSchedule!.toLowerCase();
-      _isScheduleNow = schedule == 'now';
-      // If it's 'scheduled', then _isScheduleNow will be false
-    }
-
-    // Set initial addresses if provided
-    if (widget.initialPickupAddress != null) {
-      _pickupController.text = widget.initialPickupAddress!;
-    }
-
-    if (widget.initialDestinationAddress != null) {
-      _destinationController.text = widget.initialDestinationAddress!;
+    if (bookingProvider.destinationAddress.isNotEmpty) {
+      _destinationController.text = bookingProvider.destinationAddress;
     }
   }
 
@@ -331,6 +294,37 @@ class _PlanYourRideScreenState extends State<PlanYourRideScreen> {
         pickupLng = locationProvider.currentLongitude;
       }
 
+      // Estimate price, duration, and distance if available from directions
+      double? estimatedPrice;
+      double? estimatedDuration;
+      double? estimatedDistance;
+      // Try to get estimates from directions service if both coordinates are available
+      if (pickupLat != null && pickupLng != null && destLat != null && destLng != null) {
+        final directions = await DirectionsService.getDirections(
+          origin: LatLng(pickupLat, pickupLng),
+          destination: LatLng(destLat, destLng),
+        );
+        if (directions != null) {
+          // Parse duration and distance from String to double
+          estimatedDuration = double.tryParse(directions.duration);
+          estimatedDistance = double.tryParse(directions.distance);
+        }
+      }
+
+      // Update provider with all relevant data
+      final bookingProvider = Provider.of<RideBookingProvider>(context, listen: false);
+      await bookingProvider.setTripDetails(
+        pickup: _pickupController.text,
+        destination: _destinationController.text,
+        pickupLat: pickupLat,
+        pickupLng: pickupLng,
+        destLat: destLat,
+        destLng: destLng,
+      );
+      bookingProvider.estimatedPrice = estimatedPrice;
+      bookingProvider.estimatedDuration = estimatedDuration;
+      bookingProvider.estimatedDistance = estimatedDistance;
+
       // Hide loading dialog
       if (mounted) Navigator.pop(context);
 
@@ -340,16 +334,7 @@ class _PlanYourRideScreenState extends State<PlanYourRideScreen> {
           context,
           MaterialPageRoute(
             builder:
-                (context) => RideBookingScreen(
-                  pickupAddress: _pickupController.text,
-                  destinationAddress: _destinationController.text,
-                  pickupLat: pickupLat,
-                  pickupLng: pickupLng,
-                  destLat: destLat,
-                  destLng: destLng,
-                  initialRideType: selectedRideType,
-                  initialScheduleType: _isScheduleNow ? 'now' : 'scheduled',
-                ),
+                (context) => RideBookingScreen(),
           ),
         );
       }
@@ -361,7 +346,7 @@ class _PlanYourRideScreenState extends State<PlanYourRideScreen> {
       _showErrorMessage('Unable to get location details. Please try again.');
     }
   }
-
+  //TODO: better design to show loading
   void _showLoadingDialog() {
     DialogHelper.showInfoDialog(
       context: context,
@@ -687,25 +672,34 @@ class _PlanYourRideScreenState extends State<PlanYourRideScreen> {
   }
 
   void _toggleSchedule() {
-    setState(() {
-      _isScheduleNow = !_isScheduleNow;
-    });
+    final bookingProvider = Provider.of<RideBookingProvider>(context, listen: false);
+    bookingProvider.setOptions(
+      isSolo: bookingProvider.isSolo,
+      isRideScheduled: !bookingProvider.isRideScheduled,
+      isWomenOnly: bookingProvider.isWomenOnly,
+    );
     SnackbarHelper.showInfoSnackBar(
       context,
-      _isScheduleNow ? 'Ride set for now' : 'Ride scheduled for later',
+      !bookingProvider.isRideScheduled ? 'Ride set for now' : 'Ride scheduled for later',
     );
+    setState(() {}); // To trigger UI update
   }
 
   void _toggleRideType() {
-    setState(() {
-      _isRideSolo = !_isRideSolo;
-    });
+    final bookingProvider = Provider.of<RideBookingProvider>(context, listen: false);
+    bookingProvider.setOptions(
+      isSolo: !bookingProvider.isSolo,
+      isRideScheduled: bookingProvider.isRideScheduled,
+      isWomenOnly: bookingProvider.isWomenOnly,
+    );
     SnackbarHelper.showInfoSnackBar(
       context,
-      _isRideSolo ? 'Solo ride selected' : 'Shared ride selected',
+      bookingProvider.isSolo ? 'Solo ride selected' : 'Shared ride selected',
     );
+    setState(() {}); // To trigger UI update
   }
 
+  // Showing the path in the map
   Future<void> _calculateAndDisplayRoute() async {
     // Check if we have both pickup and destination coordinates
     if (_selectedPickupCoords == null || _selectedDestinationCoords == null) {
@@ -1077,114 +1071,118 @@ class _PlanYourRideScreenState extends State<PlanYourRideScreen> {
           Positioned(
             right: AppDimensions.pageHorizontalPadding,
             bottom: kToolbarHeight + 255,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                // Schedule button with text
-                Material(
-                  elevation: 2,
-                  borderRadius: BorderRadius.circular(12),
-                  child: InkWell(
-                    onTap: _toggleSchedule,
-                    borderRadius: BorderRadius.circular(12),
-                    child: Container(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: AppDimensions.subSectionSpacingDown * 3,
-                        vertical: AppDimensions.subSectionSpacingDown * 3,
-                      ),
-                      decoration: BoxDecoration(
-                        color:
-                            _isScheduleNow
-                                ? AppColors.primaryBlue
-                                : AppColors.white,
+            child: Consumer<RideBookingProvider>(
+              builder: (context, bookingProvider, _) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    // Schedule button with text
+                    Material(
+                      elevation: 2,
+                      borderRadius: BorderRadius.circular(12),
+                      child: InkWell(
+                        onTap: _toggleSchedule,
                         borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            _isScheduleNow ? Icons.access_time : Icons.schedule,
+                        child: Container(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: AppDimensions.subSectionSpacingDown * 3,
+                            vertical: AppDimensions.subSectionSpacingDown * 3,
+                          ),
+                          decoration: BoxDecoration(
                             color:
-                                _isScheduleNow
-                                    ? AppColors.white
-                                    : AppColors.primaryBlue,
-                            size: 20,
+                                !bookingProvider.isRideScheduled
+                                    ? AppColors.primaryBlue
+                                    : AppColors.white,
+                            borderRadius: BorderRadius.circular(12),
                           ),
-                          SizedBox(width: AppDimensions.subSectionSpacingDown),
-                          Text(
-                            _isScheduleNow ? 'Now' : 'Scheduled',
-                            style: AppTextStyles.bodySmall.copyWith(
-                              color:
-                                  _isScheduleNow
-                                      ? AppColors.white
-                                      : AppColors.primaryBlue,
-                              fontWeight: FontWeight.w500,
-                            ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                !bookingProvider.isRideScheduled ? Icons.access_time : Icons.schedule,
+                                color:
+                                    !bookingProvider.isRideScheduled
+                                        ? AppColors.white
+                                        : AppColors.primaryBlue,
+                                size: 20,
+                              ),
+                              SizedBox(width: AppDimensions.subSectionSpacingDown),
+                              Text(
+                                !bookingProvider.isRideScheduled ? 'Now' : 'Scheduled',
+                                style: AppTextStyles.bodySmall.copyWith(
+                                  color:
+                                      !bookingProvider.isRideScheduled
+                                          ? AppColors.white
+                                          : AppColors.primaryBlue,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
                           ),
-                        ],
+                        ),
                       ),
                     ),
-                  ),
-                ),
-                SizedBox(height: AppDimensions.widgetSpacing),
+                    SizedBox(height: AppDimensions.widgetSpacing),
 
-                // Ride type button with text
-                Material(
-                  elevation: 2,
-                  borderRadius: BorderRadius.circular(12),
-                  child: InkWell(
-                    onTap: _toggleRideType,
-                    borderRadius: BorderRadius.circular(12),
-                    child: Container(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: AppDimensions.subSectionSpacingDown * 3,
-                        vertical: AppDimensions.subSectionSpacingDown * 3,
-                      ),
-                      decoration: BoxDecoration(
-                        color:
-                            _isRideSolo
-                                ? AppColors.primaryBlue
-                                : AppColors.white,
+                    // Ride type button with text
+                    Material(
+                      elevation: 2,
+                      borderRadius: BorderRadius.circular(12),
+                      child: InkWell(
+                        onTap: _toggleRideType,
                         borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            _isRideSolo ? Icons.person : Icons.people,
+                        child: Container(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: AppDimensions.subSectionSpacingDown * 3,
+                            vertical: AppDimensions.subSectionSpacingDown * 3,
+                          ),
+                          decoration: BoxDecoration(
                             color:
-                                _isRideSolo
-                                    ? AppColors.white
-                                    : AppColors.primaryBlue,
-                            size: 20,
+                                bookingProvider.isSolo
+                                    ? AppColors.primaryBlue
+                                    : AppColors.white,
+                            borderRadius: BorderRadius.circular(12),
                           ),
-                          SizedBox(width: AppDimensions.subSectionSpacingDown),
-                          Text(
-                            _isRideSolo ? 'Solo' : 'Shared',
-                            style: AppTextStyles.bodySmall.copyWith(
-                              color:
-                                  _isRideSolo
-                                      ? AppColors.white
-                                      : AppColors.primaryBlue,
-                              fontWeight: FontWeight.w500,
-                            ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                bookingProvider.isSolo ? Icons.person : Icons.people,
+                                color:
+                                    bookingProvider.isSolo
+                                        ? AppColors.white
+                                        : AppColors.primaryBlue,
+                                size: 20,
+                              ),
+                              SizedBox(width: AppDimensions.subSectionSpacingDown),
+                              Text(
+                                bookingProvider.isSolo ? 'Solo' : 'Shared',
+                                style: AppTextStyles.bodySmall.copyWith(
+                                  color:
+                                      bookingProvider.isSolo
+                                          ? AppColors.white
+                                          : AppColors.primaryBlue,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
                           ),
-                        ],
+                        ),
                       ),
                     ),
-                  ),
-                ),
-                SizedBox(height: AppDimensions.widgetSpacing - 5),
+                    SizedBox(height: AppDimensions.widgetSpacing - 5),
 
-                FloatingActionButton(
-                  heroTag: "focus_btn",
-                  mini: true,
-                  backgroundColor: AppColors.white,
-                  elevation: 2,
-                  onPressed: _focusOnCurrentLocation,
-                  child: Icon(Icons.my_location, color: AppColors.primaryBlue),
-                ),
-              ],
+                    FloatingActionButton(
+                      heroTag: "focus_btn",
+                      mini: true,
+                      backgroundColor: AppColors.white,
+                      elevation: 2,
+                      onPressed: _focusOnCurrentLocation,
+                      child: Icon(Icons.my_location, color: AppColors.primaryBlue),
+                    ),
+                  ],
+                );
+              },
             ),
           ),
 

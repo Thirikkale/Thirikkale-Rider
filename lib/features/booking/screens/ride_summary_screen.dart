@@ -9,26 +9,9 @@ import 'package:thirikkale_rider/features/booking/widgets/route_map.dart';
 import 'package:thirikkale_rider/features/booking/screens/ride_tracking_screen.dart';
 
 class RideSummaryScreen extends StatefulWidget {
-  final String pickupAddress;
-  final String destinationAddress;
-  final double? pickupLat;
-  final double? pickupLng;
-  final double? destLat;
-  final double? destLng;
-  final DateTime scheduledDateTime;
-  final String? rideType;
-
 
   const RideSummaryScreen({
     super.key,
-    required this.pickupAddress,
-    required this.destinationAddress,
-    this.pickupLat,
-    this.pickupLng,
-    this.destLat,
-    this.destLng,
-    required this.scheduledDateTime,
-    this.rideType,
   });
 
   @override
@@ -174,7 +157,7 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
 
   Widget _buildBottomDetailsContainer(RideBookingProvider bookingProvider) {
     final selectedVehicle = bookingProvider.selectedVehicle;
-    final basePrice = selectedVehicle?.price ?? 0;
+    final basePrice = selectedVehicle?.defaultPricePerUnit ?? 0;
     final discountPercentage = bookingProvider.hasPromotion ? bookingProvider.promotionDiscountPercentage : 0.0;
     final discountAmount = (basePrice * discountPercentage / 100).round();
     final totalPrice = basePrice - discountAmount;
@@ -465,24 +448,12 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
       await bookingProvider.bookRide();
 
       if (mounted) {
-        final selectedVehicle = bookingProvider.selectedVehicle;
-        final estimatedPrice = (selectedVehicle?.price ?? 0).toInt();
-        
+        final estimatedPrice = (bookingProvider.estimatedPrice ?? 0).toInt();
         // Navigate to ride tracking screen
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder: (context) => RideTrackingScreen(
-              pickupAddress: widget.pickupAddress,
-              destinationAddress: widget.destinationAddress,
-              pickupLat: widget.pickupLat,
-              pickupLng: widget.pickupLng,
-              destLat: widget.destLat,
-              destLng: widget.destLng,
-              scheduledDateTime: widget.scheduledDateTime,
-              rideType: widget.rideType,
-              estimatedPrice: estimatedPrice,
-            ),
+            builder: (context) => RideTrackingScreen(),
           ),
         );
       }
