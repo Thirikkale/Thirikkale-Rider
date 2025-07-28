@@ -34,29 +34,11 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
       context,
       listen: false,
     );
-    
-    // Set trip details if not already set
-    if (bookingProvider.pickupAddress != widget.pickupAddress ||
-        bookingProvider.destinationAddress != widget.destinationAddress) {
-      bookingProvider.setTripDetails(
-        pickup: widget.pickupAddress,
-        destination: widget.destinationAddress,
-        pickupLat: widget.pickupLat,
-        pickupLng: widget.pickupLng,
-        destLat: widget.destLat,
-        destLng: widget.destLng,
-      );
-    }
-    
-    // Set scheduled datetime
-    bookingProvider.setScheduledDateTime(widget.scheduledDateTime);
-    
     // Determine if this is an immediate ride or scheduled ride
     final now = DateTime.now();
-    final isImmediate = widget.scheduledDateTime.difference(now).inMinutes < 5; // If within 5 minutes, consider it immediate
-    
-    bookingProvider.setScheduleType(isImmediate ? 'now' : 'schedule_later');
-    
+    final scheduledDateTime = bookingProvider.scheduledDateTime;
+    final isImmediate = scheduledDateTime != null && scheduledDateTime.difference(now).inMinutes < 5;
+    bookingProvider.setScheduleType(isImmediate);
     // Fetch available promotions
     bookingProvider.fetchAvailablePromotions();
   }
@@ -107,7 +89,7 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
 
   Widget _buildPromotionBanner(RideBookingProvider bookingProvider) {
     final discountPercentage = bookingProvider.promotionDiscountPercentage;
-    final basePrice = bookingProvider.selectedVehicle?.price ?? 0;
+    final basePrice = bookingProvider.selectedVehicle?.defaultPricePerUnit ?? 0;
     final discountAmount = (basePrice * discountPercentage / 100).round();
     
     return Positioned(
@@ -391,7 +373,7 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
               ),
               Text(
                 bookingProvider.hasPromotion 
-                  ? 'You save LKR${((bookingProvider.selectedVehicle?.price ?? 0) * bookingProvider.promotionDiscountPercentage / 100).toStringAsFixed(0)}'
+                  ? 'You save LKR${((bookingProvider.selectedVehicle?.defaultPricePerUnit ?? 0) * bookingProvider.promotionDiscountPercentage / 100).toStringAsFixed(0)}'
                   : paymentInfo['description'] as String,
                 style: AppTextStyles.bodyMedium.copyWith(
                   color: AppColors.textSecondary,
@@ -439,29 +421,33 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
 
   String _getLoadingText() {
     final now = DateTime.now();
-    final isImmediate = widget.scheduledDateTime.difference(now).inMinutes < 5;
+    final bookingProvider = Provider.of<RideBookingProvider>(context, listen: false);
+    final scheduledDateTime = bookingProvider.scheduledDateTime;
+    final isImmediate = scheduledDateTime != null && scheduledDateTime.difference(now).inMinutes < 5;
     return isImmediate ? 'Booking Ride...' : 'Scheduling Ride...';
   }
 
   void _confirmBooking(RideBookingProvider bookingProvider) async {
     try {
       await bookingProvider.bookRide();
-
       if (mounted) {
-        final estimatedPrice = (bookingProvider.estimatedPrice ?? 0).toInt();
-        // Navigate to ride tracking screen
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder: (context) => RideTrackingScreen(),
+            builder: (context) => RideTrackingScreen(
+              pickupAddress: bookingProvider.pickupAddress,
+              destinationAddress: bookingProvider.destinationAddress,
+              scheduledDateTime: bookingProvider.scheduledDateTime ?? DateTime.now(),
+              estimatedPrice: (bookingProvider.estimatedPrice ?? 0).toInt(),
+            ),
           ),
         );
       }
     } catch (e) {
       if (mounted) {
         final now = DateTime.now();
-        final isImmediate = widget.scheduledDateTime.difference(now).inMinutes < 5;
-        
+        final scheduledDateTime = bookingProvider.scheduledDateTime;
+        final isImmediate = scheduledDateTime != null && scheduledDateTime.difference(now).inMinutes < 5;
         SnackbarHelper.showErrorSnackBar(
           context,
           isImmediate 
