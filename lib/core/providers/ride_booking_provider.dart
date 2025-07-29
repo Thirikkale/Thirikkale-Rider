@@ -60,39 +60,6 @@ class RideBookingProvider extends ChangeNotifier {
 
   // Trip information
  
-  // final List<VehicleOption> _vehicleOptions = [
-  //   VehicleOption(
-  //     id: 'tuk',
-  //     name: 'Tuk',
-  //     description: 'Affordable auto rickshaw ride',
-  //     price: 30.0,
-  // Removed duplicate methods for setting ride type and schedule type
-  //     capacity: 4,
-  //     features: ['Priority', 'Premium'],
-  //     iconAsset: 'assets/icons/rush.png',
-  //   ),
-  //   VehicleOption(
-  //     id: 'prime',
-  //     name: 'Prime',
-  //     description: 'Luxury car ride',
-  //     price: 120.0,
-  //     estimatedTime: '5-10 min',
-  //     capacity: 4,
-  //     features: ['Luxury', 'Spacious'],
-  //     iconAsset: 'assets/icons/prime.png',
-  //   ),
-  //   VehicleOption(
-  //     id: 'squad',
-  //     name: 'Squad',
-  //     description: 'Group ride for up to 6',
-  //     price: 150.0,
-  //     estimatedTime: '12-18 min',
-  //     capacity: 6,
-  //     features: ['Group', 'Spacious'],
-  //     iconAsset: 'assets/icons/squad.png',
-  //   ),
-  // ];
-  
   // Promotion information
   bool _hasPromotion = false;
   String? _promotionText;
@@ -382,9 +349,9 @@ class RideBookingProvider extends ChangeNotifier {
     }
   }
 
-  void setScheduleType(bool rideType) {
+  void setScheduleType(bool isRideScheduled) {
     // Set _isRideScheduled based on rideType
-    _isRideScheduled = rideType;
+    _isRideScheduled = isRideScheduled;
     notifyListeners();
     // Removed: _scheduleType is not defined
   }

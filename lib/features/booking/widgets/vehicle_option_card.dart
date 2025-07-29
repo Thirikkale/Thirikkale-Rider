@@ -19,7 +19,10 @@ class VehicleOptionCard extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: InkWell(
-        onTap: onTap,
+        onTap: () {
+          // Only set vehicle type, do not set isRideScheduled or any other flags
+          onTap();
+        },
         borderRadius: BorderRadius.circular(8),
         child: Container(
           padding: const EdgeInsets.all(16),

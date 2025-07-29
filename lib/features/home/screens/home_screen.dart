@@ -12,6 +12,7 @@ import 'package:thirikkale_rider/features/booking/screens/plan_your_ride_screen.
 import 'package:thirikkale_rider/features/home/screens/ride_option_detail_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:thirikkale_rider/core/providers/ride_booking_provider.dart';
+import 'package:thirikkale_rider/features/booking/models/vehicle_option.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -28,7 +29,7 @@ class _HomeScreenState extends State<HomeScreen> {
     {
       'icon': 'assets/icons/vehicles/ride.png',
       'title': 'Ride',
-      'rideType': 'Solo',
+      'vehicleType': 'ride',
       'isPromo': false,
       'flags': {
         'isSolo': true,
@@ -39,7 +40,7 @@ class _HomeScreenState extends State<HomeScreen> {
     {
       'icon': 'assets/icons/vehicles/scheduledRide.png',
       'title': 'Scheduled',
-      'rideType': 'Solo',
+      'vehicleType': 'ride',
       'schedule': 'Scheduled',
       'isPromo': false,
       'flags': {
@@ -51,7 +52,7 @@ class _HomeScreenState extends State<HomeScreen> {
     {
       'icon': 'assets/icons/vehicles/tuk.png',
       'title': 'Tuk',
-      'rideType': 'Tuk',
+      'vehicleType': 'tuk',
       'isPromo': true,
       'flags': {
         'isSolo': true,
@@ -62,7 +63,7 @@ class _HomeScreenState extends State<HomeScreen> {
     {
       'icon': 'assets/icons/vehicles/rush.png',
       'title': 'Rush',
-      'rideType': 'Rush',
+      'vehicleType': 'rush',
       'isPromo': false,
       'flags': {
         'isSolo': true,
@@ -73,7 +74,7 @@ class _HomeScreenState extends State<HomeScreen> {
     {
       'icon': 'assets/icons/vehicles/primeRide.png',
       'title': 'Prime',
-      'rideType': 'Prime',
+      'vehicleType': 'prime',
       'isPromo': false,
       'flags': {
         'isSolo': true,
@@ -88,7 +89,7 @@ class _HomeScreenState extends State<HomeScreen> {
     {
       'icon': 'assets/icons/vehicles/shared_car.png',
       'title': 'Shared',
-      'rideType': 'Shared',
+      'vehicleType': 'shared',
       'isPromo': false,
       'flags': {
         'isSolo': false,
@@ -99,7 +100,7 @@ class _HomeScreenState extends State<HomeScreen> {
     {
       'icon': 'assets/icons/vehicles/scheduledRide.png',
       'title': 'Scheduled',
-      'rideType': 'Shared',
+      'vehicleType': 'shared',
       'schedule': 'Scheduled',
       'isPromo': false,
       'flags': {
@@ -111,7 +112,7 @@ class _HomeScreenState extends State<HomeScreen> {
     {
       'icon': 'assets/icons/vehicles/squad.png',
       'title': 'Squad',
-      'rideType': 'Squad',
+      'vehicleType': 'squad',
       'isPromo': false,
       'flags': {
         'isSolo': false,
@@ -122,7 +123,7 @@ class _HomeScreenState extends State<HomeScreen> {
     {
       'icon': 'assets/icons/vehicles/ride.png',
       'title': 'Women Only',
-      'rideType': 'Women Only',
+      'vehicleType': 'ride',
       'isPromo': false,
       'flags': {
         'isSolo': false,
@@ -153,6 +154,7 @@ class _HomeScreenState extends State<HomeScreen> {
       'detailTitle': 'Standard Solo Ride',
       'description': 'Comfortable and reliable rides for your daily transportation needs. Available now or schedule for later. Perfect for short to medium distance trips.',
       'buttonText': 'Choose Standard',
+      'vehicleType': 'ride',
       'flags': {
         'isSolo': true,
         'isRideScheduled': false,
@@ -166,6 +168,7 @@ class _HomeScreenState extends State<HomeScreen> {
       'detailTitle': 'Prime Solo Experience',
       'description': 'Premium vehicles with highly-rated professional drivers. Scheduled rides available. Perfect for business meetings, airport transfers, and special occasions.',
       'buttonText': 'Choose Prime',
+      'vehicleType': 'prime',
       'flags': {
         'isSolo': true,
         'isRideScheduled': false,
@@ -183,6 +186,7 @@ class _HomeScreenState extends State<HomeScreen> {
       'detailTitle': 'Shared Ride Service',
       'description': 'Share your ride with others going in the same direction and split the cost. Scheduled rides available for regular commutes. Eco-friendly and budget-friendly option.',
       'buttonText': 'Join Shared',
+      'vehicleType': 'ride',
       'flags': {
         'isSolo': false,
         'isRideScheduled': false,
@@ -196,6 +200,7 @@ class _HomeScreenState extends State<HomeScreen> {
       'detailTitle': 'Women Only Shared Ride',
       'description': 'Shared rides exclusively for women passengers with female or verified drivers. Scheduled options available for regular commutes. Safe and comfortable environment.',
       'buttonText': 'Choose Women Only',
+      'vehicleType': 'ride',
       'flags': {
         'isSolo': false,
         'isRideScheduled': false,
@@ -213,6 +218,7 @@ class _HomeScreenState extends State<HomeScreen> {
       'detailTitle': 'Rush Solo Service',
       'description': 'Priority rides with optimized routes during rush hours. Higher fare but guaranteed faster arrival times. Scheduled rides available for regular office commutes.',
       'buttonText': 'Choose Rush',
+      'vehicleType': 'rush',
       'flags': {
         'isSolo': true,
         'isRideScheduled': false,
@@ -226,6 +232,7 @@ class _HomeScreenState extends State<HomeScreen> {
       'detailTitle': 'Tuk Solo Ride',
       'description': 'Fast and economical three-wheeler rides perfect for navigating through traffic. Instant booking available. Great for short trips and quick errands.',
       'buttonText': 'Choose Tuk',
+      'vehicleType': 'tuk',
       'flags': {
         'isSolo': true,
         'isRideScheduled': false,
@@ -243,6 +250,7 @@ class _HomeScreenState extends State<HomeScreen> {
       'detailTitle': 'Squad Shared Ride',
       'description': 'Larger vehicles for group travel with 4-6 passengers. Perfect for office teams, friends, or family groups. Scheduled rides available for regular group commutes.',
       'buttonText': 'Book Squad',
+      'vehicleType': 'squad',
       'flags': {
         'isSolo': false,
         'isRideScheduled': false,
@@ -256,6 +264,7 @@ class _HomeScreenState extends State<HomeScreen> {
       'detailTitle': 'Scheduled Shared Ride',
       'description': 'Book shared rides in advance for your regular commutes. Perfect for daily office trips with cost-effective shared transportation. Plan your rides ahead of time.',
       'buttonText': 'Schedule Ride',
+      'vehicleType': 'shared',
       'flags': {
         'isSolo': false,
         'isRideScheduled': true,
@@ -275,10 +284,16 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   // Helper method to navigate to PlanYourRideScreen with parameters
-  void _navigateToPlanYourRide(BuildContext context, String rideType, {String? schedule, Map<String, dynamic>? flags}) {
-    // Set flags in provider before navigation
+  void _navigateToPlanYourRide(BuildContext context, String vehicleType, {String? schedule, Map<String, dynamic>? flags}) {
+    // Set flags and vehicleType in provider before navigation
+    final provider = Provider.of<RideBookingProvider>(context, listen: false);
+    // Find the VehicleOption by id
+    final vehicleOption = VehicleOption.getDefaultOptions().firstWhere(
+      (v) => v.id == vehicleType,
+      orElse: () => VehicleOption.getDefaultOptions().first,
+    );
+    provider.setSelectVehicle(vehicleOption);
     if (flags != null) {
-      final provider = Provider.of<RideBookingProvider>(context, listen: false);
       provider.setOptions(
         isSolo: flags['isSolo'] ?? true,
         isRideScheduled: flags['isRideScheduled'] ?? false,
@@ -288,18 +303,25 @@ class _HomeScreenState extends State<HomeScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => PlanYourRideScreen(
-        ),
+        builder: (context) => PlanYourRideScreen(),
       ),
     );
   }
 
   // Helper method to navigate to RideOptionDetailScreen
   void _navigateToRideDetail(BuildContext context, Map<String, dynamic> option) {
-    // Set flags in provider before navigation
+    // Set flags and vehicleType in provider before navigation
+    final provider = Provider.of<RideBookingProvider>(context, listen: false);
     final flags = option['flags'] as Map<String, dynamic>?;
+    final vehicleType = option['vehicleType'] as String?;
+    if (vehicleType != null) {
+      final vehicleOption = VehicleOption.getDefaultOptions().firstWhere(
+        (v) => v.id == vehicleType,
+        orElse: () => VehicleOption.getDefaultOptions().first,
+      );
+      provider.setSelectVehicle(vehicleOption);
+    }
     if (flags != null) {
-      final provider = Provider.of<RideBookingProvider>(context, listen: false);
       provider.setOptions(
         isSolo: flags['isSolo'] ?? true,
         isRideScheduled: flags['isRideScheduled'] ?? false,
@@ -320,25 +342,8 @@ class _HomeScreenState extends State<HomeScreen> {
             // Navigate back and then to plan your ride
             Navigator.pop(context);
 
-            // Map option titles to ride types based on current tab
-            String rideType;
-            if (_selectedRideTypeIndex == 1) {
-              // If on shared tab, always use 'Shared' as ride type
-              rideType = 'Shared';
-            } else {
-              // If on solo tab, map specific ride types
-              if (option['title']!.contains('Prime')) {
-                rideType = 'Prime';
-              } else if (option['title']!.contains('Rush')) {
-                rideType = 'Rush';
-              } else if (option['title']!.contains('Tuk')) {
-                rideType = 'Tuk';
-              } else {
-                rideType = 'Solo'; // default for solo tab
-              }
-            }
-
-            _navigateToPlanYourRide(context, rideType);
+            // Use vehicleType directly for navigation
+            _navigateToPlanYourRide(context, vehicleType ?? 'ride');
           },
         ),
       ),
@@ -442,7 +447,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 isPromo: option['isPromo'] ?? false,
                               onTap: () => _navigateToPlanYourRide(
                                 context,
-                                option['rideType'],
+                                option['vehicleType'],
                                 schedule: option['schedule'],
                                 flags: option['flags'] as Map<String, dynamic>?,
                               ),

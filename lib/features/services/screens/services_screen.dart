@@ -8,15 +8,23 @@ import 'package:thirikkale_rider/widgets/common/custom_appbar_name.dart';
 import 'package:thirikkale_rider/features/booking/screens/plan_your_ride_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:thirikkale_rider/core/providers/ride_booking_provider.dart';
+import 'package:thirikkale_rider/features/booking/models/vehicle_option.dart';
 
 class ServicesScreen extends StatelessWidget {
   const ServicesScreen({super.key});
 
   // Helper method to set provider variables and navigate to PlanYourRideScreen
-  void _navigateToPlanYourRide(BuildContext context, String rideType, {String? schedule}) {
+  void _navigateToPlanYourRide(BuildContext context, String rideType, {String? schedule, String? VehicleType}) {
     final provider = Provider.of<RideBookingProvider>(context, listen: false);
     provider.setRideType(rideType);
     provider.isRideScheduled = (schedule == 'Scheduled');
+    if (VehicleType != null) {
+      final vehicle = VehicleOption.getDefaultOptions().firstWhere(
+        (v) => v.id == VehicleType,
+        orElse: () => VehicleOption.getDefaultOptions().first,
+      );
+      provider.setSelectVehicle(vehicle);
+    }
     if (schedule == 'Scheduled') {
       provider.setScheduledDateTime(DateTime.now().add(const Duration(hours: 1)));
     } else {
@@ -102,27 +110,27 @@ class ServicesScreen extends StatelessWidget {
                       icon: 'assets/icons/vehicles/tuk.png',
                       title: 'Tuk',
                       isPromo: true,
-                      onTap: () => _navigateToPlanYourRide(context, 'Tuk'),
+                      onTap: () => _navigateToPlanYourRide(context, 'Tuk', VehicleType: 'tuk'),
                     ),
                     RideOptionCard(
                       icon: 'assets/icons/vehicles/ride.png',
                       title: 'Ride',
-                      onTap: () => _navigateToPlanYourRide(context, 'Solo'),
+                      onTap: () => _navigateToPlanYourRide(context, 'Solo', VehicleType: 'ride'),
                     ),
                     RideOptionCard(
                       icon: 'assets/icons/vehicles/rush.png',
                       title: 'Rush',
-                      onTap: () => _navigateToPlanYourRide(context, 'Rush'),
+                      onTap: () => _navigateToPlanYourRide(context, 'Rush', VehicleType: 'rush'),
                     ),
                     RideOptionCard(
                       icon: 'assets/icons/vehicles/primeRide.png',
                       title: 'Prime',
-                      onTap: () => _navigateToPlanYourRide(context, 'Prime'),
+                      onTap: () => _navigateToPlanYourRide(context, 'Prime', VehicleType: 'prime'),
                     ),
                     RideOptionCard(
                       icon: 'assets/icons/vehicles/squad.png',
                       title: 'Squad',
-                      onTap: () => _navigateToPlanYourRide(context, 'Squad'),
+                      onTap: () => _navigateToPlanYourRide(context, 'Squad', VehicleType: 'squad'),
                     ),
                   ],
                 ),

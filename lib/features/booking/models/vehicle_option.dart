@@ -62,6 +62,16 @@ class VehicleOption {
         capacity: 4,
         features: ['AC', 'More comfortable'],
       ),
+      VehicleOption(
+        id: 'squad',
+        name: 'Squad',
+        description: 'Group ride for up to 6',
+        iconAsset: 'assets/icons/vehicles/squad.png',
+        defaultPricePerUnit: 300.0,
+        estimatedTime: '16:45 - 15 min away',
+        capacity: 6,
+        features: ['Group', 'Spacious'],
+      ),
     ];
   }
 }
