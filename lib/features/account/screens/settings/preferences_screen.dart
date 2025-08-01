@@ -4,6 +4,8 @@ import 'package:thirikkale_rider/core/utils/app_styles.dart';
 import 'package:thirikkale_rider/widgets/common/custom_appbar_name.dart';
 import 'package:thirikkale_rider/features/account/screens/settings/widgets/settings_subheader.dart';
 import 'dart:developer' as developer;
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:thirikkale_rider/core/utils/snackbar_helper.dart';
 
 class PreferencesScreen extends StatefulWidget {
   const PreferencesScreen({super.key});
@@ -15,6 +17,28 @@ class PreferencesScreen extends StatefulWidget {
 class _PreferencesScreenState extends State<PreferencesScreen> {
   String _selectedRideType = 'Solo'; // Default ride type
   String _selectedVehicle = 'Tuk'; // Default vehicle
+  @override
+  void initState() {
+    super.initState();
+    _loadPreferences();
+  }
+
+  Future<void> _loadPreferences() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _selectedRideType = prefs.getString('default_ride_type') ?? 'Solo';
+      _selectedVehicle = prefs.getString('default_vehicle') ?? 'Tuk';
+    });
+  }
+
+  Future<void> _savePreferences() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('default_ride_type', _selectedRideType);
+    await prefs.setString('default_vehicle', _selectedVehicle);
+    if (mounted) {
+      SnackbarHelper.showSuccessSnackBar(context, 'Preferences saved successfully!');
+    }
+  }
   
   final List<Map<String, dynamic>> _rideTypeOptions = [
     {
@@ -104,10 +128,10 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
             child: SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: () {
-                  // Handle save
+                onPressed: () async {
                   developer.log('Selected ride type: $_selectedRideType', name: 'PreferencesScreen');
                   developer.log('Selected vehicle: $_selectedVehicle', name: 'PreferencesScreen');
+                  await _savePreferences();
                   Navigator.pop(context);
                 },
                 style: AppButtonStyles.primaryButton,

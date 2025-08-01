@@ -65,7 +65,10 @@ class SnackbarHelper {
         textColor: AppColors.white,
         onPressed: () {
           ScaffoldMessenger.of(context).hideCurrentSnackBar();
-          onDismiss?.call();
+          // Ensure onDismiss is always called, even if the snackbar is already hidden
+          Future.delayed(const Duration(milliseconds: 100), () {
+            onDismiss?.call();
+          });
         },
       ),
     );
