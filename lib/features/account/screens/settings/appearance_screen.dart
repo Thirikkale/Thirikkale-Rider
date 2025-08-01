@@ -4,6 +4,8 @@ import 'package:thirikkale_rider/core/utils/app_styles.dart';
 import 'package:thirikkale_rider/widgets/common/custom_appbar_name.dart';
 import 'package:thirikkale_rider/features/account/screens/settings/widgets/settings_subheader.dart';
 import 'dart:developer' as developer;
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:thirikkale_rider/core/utils/snackbar_helper.dart';
 
 
 class AppearanceScreen extends StatefulWidget {
@@ -15,6 +17,26 @@ class AppearanceScreen extends StatefulWidget {
 
 class _AppearanceScreenState extends State<AppearanceScreen> {
   String _selectedTheme = 'Light'; // Default theme
+  @override
+  void initState() {
+    super.initState();
+    _loadThemePreference();
+  }
+
+  Future<void> _loadThemePreference() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _selectedTheme = prefs.getString('selected_theme') ?? 'Light';
+    });
+  }
+
+  Future<void> _saveThemePreference() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('selected_theme', _selectedTheme);
+    if (mounted) {
+      SnackbarHelper.showSuccessSnackBar(context, 'Theme saved successfully!');
+    }
+  }
   
   final List<Map<String, dynamic>> _themeOptions = [
     {
@@ -67,10 +89,11 @@ class _AppearanceScreenState extends State<AppearanceScreen> {
             child: SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: () {
-                  // Handle save
+                onPressed: () async {
                   developer.log('Selected theme: $_selectedTheme', name: 'AppearanceScreen');
-                  Navigator.pop(context);
+                  await _saveThemePreference();
+                  await Future.delayed(const Duration(milliseconds: 500));
+                  if (mounted) Navigator.pop(context);
                 },
                 style: AppButtonStyles.primaryButton,
                 child: const Text('Save'),
