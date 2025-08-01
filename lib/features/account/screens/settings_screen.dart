@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:thirikkale_rider/features/account/screens/settings/settings_screens.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:thirikkale_rider/features/account/screens/settings/saved_location_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:thirikkale_rider/config/routes.dart';
 import 'package:thirikkale_rider/core/providers/auth_provider.dart';
 import 'package:thirikkale_rider/core/utils/app_dimension.dart';
-import 'package:thirikkale_rider/features/account/screens/settings/settings_screens.dart';
 import 'package:thirikkale_rider/features/account/widgets/account_info_tile.dart';
 import 'package:thirikkale_rider/features/account/widgets/sign_out_btn.dart';
 import 'package:thirikkale_rider/widgets/common/custom_appbar_name.dart';
@@ -17,6 +19,23 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
+  String? _homeLocation;
+  String? _workLocation;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadLocations();
+  }
+
+  Future<void> _loadLocations() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _homeLocation = prefs.getString('home_location');
+      _workLocation = prefs.getString('work_location');
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -34,27 +53,29 @@ class _SettingsScreenState extends State<SettingsScreen> {
               AccountInfoTile(
                 icon: Icons.home_outlined,
                 title: "Home",
-                subtitle: "123 Elm st, Springfield",
-                onTap: () {
-                  Navigator.push(
+                subtitle: _homeLocation ?? "Set your home location",
+                onTap: () async {
+                  await Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => const HomeLocationScreen(),
+                      builder: (context) => SavedLocationScreen(type: 'home'),
                     ),
                   );
+                  _loadLocations();
                 },
               ),
               AccountInfoTile(
                 icon: Icons.work_outline,
                 title: "Work",
-                subtitle: "456 Oak Ave, Spirngfield",
-                onTap: () {
-                  Navigator.push(
+                subtitle: _workLocation ?? "Set your work location",
+                onTap: () async {
+                  await Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => const WorkLocationScreen(),
+                      builder: (context) => SavedLocationScreen(type: 'work'),
                     ),
                   );
+                  _loadLocations();
                 },
               ),
               AccountInfoTile(
