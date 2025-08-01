@@ -699,6 +699,20 @@ class _PlanYourRideScreenState extends State<PlanYourRideScreen> {
     setState(() {}); // To trigger UI update
   }
 
+  void _toggleWomenOnly() {
+    final bookingProvider = Provider.of<RideBookingProvider>(context, listen: false);
+    bookingProvider.setOptions(
+      // isSolo: bookingProvider.isSolo,
+      // isRideScheduled: bookingProvider.isRideScheduled,
+      isWomenOnly: !bookingProvider.isWomenOnly,
+    );
+    SnackbarHelper.showInfoSnackBar(
+      context,
+      bookingProvider.isWomenOnly ? 'Women Only option enabled' : 'Women Only option disabled',
+    );
+    setState(() {}); // To trigger UI update
+  }
+  
   // Showing the path in the map
   Future<void> _calculateAndDisplayRoute() async {
     // Check if we have both pickup and destination coordinates
@@ -1073,6 +1087,12 @@ class _PlanYourRideScreenState extends State<PlanYourRideScreen> {
             bottom: kToolbarHeight + 255,
             child: Consumer<RideBookingProvider>(
               builder: (context, bookingProvider, _) {
+                // All three buttons use the same constraints and padding for perfect alignment
+                const buttonConstraints = BoxConstraints(minWidth: 76);
+                final buttonPadding = EdgeInsets.symmetric(
+                  horizontal: AppDimensions.subSectionSpacingDown * 3,
+                  vertical: AppDimensions.subSectionSpacingDown * 3,
+                );
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
@@ -1084,15 +1104,10 @@ class _PlanYourRideScreenState extends State<PlanYourRideScreen> {
                         onTap: _toggleSchedule,
                         borderRadius: BorderRadius.circular(12),
                         child: Container(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: AppDimensions.subSectionSpacingDown * 3,
-                            vertical: AppDimensions.subSectionSpacingDown * 3,
-                          ),
+                          constraints: buttonConstraints,
+                          padding: buttonPadding,
                           decoration: BoxDecoration(
-                            color:
-                                !bookingProvider.isRideScheduled
-                                    ? AppColors.primaryBlue
-                                    : AppColors.white,
+                            color: AppColors.white,
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Row(
@@ -1100,68 +1115,14 @@ class _PlanYourRideScreenState extends State<PlanYourRideScreen> {
                             children: [
                               Icon(
                                 !bookingProvider.isRideScheduled ? Icons.access_time : Icons.schedule,
-                                color:
-                                    !bookingProvider.isRideScheduled
-                                        ? AppColors.white
-                                        : AppColors.primaryBlue,
+                                color: AppColors.primaryBlue,
                                 size: 20,
                               ),
                               SizedBox(width: AppDimensions.subSectionSpacingDown),
                               Text(
                                 !bookingProvider.isRideScheduled ? 'Now' : 'Scheduled',
                                 style: AppTextStyles.bodySmall.copyWith(
-                                  color:
-                                      !bookingProvider.isRideScheduled
-                                          ? AppColors.white
-                                          : AppColors.primaryBlue,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                    SizedBox(height: AppDimensions.widgetSpacing),
-
-                    // Ride type button with text
-                    Material(
-                      elevation: 2,
-                      borderRadius: BorderRadius.circular(12),
-                      child: InkWell(
-                        onTap: _toggleRideType,
-                        borderRadius: BorderRadius.circular(12),
-                        child: Container(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: AppDimensions.subSectionSpacingDown * 3,
-                            vertical: AppDimensions.subSectionSpacingDown * 3,
-                          ),
-                          decoration: BoxDecoration(
-                            color:
-                                bookingProvider.isSolo
-                                    ? AppColors.primaryBlue
-                                    : AppColors.white,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                bookingProvider.isSolo ? Icons.person : Icons.people,
-                                color:
-                                    bookingProvider.isSolo
-                                        ? AppColors.white
-                                        : AppColors.primaryBlue,
-                                size: 20,
-                              ),
-                              SizedBox(width: AppDimensions.subSectionSpacingDown),
-                              Text(
-                                bookingProvider.isSolo ? 'Solo' : 'Shared',
-                                style: AppTextStyles.bodySmall.copyWith(
-                                  color:
-                                      bookingProvider.isSolo
-                                          ? AppColors.white
-                                          : AppColors.primaryBlue,
+                                  color: AppColors.primaryBlue,
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
@@ -1171,6 +1132,80 @@ class _PlanYourRideScreenState extends State<PlanYourRideScreen> {
                       ),
                     ),
                     SizedBox(height: AppDimensions.widgetSpacing - 5),
+
+                    // Ride type button with text
+                    Material(
+                      elevation: 2,
+                      borderRadius: BorderRadius.circular(12),
+                      child: InkWell(
+                        onTap: _toggleRideType,
+                        borderRadius: BorderRadius.circular(12),
+                        child: Container(
+                          constraints: buttonConstraints,
+                          padding: buttonPadding,
+                          decoration: BoxDecoration(
+                            color: AppColors.white,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                bookingProvider.isSolo ? Icons.person : Icons.people,
+                                color: AppColors.primaryBlue,
+                                size: 20,
+                              ),
+                              SizedBox(width: AppDimensions.subSectionSpacingDown),
+                              Text(
+                                bookingProvider.isSolo ? 'Solo' : 'Shared',
+                                style: AppTextStyles.bodySmall.copyWith(
+                                  color: AppColors.primaryBlue,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: AppDimensions.widgetSpacing - 5),
+
+                    // Women Only button with text
+                    Material(
+                      elevation: 2,
+                      borderRadius: BorderRadius.circular(12),
+                      child: InkWell(
+                        onTap: _toggleWomenOnly,
+                        borderRadius: BorderRadius.circular(12),
+                        child: Container(
+                          constraints: buttonConstraints,
+                          padding: buttonPadding,
+                          decoration: BoxDecoration(
+                            color: AppColors.white,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.female,
+                                color: AppColors.primaryBlue,
+                                size: 20,
+                              ),
+                              SizedBox(width: AppDimensions.subSectionSpacingDown),
+                              Text(
+                                bookingProvider.isWomenOnly ? 'Women Only' : 'Any',
+                                style: AppTextStyles.bodySmall.copyWith(
+                                  color: AppColors.primaryBlue,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: AppDimensions.widgetSpacing - 8),
 
                     FloatingActionButton(
                       heroTag: "focus_btn",
