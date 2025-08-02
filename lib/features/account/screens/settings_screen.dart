@@ -92,7 +92,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               AccountInfoTile(
                 icon: Icons.notifications_none,
-                title: "Notificaitons",
+                title: "Notifications",
                 onTap: () {
                   Navigator.push(
                     context,
