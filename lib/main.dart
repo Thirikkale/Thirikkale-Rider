@@ -23,9 +23,14 @@ class ThirikkaleApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => AuthProvider()),
+        ChangeNotifierProvider(create: (_) => AuthProvider()..initialize()),
         ChangeNotifierProvider(create: (_) => LocationProvider()),
-        ChangeNotifierProvider(create: (_) => RideBookingProvider()),
+        ChangeNotifierProxyProvider<AuthProvider, RideBookingProvider>(
+          create: (_) => RideBookingProvider(),
+          update:
+              (_, auth, previousRideBooking) =>
+                  previousRideBooking!..update(auth),
+        ),
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,

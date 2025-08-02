@@ -56,7 +56,7 @@ class _PlanYourRideScreenState extends State<PlanYourRideScreen> {
       _initializeLocationProvider();
     });
   }
-  // TODO: update to hsow the bottom sheet
+  // TODO: update to show the bottom sheet
   void _showLocationPermissionDialog() {
     showDialog(
       context: context,
