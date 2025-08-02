@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:thirikkale_rider/core/utils/app_styles.dart';
 
 class SnackbarHelper {
-  static void showSuccessSnackBar(BuildContext context, String message) {
+  static void showSuccessSnackBar(BuildContext context, String message, {bool showAction = true}) {
     _showCustomSnackBar(
       context: context,
       message: message,
@@ -11,7 +11,7 @@ class SnackbarHelper {
     );
   }
 
-  static void showErrorSnackBar(BuildContext context, String message) {
+  static void showErrorSnackBar(BuildContext context, String message, {bool showAction = true}) {
     _showCustomSnackBar(
       context: context,
       message: message,
@@ -20,7 +20,7 @@ class SnackbarHelper {
     );
   }
 
-  static void showInfoSnackBar(BuildContext context, String message) {
+  static void showInfoSnackBar(BuildContext context, String message, {bool showAction = true}) {
     _showCustomSnackBar(
       context: context,
       message: message,
@@ -36,6 +36,7 @@ class SnackbarHelper {
     required IconData icon,
     Duration duration = const Duration(seconds: 3),
     VoidCallback? onDismiss,
+    bool showAction = false,
   }) {
     // Clear any existing snackbars first to prevent stacking
     ScaffoldMessenger.of(context).clearSnackBars();
@@ -60,7 +61,7 @@ class SnackbarHelper {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       margin: const EdgeInsets.all(12),
       duration: duration,
-      action: SnackBarAction(
+      action: showAction ? SnackBarAction(
         label: "DISMISS",
         textColor: AppColors.white,
         onPressed: () {
@@ -70,7 +71,7 @@ class SnackbarHelper {
             onDismiss?.call();
           });
         },
-      ),
+      ) : null,
     );
 
     ScaffoldMessenger.of(context).showSnackBar(snackBar);

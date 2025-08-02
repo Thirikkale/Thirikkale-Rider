@@ -91,7 +91,11 @@ class _AppearanceScreenState extends State<AppearanceScreen> {
               child: ElevatedButton(
                 onPressed: () async {
                   developer.log('Selected theme: $_selectedTheme', name: 'AppearanceScreen');
-                  await _saveThemePreference();
+                  final prefs = await SharedPreferences.getInstance();
+                  await prefs.setString('selected_theme', _selectedTheme);
+                  if (mounted) {
+                    SnackbarHelper.showSuccessSnackBar(context, 'Theme saved successfully!', showAction: false);
+                  }
                   await Future.delayed(const Duration(milliseconds: 500));
                   if (mounted) Navigator.pop(context);
                 },
