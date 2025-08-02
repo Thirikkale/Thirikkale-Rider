@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:thirikkale_rider/core/utils/app_dimension.dart';
 import 'package:thirikkale_rider/core/utils/app_styles.dart';
 import 'package:thirikkale_rider/widgets/common/custom_appbar_name.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:thirikkale_rider/core/utils/snackbar_helper.dart';
 
 class LanguageScreen extends StatefulWidget {
   const LanguageScreen({super.key});
@@ -12,6 +14,25 @@ class LanguageScreen extends StatefulWidget {
 
 class _LanguageScreenState extends State<LanguageScreen> {
   String _selectedLanguage = 'English (Australia)'; // Default language
+  bool _loading = true;
+  @override
+  void initState() {
+    super.initState();
+    _loadLanguagePreference();
+  }
+
+  Future<void> _loadLanguagePreference() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _selectedLanguage = prefs.getString('selected_language') ?? 'English (Australia)';
+      _loading = false;
+    });
+  }
+
+  Future<void> _saveLanguagePreference() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('selected_language', _selectedLanguage);
+  }
   
   final List<Map<String, dynamic>> _languageOptions = [
     {
@@ -78,80 +99,81 @@ class _LanguageScreenState extends State<LanguageScreen> {
         title: "Language",
         showBackButton: true,
       ),
-      body: Column(
-        children: [
-          // Search bar
-          Padding(
-            padding: const EdgeInsets.all(AppDimensions.pageHorizontalPadding),
-            child: TextField(
-              onChanged: (value) {
-                // Handle search
-                print('Searching for: $value');
-              },
-              decoration: InputDecoration(
-                hintText: 'Search',
-                hintStyle: AppTextStyles.bodyMedium.copyWith(
-                  color: AppColors.textSecondary,
-                ),
-                prefixIcon: const Icon(
-                  Icons.search,
-                  color: AppColors.textSecondary,
-                  size: 20,
-                ),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  borderSide: BorderSide.none,
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  borderSide: const BorderSide(
-                    color: AppColors.primaryBlue,
-                    width: 2,
+      body: _loading
+          ? const Center(child: CircularProgressIndicator())
+          : Column(
+              children: [
+                // Search bar
+                Padding(
+                  padding: const EdgeInsets.all(AppDimensions.pageHorizontalPadding),
+                  child: TextField(
+                    onChanged: (value) {
+                      // Handle search
+                      print('Searching for: $value');
+                    },
+                    decoration: InputDecoration(
+                      hintText: 'Search',
+                      hintStyle: AppTextStyles.bodyMedium.copyWith(
+                        color: AppColors.textSecondary,
+                      ),
+                      prefixIcon: const Icon(
+                        Icons.search,
+                        color: AppColors.textSecondary,
+                        size: 20,
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: BorderSide.none,
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: const BorderSide(
+                          color: AppColors.primaryBlue,
+                          width: 2,
+                        ),
+                      ),
+                      filled: true,
+                      fillColor: AppColors.subtleGrey,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 14,
+                      ),
+                    ),
+                    style: AppTextStyles.bodyMedium,
                   ),
                 ),
-                filled: true,
-                fillColor: AppColors.subtleGrey,
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 14,
+                // Language list
+                Expanded(
+                  child: ListView.builder(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppDimensions.pageHorizontalPadding,
+                    ),
+                    itemCount: _languageOptions.length,
+                    itemBuilder: (context, index) {
+                      final option = _languageOptions[index];
+                      return _buildLanguageOption(option);
+                    },
+                  ),
                 ),
-              ),
-              style: AppTextStyles.bodyMedium,
+                // Save button at bottom
+                Padding(
+                  padding: const EdgeInsets.all(AppDimensions.pageHorizontalPadding),
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () async {
+                        await _saveLanguagePreference();
+                        SnackbarHelper.showSuccessSnackBar(context, 'Language saved!', showAction: false);
+                        print('Selected language: $_selectedLanguage');
+                        Navigator.pop(context);
+                      },
+                      style: AppButtonStyles.primaryButton,
+                      child: const Text('Save'),
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ),
-          
-          // Language list
-          Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppDimensions.pageHorizontalPadding,
-              ),
-              itemCount: _languageOptions.length,
-              itemBuilder: (context, index) {
-                final option = _languageOptions[index];
-                return _buildLanguageOption(option);
-              },
-            ),
-          ),
-          
-          // Save button at bottom
-          Padding(
-            padding: const EdgeInsets.all(AppDimensions.pageHorizontalPadding),
-            child: SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () {
-                  // Handle save
-                  print('Selected language: $_selectedLanguage');
-                  Navigator.pop(context);
-                },
-                style: AppButtonStyles.primaryButton,
-                child: const Text('Save'),
-              ),
-            ),
-          ),
-        ],
-      ),
     );
   }
   
