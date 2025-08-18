@@ -4,6 +4,9 @@ import 'package:thirikkale_rider/core/utils/app_styles.dart';
 import 'package:thirikkale_rider/core/utils/snackbar_helper.dart';
 import 'package:thirikkale_rider/widgets/common/custom_appbar_name.dart';
 import 'package:thirikkale_rider/features/account/screens/settings/widgets/settings_subheader.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:thirikkale_rider/features/account/widgets/edit_emergency_contact_bottom_sheet.dart';
+import 'dart:convert';
 
 class EmergencyContactsScreen extends StatefulWidget {
   const EmergencyContactsScreen({super.key});
@@ -16,20 +19,36 @@ class _EmergencyContactsScreenState extends State<EmergencyContactsScreen> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  bool _loading = true;
+  List<Map<String, String>> _emergencyContacts = [];
+  @override
+  void initState() {
+    super.initState();
+    _loadContacts();
+  }
 
-  // Mock emergency contacts data
-  final List<Map<String, String>> _emergencyContacts = [
-    {
-      'name': 'Sophia Carter',
-      'phone': '+94 77 123 4567',
-      'relationship': 'Sister',
-    },
-    {
-      'name': 'Ethan Bennett',
-      'phone': '+94 77 890 1234',
-      'relationship': 'Brother',
-    },
-  ];
+  Future<void> _loadContacts() async {
+    final prefs = await SharedPreferences.getInstance();
+    final contactsJsonList = prefs.getStringList('emergency_contacts') ?? [];
+    setState(() {
+      _emergencyContacts = contactsJsonList.map((jsonStr) {
+        final Map<String, dynamic> contact = jsonDecode(jsonStr);
+        return {
+          'name': (contact['name'] ?? '').toString(),
+          'phone': (contact['phone'] ?? '').toString(),
+          'relationship': (contact['relationship'] ?? 'Contact').toString(),
+        };
+      }).toList();
+      _loading = false;
+    });
+  }
+
+  Future<void> _saveContacts() async {
+    final prefs = await SharedPreferences.getInstance();
+    final contactsJsonList = _emergencyContacts.map((c) => jsonEncode(c)).toList();
+    await prefs.setStringList('emergency_contacts', contactsJsonList);
+    print('Emergency contacts saved successfully! $contactsJsonList');
+  }
 
   @override
   void dispose() {
@@ -45,89 +64,86 @@ class _EmergencyContactsScreenState extends State<EmergencyContactsScreen> {
         title: 'Emergency Contacts',
         showBackButton: true,
       ),
-      body: Column(
-        children: [
-          Expanded(
-            child: SingleChildScrollView(
-              child: Padding(
-                padding: const EdgeInsets.all(AppDimensions.pageHorizontalPadding),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SettingsSubheader(title: 'Add a contact'),
-                    Form(
-                      key: _formKey,
+      body: _loading
+          ? const Center(child: CircularProgressIndicator())
+          : Column(
+              children: [
+                Expanded(
+                  child: SingleChildScrollView(
+                    child: Padding(
+                      padding: const EdgeInsets.all(AppDimensions.pageHorizontalPadding),
                       child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          TextFormField(
-                            controller: _nameController,
-                            decoration: const InputDecoration(
-                              labelText: 'Name',
-                              hintText: 'Enter contact name',
-                              border: OutlineInputBorder(),
-                              focusedBorder: OutlineInputBorder(
-                                borderSide: BorderSide(color: AppColors.primaryBlue, width: 2),
-                              ),
+                          const SettingsSubheader(title: 'Add a contact'),
+                          Form(
+                            key: _formKey,
+                            child: Column(
+                              children: [
+                                TextFormField(
+                                  controller: _nameController,
+                                  decoration: const InputDecoration(
+                                    labelText: 'Name',
+                                    hintText: 'Enter contact name',
+                                    border: OutlineInputBorder(),
+                                    focusedBorder: OutlineInputBorder(
+                                      borderSide: BorderSide(color: AppColors.primaryBlue, width: 2),
+                                    ),
+                                  ),
+                                  validator: (value) {
+                                    if (value == null || value.isEmpty) {
+                                      return 'Please enter a name';
+                                    }
+                                    return null;
+                                  },
+                                ),
+                                const SizedBox(height: 16),
+                                TextFormField(
+                                  controller: _phoneController,
+                                  keyboardType: TextInputType.phone,
+                                  decoration: const InputDecoration(
+                                    labelText: 'Phone number',
+                                    hintText: 'Enter phone number',
+                                    border: OutlineInputBorder(),
+                                    focusedBorder: OutlineInputBorder(
+                                      borderSide: BorderSide(color: AppColors.primaryBlue, width: 2),
+                                    ),
+                                  ),
+                                  validator: (value) {
+                                    if (value == null || value.isEmpty) {
+                                      return 'Please enter a phone number';
+                                    }
+                                    return null;
+                                  },
+                                ),
+                              ],
                             ),
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return 'Please enter a name';
-                              }
-                              return null;
-                            },
                           ),
-                          const SizedBox(height: 16),
-                          TextFormField(
-                            controller: _phoneController,
-                            keyboardType: TextInputType.phone,
-                            decoration: const InputDecoration(
-                              labelText: 'Phone number',
-                              hintText: 'Enter phone number',
-                              border: OutlineInputBorder(),
-                              focusedBorder: OutlineInputBorder(
-                                borderSide: BorderSide(color: AppColors.primaryBlue, width: 2),
-                              ),
-                            ),
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return 'Please enter a phone number';
-                              }
-                              return null;
-                            },
-                          ),
+                          const SizedBox(height: 32),
+                          const SettingsSubheader(title: 'Your contacts'),
+                          ..._emergencyContacts.map((contact) => _buildContactTile(contact)),
                         ],
                       ),
                     ),
-                    const SizedBox(height: 32),
-                    const SettingsSubheader(title: 'Your contacts'),
-                    // const Text(
-                    //   'Your contacts',
-                    //   style: AppTextStyles.heading3,
-                    // ),
-                    // const SizedBox(height: 16),
-                    ..._emergencyContacts.map((contact) => _buildContactTile(contact)),
-                  ],
+                  ),
                 ),
-              ),
+                Padding(
+                  padding: const EdgeInsets.all(AppDimensions.pageHorizontalPadding),
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      style: AppButtonStyles.primaryButton,
+                      onPressed: () {
+                        if (_formKey.currentState!.validate()) {
+                          _addContact();
+                        }
+                      },
+                      child: const Text('Add Contact'),
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(AppDimensions.pageHorizontalPadding),
-            child: SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                style: AppButtonStyles.primaryButton,
-                onPressed: () {
-                  if (_formKey.currentState!.validate()) {
-                    _addContact();
-                  }
-                },
-                child: const Text('Add Contact'),
-              ),
-            ),
-          ),
-        ],
-      ),
     );
   }
 
@@ -175,7 +191,38 @@ class _EmergencyContactsScreenState extends State<EmergencyContactsScreen> {
             ),
           ),
           IconButton(
-            onPressed: () => _editContact(contact),
+            onPressed: () {
+              final index = _emergencyContacts.indexOf(contact);
+              EditEmergencyContactBottomSheet.show(
+                context,
+                initialName: contact['name']!,
+                initialPhone: contact['phone']!,
+                onSave: (name, phone) {
+                  setState(() {
+                    _emergencyContacts[index] = {
+                      'name': name,
+                      'phone': phone,
+                      'relationship': contact['relationship'] ?? 'Contact',
+                    };
+                  });
+                  _saveContacts();
+                  SnackbarHelper.showSuccessSnackBar(
+                    context,
+                    'Contact updated successfully!',
+                  );
+                },
+                onDelete: () {
+                  setState(() {
+                    _emergencyContacts.removeAt(index);
+                  });
+                  _saveContacts();
+                  SnackbarHelper.showSuccessSnackBar(
+                    context,
+                    'Contact deleted successfully!',
+                  );
+                },
+              );
+            },
             icon: const Icon(
               Icons.edit_outlined,
               color: AppColors.textSecondary,
@@ -196,10 +243,9 @@ class _EmergencyContactsScreenState extends State<EmergencyContactsScreen> {
           'relationship': 'Contact',
         });
       });
-      
+      _saveContacts();
       _nameController.clear();
       _phoneController.clear();
-      
       SnackbarHelper.showSuccessSnackBar(
         context,
         'Emergency contact added successfully!',
@@ -207,8 +253,4 @@ class _EmergencyContactsScreenState extends State<EmergencyContactsScreen> {
     }
   }
 
-  void _editContact(Map<String, String> contact) {
-    // Handle edit contact
-    print('Edit contact: ${contact['name']}');
-  }
 }

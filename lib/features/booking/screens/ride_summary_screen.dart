@@ -433,7 +433,7 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
 
   void _confirmBooking(RideBookingProvider bookingProvider) async {
     try {
-      await bookingProvider.bookRide();
+      // await bookingProvider.bookRide();
       if (mounted) {
         Navigator.pushReplacement(
           context,

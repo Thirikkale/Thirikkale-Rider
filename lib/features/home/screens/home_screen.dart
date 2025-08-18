@@ -13,6 +13,7 @@ import 'package:thirikkale_rider/features/home/screens/ride_option_detail_screen
 import 'package:provider/provider.dart';
 import 'package:thirikkale_rider/core/providers/ride_booking_provider.dart';
 import 'package:thirikkale_rider/features/booking/models/vehicle_option.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -23,6 +24,19 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedRideTypeIndex = 0; // 0 = Solo, 1 = Shared
+  @override
+  void initState() {
+    super.initState();
+    _loadRideTypePreference();
+  }
+
+  Future<void> _loadRideTypePreference() async {
+    final prefs = await SharedPreferences.getInstance();
+    final rideType = prefs.getString('default_ride_type') ?? 'Solo';
+    setState(() {
+      _selectedRideTypeIndex = rideType == 'Shared' ? 1 : 0;
+    });
+  }
 
   // Solo ride options
   static const List<Map<String, dynamic>> soloRideOptions = [
@@ -387,7 +401,7 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Column(
             children: [
               RideTypeTabs(
-                initialSelectedIndex: _selectedRideTypeIndex,
+                selectedIndex: _selectedRideTypeIndex,
                 onTabChanged: _onRideTypeChanged,
               ),
       

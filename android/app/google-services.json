@@ -1,13 +1,32 @@
 {
   "project_info": {
-    "project_number": "773740595615",
-    "project_id": "thirikkale-app",
-    "storage_bucket": "thirikkale-app.firebasestorage.app"
+    "project_number": "340109950192",
+    "project_id": "thirikkale-e32a7",
+    "storage_bucket": "thirikkale-e32a7.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:773740595615:android:a260dd90702c7f2b7495aa",
+        "mobilesdk_app_id": "1:340109950192:android:b483c1556dfe551e799635",
+        "android_client_info": {
+          "package_name": "com.example.thirikkale_driver"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC67d3JR1FavdIwp-qVZBP0TI95BFQb5Gg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:340109950192:android:10130022a23e8338799635",
         "android_client_info": {
           "package_name": "com.example.thirikkale_rider"
         }
@@ -15,7 +34,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyCy_hREOSCiR5WlUXgmg_YgQ5u9i5J-pTU"
+          "current_key": "AIzaSyC67d3JR1FavdIwp-qVZBP0TI95BFQb5Gg"
         }
       ],
       "services": {
