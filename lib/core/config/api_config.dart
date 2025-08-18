@@ -2,16 +2,18 @@ class ApiConfig {
   // Base URLs - Update this IP address to your backend server's IP
   // IMPORTANT: Replace 'YOUR_BACKEND_IP' with the actual IP address of your backend device
   // Example: 'http://192.168.1.100:8081/user-service/api/v1'
+  static const String ipAddress = "10.22.162.230";
   static const String userServiceBaseUrl =
-      'http://192.168.137.186:8081/user-service/api/v1';
+      'http://$ipAddress:8081/user-service/api/v1';
   static const String rideServiceBaseUrl =
-      'http://192.168.137.186:8082/ride-service/api/v1';
+      'http://$ipAddress:8082/ride-service/api/v1';
 
   // User Service URLs
   static const String authBaseUrl = '$userServiceBaseUrl/auth';
   static const String ridersBaseUrl = '$userServiceBaseUrl/riders';
   static const String driversBaseUrl = '$userServiceBaseUrl/drivers';
 
+  
   // Timeout configurations (increased for network latency)
   static const Duration connectTimeout = Duration(seconds: 45);
   static const Duration receiveTimeout = Duration(seconds: 90);
