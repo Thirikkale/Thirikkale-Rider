@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'dart:math' as math;
+// import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:geolocator/geolocator.dart';
@@ -18,6 +18,7 @@ import 'package:thirikkale_rider/features/booking/screens/location_search_screen
 import 'package:thirikkale_rider/features/booking/models/custom_marker.dart';
 import 'package:thirikkale_rider/widgets/common/custom_appbar_name.dart';
 import 'package:thirikkale_rider/core/providers/ride_booking_provider.dart';
+import 'package:thirikkale_rider/core/utils/map_cache.dart';
 
 class PlanYourRideScreen extends StatefulWidget {
   const PlanYourRideScreen({super.key});
@@ -720,22 +721,38 @@ class _PlanYourRideScreenState extends State<PlanYourRideScreen> {
       return;
     }
 
+    // Use cache if available and coordinates match
+    if (MapCache.pickupLat == _selectedPickupCoords!.latitude &&
+        MapCache.pickupLng == _selectedPickupCoords!.longitude &&
+        MapCache.destLat == _selectedDestinationCoords!.latitude &&
+        MapCache.destLng == _selectedDestinationCoords!.longitude &&
+        MapCache.markers != null &&
+        MapCache.polylines != null) {
+      setState(() {
+        _markers
+          ..clear()
+          ..addAll(MapCache.markers!);
+        _polylines
+          ..clear()
+          ..addAll(MapCache.polylines!);
+      });
+      print('PlanYourRideScreen: Using cached map data');
+      return;
+    }
+
     try {
-      // Import DirectionService at the top level and use it here
       final directions = await DirectionsService.getDirections(
         origin: _selectedPickupCoords!,
         destination: _selectedDestinationCoords!,
       );
 
       if (directions != null) {
-        // Decode the polyline points using google_polyline_algorithm
         final polylinePoints = decodePolyline(directions.polylinePoints);
         final List<LatLng> routeCoords =
             polylinePoints
                 .map((p) => LatLng(p[0].toDouble(), p[1].toDouble()))
                 .toList();
 
-        // Create polyline
         final polyline = Polyline(
           polylineId: const PolylineId('route'),
           points: routeCoords,
@@ -747,7 +764,6 @@ class _PlanYourRideScreenState extends State<PlanYourRideScreen> {
           geodesic: true,
         );
 
-        // Create custom markers for pickup and destination like in RouteMap
         final pickupIcon = await CustomMarker.createPillMarker('Pickup');
         final destinationIcon = await CustomMarker.createPillMarker('Drop');
 
@@ -766,33 +782,28 @@ class _PlanYourRideScreenState extends State<PlanYourRideScreen> {
           markerId: const MarkerId('destination'),
           position: _selectedDestinationCoords!,
           icon: destinationIcon,
-          infoWindow: InfoWindow(
-            title: 'Destination',
-            snippet: _destinationController.text,
-          ),
-          anchor: const Offset(0.5, 1.0), // Bottom center for pill marker
+          anchor: const Offset(0.5, 1.0),
         );
 
-        // Update the map with route and markers
-        if (mounted) {
-          setState(() {
-            _polylines.clear();
-            _polylines.add(polyline);
-            _markers.clear();
-            _markers.addAll([pickupMarker, destinationMarker]);
-          });
+        setState(() {
+          _markers
+            ..clear()
+            ..add(pickupMarker)
+            ..add(destinationMarker);
+          _polylines
+            ..clear()
+            ..add(polyline);
+        });
 
-          // Adjust camera to show entire route
-          _fitCameraToRoute(routeCoords);
-        }
-
-        print('Route displayed with ${routeCoords.length} points');
-        print(
-          'Distance: ${directions.distance}, Duration: ${directions.duration}',
+        // Cache the route for other screens
+        MapCache.setRoute(
+          pickupLat: _selectedPickupCoords!.latitude,
+          pickupLng: _selectedPickupCoords!.longitude,
+          destLat: _selectedDestinationCoords!.latitude,
+          destLng: _selectedDestinationCoords!.longitude,
+          markers: _markers,
+          polylines: _polylines,
         );
-      } else {
-        // Fallback to direct line if directions service fails
-        _showMarkersOnly();
       }
     } catch (e) {
       print('Error calculating route: $e');
@@ -840,37 +851,37 @@ class _PlanYourRideScreenState extends State<PlanYourRideScreen> {
     }
   }
 
-  void _fitCameraToRoute(List<LatLng> routeCoords) async {
-    if (routeCoords.isEmpty) return;
+  // void _fitCameraToRoute(List<LatLng> routeCoords) async {
+  //   if (routeCoords.isEmpty) return;
 
-    try {
-      final controller = await _mapController.future;
+  //   try {
+  //     final controller = await _mapController.future;
 
-      // Calculate bounds
-      double minLat = routeCoords.first.latitude;
-      double maxLat = routeCoords.first.latitude;
-      double minLng = routeCoords.first.longitude;
-      double maxLng = routeCoords.first.longitude;
+  //     // Calculate bounds
+  //     double minLat = routeCoords.first.latitude;
+  //     double maxLat = routeCoords.first.latitude;
+  //     double minLng = routeCoords.first.longitude;
+  //     double maxLng = routeCoords.first.longitude;
 
-      for (final coord in routeCoords) {
-        minLat = math.min(minLat, coord.latitude);
-        maxLat = math.max(maxLat, coord.latitude);
-        minLng = math.min(minLng, coord.longitude);
-        maxLng = math.max(maxLng, coord.longitude);
-      }
+  //     for (final coord in routeCoords) {
+  //       minLat = math.min(minLat, coord.latitude);
+  //       maxLat = math.max(maxLat, coord.latitude);
+  //       minLng = math.min(minLng, coord.longitude);
+  //       maxLng = math.max(maxLng, coord.longitude);
+  //     }
 
-      // Add padding
-      const padding = 0.01;
-      final bounds = LatLngBounds(
-        southwest: LatLng(minLat - padding, minLng - padding),
-        northeast: LatLng(maxLat + padding, maxLng + padding),
-      );
+  //     // Add padding
+  //     const padding = 0.01;
+  //     final bounds = LatLngBounds(
+  //       southwest: LatLng(minLat - padding, minLng - padding),
+  //       northeast: LatLng(maxLat + padding, maxLng + padding),
+  //     );
 
-      await controller.animateCamera(CameraUpdate.newLatLngBounds(bounds, 100));
-    } catch (e) {
-      print('Error fitting camera to route: $e');
-    }
-  }
+  //     await controller.animateCamera(CameraUpdate.newLatLngBounds(bounds, 100));
+  //   } catch (e) {
+  //     print('Error fitting camera to route: $e');
+  //   }
+  // }
 
   @override
   Widget build(BuildContext context) {

@@ -4,6 +4,7 @@ import 'package:thirikkale_rider/core/providers/ride_booking_provider.dart';
 import 'package:thirikkale_rider/core/utils/app_dimension.dart';
 import 'package:thirikkale_rider/core/utils/snackbar_helper.dart';
 import 'package:thirikkale_rider/features/booking/widgets/Route_map.dart';
+// import 'package:thirikkale_rider/core/utils/map_cache.dart';
 import 'package:thirikkale_rider/features/booking/widgets/ride_options_bottom_sheet.dart';
 import 'package:thirikkale_rider/features/booking/widgets/payment_method_bottom_sheet.dart';
 import 'package:thirikkale_rider/features/booking/screens/ride_summary_screen.dart';
@@ -17,7 +18,7 @@ class RideBookingScreen extends StatefulWidget {
 
 class _RideBookingScreenState extends State<RideBookingScreen> {
   // Add a state variable to hold the sheet's current height in pixels
-  double _sheetHeight = 8;
+  double _sheetHeight = AppDimensions.widgetSpacing; // Use widgetSpacing as a default
 
   @override
   void initState() {
@@ -26,8 +27,8 @@ class _RideBookingScreenState extends State<RideBookingScreen> {
       _initializeBooking();
       // Set the initial sheet height after the first frame
       setState(() {
-        // initialChildSize is 0.6, so we calculate the initial pixel height
-        _sheetHeight = MediaQuery.of(context).size.height * 0.6;
+        // Use AppDimensions for initial sheet height if available, else fallback
+  _sheetHeight = MediaQuery.of(context).size.height * 0.6; // Fallback to previous manual value
       });
     });
   }
@@ -81,15 +82,15 @@ class _RideBookingScreenState extends State<RideBookingScreen> {
                 ScrollController scrollController,
               ) {
                 return Container(
-                  decoration: const BoxDecoration(
+                  decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.vertical(
-                      top: Radius.circular(20.0),
+                      top: Radius.circular(20.0), // Fallback to previous manual value
                     ),
                     boxShadow: [
                       BoxShadow(
                         color: Colors.black26,
-                        blurRadius: 10.0,
+                        blurRadius: 10.0, // Fallback to previous manual value
                         offset: Offset(0, -2),
                       ),
                     ],
@@ -122,7 +123,7 @@ class _RideBookingScreenState extends State<RideBookingScreen> {
       ),
       isScrollControlled: true,
       constraints: BoxConstraints(
-        maxHeight: MediaQuery.of(context).size.height * 0.8, // Limit height
+        maxHeight: MediaQuery.of(context).size.height * 0.8, // Fallback to previous manual value
       ),
       builder:
           (context) => PaymentMethodBottomSheet(

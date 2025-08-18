@@ -5,6 +5,7 @@ import 'package:thirikkale_rider/config/routes.dart';
 import 'package:thirikkale_rider/core/providers/auth_provider.dart';
 import 'package:thirikkale_rider/core/providers/location_provider.dart';
 import 'package:thirikkale_rider/core/providers/ride_booking_provider.dart';
+import 'package:thirikkale_rider/core/providers/map_data_provider.dart';
 import 'package:thirikkale_rider/core/services/env_service.dart';
 import 'package:thirikkale_rider/core/utils/app_theme.dart';
 
@@ -31,6 +32,7 @@ class ThirikkaleApp extends StatelessWidget {
               (_, auth, previousRideBooking) =>
                   previousRideBooking!..update(auth),
         ),
+        ChangeNotifierProvider(create: (_) => MapDataProvider()),
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
@@ -38,9 +40,9 @@ class ThirikkaleApp extends StatelessWidget {
         theme: AppTheme.lightTheme,
         // darkTheme: AppTheme.darkTheme,
         // themeMode: ThemeMode.system,
-  // initialRoute: AppRoutes.initial,
-  // initialRoute: AppRoutes.service,
-  initialRoute: AppRoutes.home,
+        // initialRoute: AppRoutes.initial,
+        // initialRoute: AppRoutes.service,
+        initialRoute: AppRoutes.home,
         routes: AppRoutes.getRoutes(),
       ),
     );

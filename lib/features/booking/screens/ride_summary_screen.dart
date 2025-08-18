@@ -1,3 +1,4 @@
+import 'package:thirikkale_rider/core/utils/map_cache.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:thirikkale_rider/core/providers/ride_booking_provider.dart';
@@ -50,17 +51,24 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
       resizeToAvoidBottomInset: false,
       body: Consumer<RideBookingProvider>(
         builder: (context, bookingProvider, child) {
+          // Use cached map data if available
+          final pickupLat = MapCache.pickupLat ?? bookingProvider.pickupLat;
+          final pickupLng = MapCache.pickupLng ?? bookingProvider.pickupLng;
+          final destLat = MapCache.destLat ?? bookingProvider.destLat;
+          final destLng = MapCache.destLng ?? bookingProvider.destLng;
+          final pickupAddress = bookingProvider.pickupAddress;
+          final destinationAddress = bookingProvider.destinationAddress;
           return Stack(
             children: [
               // Map Section (takes up the whole screen behind the sheet)
               SizedBox.expand(
                 child: RouteMap(
-                  pickupAddress: bookingProvider.pickupAddress,
-                  destinationAddress: bookingProvider.destinationAddress,
-                  pickupLat: bookingProvider.pickupLat,
-                  pickupLng: bookingProvider.pickupLng,
-                  destLat: bookingProvider.destLat,
-                  destLng: bookingProvider.destLng,
+                  pickupAddress: pickupAddress,
+                  destinationAddress: destinationAddress,
+                  pickupLat: pickupLat,
+                  pickupLng: pickupLng,
+                  destLat: destLat,
+                  destLng: destLng,
                   bottomPadding:
                       MediaQuery.of(context).size.height *
                       0.35, // Reserve space for bottom sheet

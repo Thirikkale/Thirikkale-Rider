@@ -7,6 +7,7 @@ import 'package:thirikkale_rider/core/utils/app_dimension.dart';
 import 'package:thirikkale_rider/core/utils/snackbar_helper.dart';
 import 'package:thirikkale_rider/widgets/common/custom_appbar_name.dart';
 import 'package:thirikkale_rider/features/booking/widgets/route_map.dart';
+import 'package:thirikkale_rider/core/utils/map_cache.dart';
 import 'package:thirikkale_rider/core/providers/auth_provider.dart';
 import 'package:thirikkale_rider/core/providers/ride_booking_provider.dart';
 import 'package:thirikkale_rider/core/services/ride_status_service.dart';
@@ -321,6 +322,11 @@ class _RideTrackingScreenState extends State<RideTrackingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Use cached coordinates if available
+    final pickupLat = MapCache.pickupLat ?? widget.pickupLat;
+    final pickupLng = MapCache.pickupLng ?? widget.pickupLng;
+    final destLat = MapCache.destLat ?? widget.destLat;
+    final destLng = MapCache.destLng ?? widget.destLng;
     return Scaffold(
       backgroundColor: AppColors.white,
       appBar: CustomAppbarName(title: _getAppBarTitle(), showBackButton: true),
@@ -331,10 +337,10 @@ class _RideTrackingScreenState extends State<RideTrackingScreen> {
             child: RouteMap(
               pickupAddress: widget.pickupAddress,
               destinationAddress: widget.destinationAddress,
-              pickupLat: widget.pickupLat,
-              pickupLng: widget.pickupLng,
-              destLat: widget.destLat,
-              destLng: widget.destLng,
+              pickupLat: pickupLat,
+              pickupLng: pickupLng,
+              destLat: destLat,
+              destLng: destLng,
               bottomPadding: MediaQuery.of(context).size.height * 0.4,
               showBackButton: false,
             ),

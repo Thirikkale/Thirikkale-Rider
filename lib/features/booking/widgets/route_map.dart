@@ -4,6 +4,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:google_polyline_algorithm/google_polyline_algorithm.dart';
 import 'package:thirikkale_rider/core/services/direction_service.dart';
 import 'package:thirikkale_rider/core/utils/app_styles.dart';
+import 'package:thirikkale_rider/core/utils/map_cache.dart';
 import 'package:thirikkale_rider/features/booking/models/custom_marker.dart';
 
 class RouteMap extends StatefulWidget {
@@ -45,7 +46,21 @@ class _RouteMapState extends State<RouteMap> {
     print(
       'RouteMap initState - Pickup: ${widget.pickupLat}, ${widget.pickupLng}, Dest: ${widget.destLat}, ${widget.destLng}',
     );
-    _initializeMap();
+    // Use cache if available and coordinates match
+    if (MapCache.pickupLat == widget.pickupLat &&
+        MapCache.pickupLng == widget.pickupLng &&
+        MapCache.destLat == widget.destLat &&
+        MapCache.destLng == widget.destLng &&
+        MapCache.markers != null &&
+        MapCache.polylines != null) {
+      _markers = MapCache.markers!;
+      _polylines = MapCache.polylines!;
+      _isLoadingRoute = false;
+      print('RouteMap: Using cached map data');
+      Future.delayed(const Duration(milliseconds: 500), _fitRouteInView);
+    } else {
+      _initializeMap();
+    }
   }
 
   @override
@@ -71,6 +86,18 @@ class _RouteMapState extends State<RouteMap> {
     print('RouteMap _initializeMap called');
     await _createMarkers();
     await _getDirections();
+
+    // Cache the result for future screens
+    if (widget.pickupLat != null && widget.pickupLng != null && widget.destLat != null && widget.destLng != null) {
+      MapCache.setRoute(
+        pickupLat: widget.pickupLat!,
+        pickupLng: widget.pickupLng!,
+        destLat: widget.destLat!,
+        destLng: widget.destLng!,
+        markers: _markers,
+        polylines: _polylines,
+      );
+    }
 
     // Ensure we always have some route visible
     if (_polylines.isEmpty &&
