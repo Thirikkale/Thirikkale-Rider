@@ -48,3 +48,10 @@ app.*.map.json
 
 
 /android/app/google-services.json
+
+
+# Environment variables and API keys
+.env
+.env.local
+.env.*.local
+ios/Flutter/Environment.xcconfig

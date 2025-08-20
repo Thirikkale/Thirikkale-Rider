@@ -30,20 +30,20 @@ class _AuthWrapperState extends State<AuthWrapper> {
       if (authProvider.hasValidJWTToken) {
         print('✅ Valid session found. Navigating to home screen.');
         Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const HomeScreen())
+          MaterialPageRoute(builder: (_) => const HomeScreen()),
         );
       } else {
         // No valid token, user needs to log in.
-        // print('❌ No valid session. Navigating to login screen.');
-        // Navigator.of(context).pushReplacement(
-        //   MaterialPageRoute(builder: (_) => const GetStartedScreen())
-        // );
+        print('❌ No valid session. Navigating to login screen.');
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const GetStartedScreen()),
+        );
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    return Scaffold(body: Center(child: CircularProgressIndicator()));
   }
 }
