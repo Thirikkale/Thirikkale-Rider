@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:thirikkale_rider/core/providers/ride_booking_provider.dart';
-import 'package:thirikkale_rider/core/utils/app_dimension.dart';
 import 'package:thirikkale_rider/core/utils/snackbar_helper.dart';
 import 'package:thirikkale_rider/features/booking/widgets/Route_map.dart';
 import 'package:thirikkale_rider/features/booking/widgets/ride_options_bottom_sheet.dart';

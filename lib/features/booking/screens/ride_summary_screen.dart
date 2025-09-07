@@ -433,8 +433,17 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
 
   void _confirmBooking(RideBookingProvider bookingProvider) async {
     try {
-      // await bookingProvider.bookRide();
+      await bookingProvider.bookRide();
       if (mounted) {
+        // Debug: Print coordinates before navigation
+        print('🚀 Navigating to RideTrackingScreen with coordinates:');
+        print(
+          '📍 Pickup: ${bookingProvider.pickupLat}, ${bookingProvider.pickupLng}',
+        );
+        print(
+          '📍 Destination: ${bookingProvider.destLat}, ${bookingProvider.destLng}',
+        );
+
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
@@ -442,6 +451,10 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
                 (context) => RideTrackingScreen(
                   pickupAddress: bookingProvider.pickupAddress,
                   destinationAddress: bookingProvider.destinationAddress,
+                  pickupLat: bookingProvider.pickupLat,
+                  pickupLng: bookingProvider.pickupLng,
+                  destLat: bookingProvider.destLat,
+                  destLng: bookingProvider.destLng,
                   scheduledDateTime:
                       bookingProvider.scheduledDateTime ?? DateTime.now(),
                   estimatedPrice: (bookingProvider.estimatedPrice ?? 0).toInt(),

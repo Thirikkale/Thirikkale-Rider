@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import 'package:provider/provider.dart';
 import 'package:thirikkale_rider/core/utils/app_styles.dart';
 import 'package:thirikkale_rider/core/utils/app_dimension.dart';
@@ -61,6 +60,11 @@ class _RideTrackingScreenState extends State<RideTrackingScreen> {
   String? vehicleDetails;
   double? driverRating;
   String? estimatedArrival;
+
+  double? _currentPickupLat;
+  double? _currentPickupLng;
+  double? _currentDestLat;
+  double? _currentDestLng;
 
   // Legacy variables for old UI components
   double sliderValue = 0.5;
@@ -173,6 +177,12 @@ class _RideTrackingScreenState extends State<RideTrackingScreen> {
   void _updateRideState(Map<String, dynamic> rideData) {
     final status = rideData['status'] as String?;
 
+    // Extract coordinates from ride data
+    _currentPickupLat = (rideData['pickupLatitude'] as num?)?.toDouble();
+    _currentPickupLng = (rideData['pickupLongitude'] as num?)?.toDouble();
+    _currentDestLat = (rideData['dropoffLatitude'] as num?)?.toDouble();
+    _currentDestLng = (rideData['dropoffLongitude'] as num?)?.toDouble();
+
     switch (status) {
       case 'PENDING':
         currentState = RideState.pending;
@@ -236,88 +246,91 @@ class _RideTrackingScreenState extends State<RideTrackingScreen> {
     }
   }
 
-  void _acceptSharedRide() {
-    setState(() {
-      currentState = RideState.accepted;
-      sliderValue = 0.5; // Reset to center
-      isSliderActive = false;
-    });
-  }
+  // void _acceptSharedRide() {
+  //   setState(() {
+  //     currentState = RideState.accepted;
+  //     sliderValue = 0.5; // Reset to center
+  //     isSliderActive = false;
+  //   });
+  // }
 
-  void _startRideFlow() {
-    // Start a new search for rides
-    setState(() {
-      currentState = RideState.pending;
-      isLoading = true;
-      errorMessage = null;
-    });
+  // void _startRideFlow() {
+  //   // Start a new search for rides
+  //   setState(() {
+  //     currentState = RideState.pending;
+  //     isLoading = true;
+  //     errorMessage = null;
+  //   });
 
-    // Simulate searching for a new ride
-    Timer.periodic(const Duration(milliseconds: 100), (timer) {
-      setState(() {
-        searchProgress = (searchProgress + 2).clamp(0, 100);
-      });
+  //   // Simulate searching for a new ride
+  //   Timer.periodic(const Duration(milliseconds: 100), (timer) {
+  //     setState(() {
+  //       searchProgress = (searchProgress + 2).clamp(0, 100);
+  //     });
 
-      if (searchProgress >= 100) {
-        timer.cancel();
-        // You can add logic here to either find a new ride or show no rides available
-      }
-    });
-  }
+  //     if (searchProgress >= 100) {
+  //       timer.cancel();
+  //       // You can add logic here to either find a new ride or show no rides available
+  //     }
+  //   });
+  // }
 
-  void _autoAcceptRide() {
-    // Animate slider to accept position
-    setState(() {
-      sliderValue = 1.0;
-    });
-    // Small delay to show the animation then accept
-    Future.delayed(const Duration(milliseconds: 300), () {
-      if (mounted) {
-        _acceptSharedRide();
-      }
-    });
-  }
+  // COMMENT UNUSED METHODS
+  // void _autoAcceptRide() {
+  //   // Animate slider to accept position
+  //   setState(() {
+  //     sliderValue = 1.0;
+  //   });
+  //   // Small delay to show the animation then accept
+  //   Future.delayed(const Duration(milliseconds: 300), () {
+  //     if (mounted) {
+  //       _acceptSharedRide();
+  //     }
+  //   });
+  // }
 
-  void _rejectSharedRide() {
-    setState(() {
-      currentState = RideState.pending;
-      searchProgress = 0;
-      sliderValue = 0.5; // Reset to center
-      isSliderActive = false;
-    });
-    // Start finding another ride
-    _startRideFlow();
-  }
+  // void _rejectSharedRide() {
+  //   setState(() {
+  //     currentState = RideState.pending;
+  //     searchProgress = 0;
+  //     sliderValue = 0.5; // Reset to center
+  //     isSliderActive = false;
+  //   });
+  //   // Start finding another ride
+  //   _startRideFlow();
+  // }
 
-  void _onSliderChanged(double value) {
-    setState(() {
-      sliderValue = value;
-      if (value >= 0.9) {
-        // Accept ride when slider is almost at the end
-        _acceptSharedRide();
-      } else if (value <= 0.1) {
-        // Reject ride when slider is moved to the start
-        _rejectSharedRide();
-      }
+  // // COMMENT UNUSED METHODS
+  // void _onSliderChanged(double value) {
+  //   setState(() {
+  //     sliderValue = value;
+  //     if (value >= 0.9) {
+  //       // Accept ride when slider is almost at the end
+  //       _acceptSharedRide();
+  //     } else if (value <= 0.1) {
+  //       // Reject ride when slider is moved to the start
+  //       _rejectSharedRide();
+  //     }
 
-      // Mark slider as active once it's moved significantly from center (0.5)
-      if ((value - 0.5).abs() > 0.2) {
-        isSliderActive = true;
-      }
-    });
-  }
+  //     // Mark slider as active once it's moved significantly from center (0.5)
+  //     if ((value - 0.5).abs() > 0.2) {
+  //       isSliderActive = true;
+  //     }
+  //   });
+  // }
 
-  void _createNewSharedRide() {
-    setState(() {
-      currentState = RideState.accepted;
-    });
-  }
+  // void _createNewSharedRide() {
+  //   setState(() {
+  //     currentState = RideState.accepted;
+  //   });
+  // }
 
-  void _completeRide() {
-    setState(() {
-      currentState = RideState.completed;
-    });
-  }
+  // // COMMENT UNUSED METHODS
+  // void _completeRide() {
+  //   setState(() {
+  //     currentState = RideState.completed;
+  //   });
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -331,10 +344,10 @@ class _RideTrackingScreenState extends State<RideTrackingScreen> {
             child: RouteMap(
               pickupAddress: widget.pickupAddress,
               destinationAddress: widget.destinationAddress,
-              pickupLat: widget.pickupLat,
-              pickupLng: widget.pickupLng,
-              destLat: widget.destLat,
-              destLng: widget.destLng,
+              pickupLat: _currentPickupLat ?? widget.pickupLat,
+              pickupLng: _currentPickupLng ?? widget.pickupLng,
+              destLat: _currentDestLat ?? widget.destLat,
+              destLng: _currentDestLng ?? widget.destLng,
               bottomPadding: MediaQuery.of(context).size.height * 0.4,
               showBackButton: false,
             ),
@@ -846,657 +859,659 @@ class _RideTrackingScreenState extends State<RideTrackingScreen> {
     );
   }
 
-  Widget _buildSharedRideDetailsContent() {
-    return Container(
-      decoration: const BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(20),
-          topRight: Radius.circular(20),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black26,
-            blurRadius: 10,
-            offset: Offset(0, -2),
-          ),
-        ],
-      ),
-      child: SafeArea(
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.all(AppDimensions.pageHorizontalPadding),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Handle bar
-                Center(
-                  child: Container(
-                    width: 40,
-                    height: 4,
-                    margin: const EdgeInsets.only(bottom: 16),
-                    decoration: BoxDecoration(
-                      color: AppColors.lightGrey,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                ),
+  // // COMMENT UNUSED METHODS
+  // Widget _buildSharedRideDetailsContent() {
+  //   return Container(
+  //     decoration: const BoxDecoration(
+  //       color: AppColors.white,
+  //       borderRadius: BorderRadius.only(
+  //         topLeft: Radius.circular(20),
+  //         topRight: Radius.circular(20),
+  //       ),
+  //       boxShadow: [
+  //         BoxShadow(
+  //           color: Colors.black26,
+  //           blurRadius: 10,
+  //           offset: Offset(0, -2),
+  //         ),
+  //       ],
+  //     ),
+  //     child: SafeArea(
+  //       child: SingleChildScrollView(
+  //         child: Padding(
+  //           padding: const EdgeInsets.all(AppDimensions.pageHorizontalPadding),
+  //           child: Column(
+  //             mainAxisSize: MainAxisSize.min,
+  //             crossAxisAlignment: CrossAxisAlignment.start,
+  //             children: [
+  //               // Handle bar
+  //               Center(
+  //                 child: Container(
+  //                   width: 40,
+  //                   height: 4,
+  //                   margin: const EdgeInsets.only(bottom: 16),
+  //                   decoration: BoxDecoration(
+  //                     color: AppColors.lightGrey,
+  //                     borderRadius: BorderRadius.circular(2),
+  //                   ),
+  //                 ),
+  //               ),
 
-                // Header
-                Row(
-                  children: [
-                    Icon(Icons.group, color: AppColors.primaryBlue, size: 24),
-                    const SizedBox(width: 12),
-                    Text(
-                      'Shared Ride Found!',
-                      style: AppTextStyles.heading2.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.primaryBlue,
-                      ),
-                    ),
-                  ],
-                ),
+  //               // Header
+  //               Row(
+  //                 children: [
+  //                   Icon(Icons.group, color: AppColors.primaryBlue, size: 24),
+  //                   const SizedBox(width: 12),
+  //                   Text(
+  //                     'Shared Ride Found!',
+  //                     style: AppTextStyles.heading2.copyWith(
+  //                       fontWeight: FontWeight.w600,
+  //                       color: AppColors.primaryBlue,
+  //                     ),
+  //                   ),
+  //                 ],
+  //               ),
 
-                const SizedBox(height: 16),
+  //               const SizedBox(height: 16),
 
-                // Driver info
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: AppColors.surfaceLight,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppColors.lightGrey),
-                  ),
-                  child: Row(
-                    children: [
-                      CircleAvatar(
-                        radius: 25,
-                        backgroundImage: AssetImage(driverInfo['profileImage']),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              driverInfo['name'],
-                              style: AppTextStyles.bodyLarge.copyWith(
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            Row(
-                              children: [
-                                Icon(
-                                  Icons.star,
-                                  size: 16,
-                                  color: AppColors.warning,
-                                ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  '${driverInfo['rating']}',
-                                  style: AppTextStyles.bodySmall,
-                                ),
-                                const SizedBox(width: 16),
-                                Text(
-                                  '${driverInfo['vehicleModel']} • ${driverInfo['vehicleNumber']}',
-                                  style: AppTextStyles.bodySmall.copyWith(
-                                    color: AppColors.textSecondary,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+  //               // Driver info
+  //               Container(
+  //                 padding: const EdgeInsets.all(16),
+  //                 decoration: BoxDecoration(
+  //                   color: AppColors.surfaceLight,
+  //                   borderRadius: BorderRadius.circular(12),
+  //                   border: Border.all(color: AppColors.lightGrey),
+  //                 ),
+  //                 child: Row(
+  //                   children: [
+  //                     CircleAvatar(
+  //                       radius: 25,
+  //                       backgroundImage: AssetImage(driverInfo['profileImage']),
+  //                     ),
+  //                     const SizedBox(width: 12),
+  //                     Expanded(
+  //                       child: Column(
+  //                         crossAxisAlignment: CrossAxisAlignment.start,
+  //                         children: [
+  //                           Text(
+  //                             driverInfo['name'],
+  //                             style: AppTextStyles.bodyLarge.copyWith(
+  //                               fontWeight: FontWeight.w600,
+  //                             ),
+  //                           ),
+  //                           Row(
+  //                             children: [
+  //                               Icon(
+  //                                 Icons.star,
+  //                                 size: 16,
+  //                                 color: AppColors.warning,
+  //                               ),
+  //                               const SizedBox(width: 4),
+  //                               Text(
+  //                                 '${driverInfo['rating']}',
+  //                                 style: AppTextStyles.bodySmall,
+  //                               ),
+  //                               const SizedBox(width: 16),
+  //                               Text(
+  //                                 '${driverInfo['vehicleModel']} • ${driverInfo['vehicleNumber']}',
+  //                                 style: AppTextStyles.bodySmall.copyWith(
+  //                                   color: AppColors.textSecondary,
+  //                                 ),
+  //                               ),
+  //                             ],
+  //                           ),
+  //                         ],
+  //                       ),
+  //                     ),
+  //                   ],
+  //                 ),
+  //               ),
 
-                const SizedBox(height: 16),
+  //               const SizedBox(height: 16),
 
-                Text(
-                  'Current Riders (${currentRiders.length})',
-                  style: AppTextStyles.bodyLarge.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
+  //               Text(
+  //                 'Current Riders (${currentRiders.length})',
+  //                 style: AppTextStyles.bodyLarge.copyWith(
+  //                   fontWeight: FontWeight.w600,
+  //                 ),
+  //               ),
 
-                const SizedBox(height: 12),
+  //               const SizedBox(height: 12),
 
-                // Current riders list
-                ...currentRiders.map(
-                  (rider) => Container(
-                    margin: const EdgeInsets.only(bottom: 12),
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: AppColors.surfaceLight,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: AppColors.lightGrey),
-                    ),
-                    child: Row(
-                      children: [
-                        CircleAvatar(
-                          radius: 20,
-                          backgroundImage: AssetImage(rider['profileImage']),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Text(
-                                    rider['name'],
-                                    style: AppTextStyles.bodyMedium.copyWith(
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Icon(
-                                    Icons.star,
-                                    size: 14,
-                                    color: AppColors.warning,
-                                  ),
-                                  const SizedBox(width: 2),
-                                  Text(
-                                    '${rider['rating']}',
-                                    style: AppTextStyles.bodySmall,
-                                  ),
-                                ],
-                              ),
-                              Text(
-                                '${rider['pickupLocation']} → ${rider['dropLocation']}',
-                                style: AppTextStyles.bodySmall.copyWith(
-                                  color: AppColors.textSecondary,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
+  //               // Current riders list
+  //               ...currentRiders.map(
+  //                 (rider) => Container(
+  //                   margin: const EdgeInsets.only(bottom: 12),
+  //                   padding: const EdgeInsets.all(12),
+  //                   decoration: BoxDecoration(
+  //                     color: AppColors.surfaceLight,
+  //                     borderRadius: BorderRadius.circular(8),
+  //                     border: Border.all(color: AppColors.lightGrey),
+  //                   ),
+  //                   child: Row(
+  //                     children: [
+  //                       CircleAvatar(
+  //                         radius: 20,
+  //                         backgroundImage: AssetImage(rider['profileImage']),
+  //                       ),
+  //                       const SizedBox(width: 12),
+  //                       Expanded(
+  //                         child: Column(
+  //                           crossAxisAlignment: CrossAxisAlignment.start,
+  //                           children: [
+  //                             Row(
+  //                               children: [
+  //                                 Text(
+  //                                   rider['name'],
+  //                                   style: AppTextStyles.bodyMedium.copyWith(
+  //                                     fontWeight: FontWeight.w600,
+  //                                   ),
+  //                                 ),
+  //                                 const SizedBox(width: 8),
+  //                                 Icon(
+  //                                   Icons.star,
+  //                                   size: 14,
+  //                                   color: AppColors.warning,
+  //                                 ),
+  //                                 const SizedBox(width: 2),
+  //                                 Text(
+  //                                   '${rider['rating']}',
+  //                                   style: AppTextStyles.bodySmall,
+  //                                 ),
+  //                               ],
+  //                             ),
+  //                             Text(
+  //                               '${rider['pickupLocation']} → ${rider['dropLocation']}',
+  //                               style: AppTextStyles.bodySmall.copyWith(
+  //                                 color: AppColors.textSecondary,
+  //                               ),
+  //                             ),
+  //                           ],
+  //                         ),
+  //                       ),
+  //                     ],
+  //                   ),
+  //                 ),
+  //               ),
 
-                const SizedBox(height: 16),
+  //               const SizedBox(height: 16),
 
-                // Auto-accept countdown
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: AppColors.warning.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: AppColors.warning),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(Icons.timer, color: AppColors.warning, size: 20),
-                      const SizedBox(width: 8),
-                      Text(
-                        'This ride will be auto-accepted in 15 seconds',
-                        style: AppTextStyles.bodySmall.copyWith(
-                          color: AppColors.textPrimary,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+  //               // Auto-accept countdown
+  //               Container(
+  //                 padding: const EdgeInsets.all(12),
+  //                 decoration: BoxDecoration(
+  //                   color: AppColors.warning.withValues(alpha: 0.1),
+  //                   borderRadius: BorderRadius.circular(8),
+  //                   border: Border.all(color: AppColors.warning),
+  //                 ),
+  //                 child: Row(
+  //                   children: [
+  //                     Icon(Icons.timer, color: AppColors.warning, size: 20),
+  //                     const SizedBox(width: 8),
+  //                     Text(
+  //                       'This ride will be auto-accepted in 15 seconds',
+  //                       style: AppTextStyles.bodySmall.copyWith(
+  //                         color: AppColors.textPrimary,
+  //                         fontWeight: FontWeight.w500,
+  //                       ),
+  //                     ),
+  //                   ],
+  //                 ),
+  //               ),
 
-                const SizedBox(height: 20),
+  //               const SizedBox(height: 20),
 
-                // Slider to accept/reject
-                Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: AppColors.surfaceLight,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: AppColors.lightGrey),
-                  ),
-                  child: Column(
-                    children: [
-                      Text(
-                        'Slide to Accept or Reject',
-                        style: AppTextStyles.bodyMedium.copyWith(
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.textPrimary,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      Stack(
-                        children: [
-                          // Background track
-                          Container(
-                            height: 60,
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(30),
-                              gradient: LinearGradient(
-                                colors: [
-                                  AppColors.error.withValues(alpha: 0.3),
-                                  AppColors.lightGrey,
-                                  AppColors.success.withValues(alpha: 0.3),
-                                ],
-                              ),
-                            ),
-                          ),
-                          // Labels
-                          Positioned.fill(
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Padding(
-                                  padding: const EdgeInsets.only(left: 20),
-                                  child: Row(
-                                    children: [
-                                      Icon(
-                                        Icons.close,
-                                        color: AppColors.error,
-                                        size: 20,
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Text(
-                                        'Reject',
-                                        style: AppTextStyles.bodySmall.copyWith(
-                                          color: AppColors.error,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                Padding(
-                                  padding: const EdgeInsets.only(right: 20),
-                                  child: Row(
-                                    children: [
-                                      Text(
-                                        'Accept',
-                                        style: AppTextStyles.bodySmall.copyWith(
-                                          color: AppColors.success,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Icon(
-                                        Icons.check,
-                                        color: AppColors.success,
-                                        size: 20,
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          // Slider
-                          SliderTheme(
-                            data: SliderTheme.of(context).copyWith(
-                              trackHeight: 60,
-                              activeTrackColor: Colors.transparent,
-                              inactiveTrackColor: Colors.transparent,
-                              thumbShape: CustomSliderThumb(),
-                              overlayShape: const RoundSliderOverlayShape(
-                                overlayRadius: 0,
-                              ),
-                              trackShape: const RoundedRectSliderTrackShape(),
-                            ),
-                            child: Slider(
-                              value: sliderValue,
-                              min: 0.0,
-                              max: 1.0,
-                              onChanged: _onSliderChanged,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      Text(
-                        sliderValue <= 0.1
-                            ? 'Finding another ride...'
-                            : sliderValue >= 0.9
-                            ? 'Ride accepted!'
-                            : sliderValue > 0.7
-                            ? 'Slide right to accept...'
-                            : sliderValue < 0.3
-                            ? 'Slide left to reject...'
-                            : 'Slide to make your choice',
-                        style: AppTextStyles.bodySmall.copyWith(
-                          color:
-                              sliderValue <= 0.1
-                                  ? AppColors.error
-                                  : sliderValue >= 0.9
-                                  ? AppColors.success
-                                  : AppColors.textSecondary,
-                          fontWeight: FontWeight.w500,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
+  //               // Slider to accept/reject
+  //               Container(
+  //                 padding: const EdgeInsets.all(20),
+  //                 decoration: BoxDecoration(
+  //                   color: AppColors.surfaceLight,
+  //                   borderRadius: BorderRadius.circular(16),
+  //                   border: Border.all(color: AppColors.lightGrey),
+  //                 ),
+  //                 child: Column(
+  //                   children: [
+  //                     Text(
+  //                       'Slide to Accept or Reject',
+  //                       style: AppTextStyles.bodyMedium.copyWith(
+  //                         fontWeight: FontWeight.w600,
+  //                         color: AppColors.textPrimary,
+  //                       ),
+  //                     ),
+  //                     const SizedBox(height: 16),
+  //                     Stack(
+  //                       children: [
+  //                         // Background track
+  //                         Container(
+  //                           height: 60,
+  //                           decoration: BoxDecoration(
+  //                             borderRadius: BorderRadius.circular(30),
+  //                             gradient: LinearGradient(
+  //                               colors: [
+  //                                 AppColors.error.withValues(alpha: 0.3),
+  //                                 AppColors.lightGrey,
+  //                                 AppColors.success.withValues(alpha: 0.3),
+  //                               ],
+  //                             ),
+  //                           ),
+  //                         ),
+  //                         // Labels
+  //                         Positioned.fill(
+  //                           child: Row(
+  //                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  //                             children: [
+  //                               Padding(
+  //                                 padding: const EdgeInsets.only(left: 20),
+  //                                 child: Row(
+  //                                   children: [
+  //                                     Icon(
+  //                                       Icons.close,
+  //                                       color: AppColors.error,
+  //                                       size: 20,
+  //                                     ),
+  //                                     const SizedBox(width: 8),
+  //                                     Text(
+  //                                       'Reject',
+  //                                       style: AppTextStyles.bodySmall.copyWith(
+  //                                         color: AppColors.error,
+  //                                         fontWeight: FontWeight.w600,
+  //                                       ),
+  //                                     ),
+  //                                   ],
+  //                                 ),
+  //                               ),
+  //                               Padding(
+  //                                 padding: const EdgeInsets.only(right: 20),
+  //                                 child: Row(
+  //                                   children: [
+  //                                     Text(
+  //                                       'Accept',
+  //                                       style: AppTextStyles.bodySmall.copyWith(
+  //                                         color: AppColors.success,
+  //                                         fontWeight: FontWeight.w600,
+  //                                       ),
+  //                                     ),
+  //                                     const SizedBox(width: 8),
+  //                                     Icon(
+  //                                       Icons.check,
+  //                                       color: AppColors.success,
+  //                                       size: 20,
+  //                                     ),
+  //                                   ],
+  //                                 ),
+  //                               ),
+  //                             ],
+  //                           ),
+  //                         ),
+  //                         // Slider
+  //                         SliderTheme(
+  //                           data: SliderTheme.of(context).copyWith(
+  //                             trackHeight: 60,
+  //                             activeTrackColor: Colors.transparent,
+  //                             inactiveTrackColor: Colors.transparent,
+  //                             thumbShape: CustomSliderThumb(),
+  //                             overlayShape: const RoundSliderOverlayShape(
+  //                               overlayRadius: 0,
+  //                             ),
+  //                             trackShape: const RoundedRectSliderTrackShape(),
+  //                           ),
+  //                           child: Slider(
+  //                             value: sliderValue,
+  //                             min: 0.0,
+  //                             max: 1.0,
+  //                             onChanged: _onSliderChanged,
+  //                           ),
+  //                         ),
+  //                       ],
+  //                     ),
+  //                     const SizedBox(height: 12),
+  //                     Text(
+  //                       sliderValue <= 0.1
+  //                           ? 'Finding another ride...'
+  //                           : sliderValue >= 0.9
+  //                           ? 'Ride accepted!'
+  //                           : sliderValue > 0.7
+  //                           ? 'Slide right to accept...'
+  //                           : sliderValue < 0.3
+  //                           ? 'Slide left to reject...'
+  //                           : 'Slide to make your choice',
+  //                       style: AppTextStyles.bodySmall.copyWith(
+  //                         color:
+  //                             sliderValue <= 0.1
+  //                                 ? AppColors.error
+  //                                 : sliderValue >= 0.9
+  //                                 ? AppColors.success
+  //                                 : AppColors.textSecondary,
+  //                         fontWeight: FontWeight.w500,
+  //                       ),
+  //                       textAlign: TextAlign.center,
+  //                     ),
+  //                   ],
+  //                 ),
+  //               ),
+  //             ],
+  //           ),
+  //         ),
+  //       ),
+  //     ),
+  //   );
+  // }
 
-  Widget _buildNoSharedRideContent() {
-    return Container(
-      decoration: const BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(20),
-          topRight: Radius.circular(20),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black26,
-            blurRadius: 10,
-            offset: Offset(0, -2),
-          ),
-        ],
-      ),
-      child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(AppDimensions.pageHorizontalPadding),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Handle bar
-              Container(
-                width: 40,
-                height: 4,
-                margin: const EdgeInsets.only(bottom: 16),
-                decoration: BoxDecoration(
-                  color: AppColors.lightGrey,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
+  // // COMMENT UNUSED METHODS
+  // Widget _buildNoSharedRideContent() {
+  //   return Container(
+  //     decoration: const BoxDecoration(
+  //       color: AppColors.white,
+  //       borderRadius: BorderRadius.only(
+  //         topLeft: Radius.circular(20),
+  //         topRight: Radius.circular(20),
+  //       ),
+  //       boxShadow: [
+  //         BoxShadow(
+  //           color: Colors.black26,
+  //           blurRadius: 10,
+  //           offset: Offset(0, -2),
+  //         ),
+  //       ],
+  //     ),
+  //     child: SafeArea(
+  //       child: Padding(
+  //         padding: const EdgeInsets.all(AppDimensions.pageHorizontalPadding),
+  //         child: Column(
+  //           mainAxisSize: MainAxisSize.min,
+  //           children: [
+  //             // Handle bar
+  //             Container(
+  //               width: 40,
+  //               height: 4,
+  //               margin: const EdgeInsets.only(bottom: 16),
+  //               decoration: BoxDecoration(
+  //                 color: AppColors.lightGrey,
+  //                 borderRadius: BorderRadius.circular(2),
+  //               ),
+  //             ),
 
-              Icon(Icons.group_off, size: 64, color: AppColors.textSecondary),
+  //             Icon(Icons.group_off, size: 64, color: AppColors.textSecondary),
 
-              const SizedBox(height: 16),
+  //             const SizedBox(height: 16),
 
-              Text(
-                'No Shared Rides Available',
-                style: AppTextStyles.heading2.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
-                textAlign: TextAlign.center,
-              ),
+  //             Text(
+  //               'No Shared Rides Available',
+  //               style: AppTextStyles.heading2.copyWith(
+  //                 fontWeight: FontWeight.w600,
+  //               ),
+  //               textAlign: TextAlign.center,
+  //             ),
 
-              const SizedBox(height: 8),
+  //             const SizedBox(height: 8),
 
-              Text(
-                'Would you like to create a new shared ride? Other riders can join your trip.',
-                style: AppTextStyles.bodyMedium.copyWith(
-                  color: AppColors.textSecondary,
-                ),
-                textAlign: TextAlign.center,
-              ),
+  //             Text(
+  //               'Would you like to create a new shared ride? Other riders can join your trip.',
+  //               style: AppTextStyles.bodyMedium.copyWith(
+  //                 color: AppColors.textSecondary,
+  //               ),
+  //               textAlign: TextAlign.center,
+  //             ),
 
-              const SizedBox(height: 24),
+  //             const SizedBox(height: 24),
 
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () => Navigator.pop(context),
-                      style: OutlinedButton.styleFrom(
-                        side: const BorderSide(color: AppColors.lightGrey),
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                      ),
-                      child: Text(
-                        'Cancel',
-                        style: AppTextStyles.bodyMedium.copyWith(
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    flex: 2,
-                    child: ElevatedButton(
-                      onPressed: _createNewSharedRide,
-                      style: AppButtonStyles.primaryButton,
-                      child: const Text('Create Shared Ride'),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
+  //             Row(
+  //               children: [
+  //                 Expanded(
+  //                   child: OutlinedButton(
+  //                     onPressed: () => Navigator.pop(context),
+  //                     style: OutlinedButton.styleFrom(
+  //                       side: const BorderSide(color: AppColors.lightGrey),
+  //                       padding: const EdgeInsets.symmetric(vertical: 16),
+  //                     ),
+  //                     child: Text(
+  //                       'Cancel',
+  //                       style: AppTextStyles.bodyMedium.copyWith(
+  //                         color: AppColors.textSecondary,
+  //                       ),
+  //                     ),
+  //                   ),
+  //                 ),
+  //                 const SizedBox(width: 12),
+  //                 Expanded(
+  //                   flex: 2,
+  //                   child: ElevatedButton(
+  //                     onPressed: _createNewSharedRide,
+  //                     style: AppButtonStyles.primaryButton,
+  //                     child: const Text('Create Shared Ride'),
+  //                   ),
+  //                 ),
+  //               ],
+  //             ),
+  //           ],
+  //         ),
+  //       ),
+  //     ),
+  //   );
+  // }
 
-  Widget _buildDropOffContent() {
-    return Container(
-      decoration: const BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(20),
-          topRight: Radius.circular(20),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black26,
-            blurRadius: 10,
-            offset: Offset(0, -2),
-          ),
-        ],
-      ),
-      child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(AppDimensions.pageHorizontalPadding),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Handle bar
-              Container(
-                width: 40,
-                height: 4,
-                margin: const EdgeInsets.only(bottom: 16),
-                decoration: BoxDecoration(
-                  color: AppColors.lightGrey,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
+  // Widget _buildDropOffContent() {
+  //   return Container(
+  //     decoration: const BoxDecoration(
+  //       color: AppColors.white,
+  //       borderRadius: BorderRadius.only(
+  //         topLeft: Radius.circular(20),
+  //         topRight: Radius.circular(20),
+  //       ),
+  //       boxShadow: [
+  //         BoxShadow(
+  //           color: Colors.black26,
+  //           blurRadius: 10,
+  //           offset: Offset(0, -2),
+  //         ),
+  //       ],
+  //     ),
+  //     child: SafeArea(
+  //       child: Padding(
+  //         padding: const EdgeInsets.all(AppDimensions.pageHorizontalPadding),
+  //         child: Column(
+  //           mainAxisSize: MainAxisSize.min,
+  //           children: [
+  //             // Handle bar
+  //             Container(
+  //               width: 40,
+  //               height: 4,
+  //               margin: const EdgeInsets.only(bottom: 16),
+  //               decoration: BoxDecoration(
+  //                 color: AppColors.lightGrey,
+  //                 borderRadius: BorderRadius.circular(2),
+  //               ),
+  //             ),
 
-              // Success icon
-              Container(
-                width: 80,
-                height: 80,
-                decoration: BoxDecoration(
-                  color: AppColors.success.withValues(alpha: 0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.check_circle,
-                  size: 40,
-                  color: AppColors.success,
-                ),
-              ),
+  //             // Success icon
+  //             Container(
+  //               width: 80,
+  //               height: 80,
+  //               decoration: BoxDecoration(
+  //                 color: AppColors.success.withValues(alpha: 0.1),
+  //                 shape: BoxShape.circle,
+  //               ),
+  //               child: const Icon(
+  //                 Icons.check_circle,
+  //                 size: 40,
+  //                 color: AppColors.success,
+  //               ),
+  //             ),
 
-              const SizedBox(height: 16),
+  //             const SizedBox(height: 16),
 
-              Text(
-                'Trip Completed!',
-                style: AppTextStyles.heading2.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.success,
-                ),
-                textAlign: TextAlign.center,
-              ),
+  //             Text(
+  //               'Trip Completed!',
+  //               style: AppTextStyles.heading2.copyWith(
+  //                 fontWeight: FontWeight.w600,
+  //                 color: AppColors.success,
+  //               ),
+  //               textAlign: TextAlign.center,
+  //             ),
 
-              const SizedBox(height: 8),
+  //             const SizedBox(height: 8),
 
-              Text(
-                'Thank you for choosing Thirikkale',
-                style: AppTextStyles.bodyMedium.copyWith(
-                  color: AppColors.textSecondary,
-                ),
-                textAlign: TextAlign.center,
-              ),
+  //             Text(
+  //               'Thank you for choosing Thirikkale',
+  //               style: AppTextStyles.bodyMedium.copyWith(
+  //                 color: AppColors.textSecondary,
+  //               ),
+  //               textAlign: TextAlign.center,
+  //             ),
 
-              const SizedBox(height: 24),
+  //             const SizedBox(height: 24),
 
-              // Price breakdown
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: AppColors.surfaceLight,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.lightGrey),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Trip Summary',
-                      style: AppTextStyles.bodyLarge.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Estimated Price',
-                          style: AppTextStyles.bodyMedium,
-                        ),
-                        Text(
-                          'LKR ${widget.estimatedPrice}',
-                          style: AppTextStyles.bodyMedium,
-                        ),
-                      ],
-                    ),
-                    if (savings > 0) ...[
-                      const SizedBox(height: 4),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            'Savings',
-                            style: AppTextStyles.bodyMedium.copyWith(
-                              color: AppColors.success,
-                            ),
-                          ),
-                          Text(
-                            '- LKR $savings',
-                            style: AppTextStyles.bodyMedium.copyWith(
-                              color: AppColors.success,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                    const Divider(),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Final Amount',
-                          style: AppTextStyles.bodyLarge.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        Text(
-                          'LKR $actualPrice',
-                          style: AppTextStyles.bodyLarge.copyWith(
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.primaryBlue,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
+  //             // Price breakdown
+  //             Container(
+  //               padding: const EdgeInsets.all(16),
+  //               decoration: BoxDecoration(
+  //                 color: AppColors.surfaceLight,
+  //                 borderRadius: BorderRadius.circular(12),
+  //                 border: Border.all(color: AppColors.lightGrey),
+  //               ),
+  //               child: Column(
+  //                 crossAxisAlignment: CrossAxisAlignment.start,
+  //                 children: [
+  //                   Text(
+  //                     'Trip Summary',
+  //                     style: AppTextStyles.bodyLarge.copyWith(
+  //                       fontWeight: FontWeight.w600,
+  //                     ),
+  //                   ),
+  //                   const SizedBox(height: 12),
+  //                   Row(
+  //                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  //                     children: [
+  //                       Text(
+  //                         'Estimated Price',
+  //                         style: AppTextStyles.bodyMedium,
+  //                       ),
+  //                       Text(
+  //                         'LKR ${widget.estimatedPrice}',
+  //                         style: AppTextStyles.bodyMedium,
+  //                       ),
+  //                     ],
+  //                   ),
+  //                   if (savings > 0) ...[
+  //                     const SizedBox(height: 4),
+  //                     Row(
+  //                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  //                       children: [
+  //                         Text(
+  //                           'Savings',
+  //                           style: AppTextStyles.bodyMedium.copyWith(
+  //                             color: AppColors.success,
+  //                           ),
+  //                         ),
+  //                         Text(
+  //                           '- LKR $savings',
+  //                           style: AppTextStyles.bodyMedium.copyWith(
+  //                             color: AppColors.success,
+  //                           ),
+  //                         ),
+  //                       ],
+  //                     ),
+  //                   ],
+  //                   const Divider(),
+  //                   Row(
+  //                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  //                     children: [
+  //                       Text(
+  //                         'Final Amount',
+  //                         style: AppTextStyles.bodyLarge.copyWith(
+  //                           fontWeight: FontWeight.w600,
+  //                         ),
+  //                       ),
+  //                       Text(
+  //                         'LKR $actualPrice',
+  //                         style: AppTextStyles.bodyLarge.copyWith(
+  //                           fontWeight: FontWeight.w600,
+  //                           color: AppColors.primaryBlue,
+  //                         ),
+  //                       ),
+  //                     ],
+  //                   ),
+  //                 ],
+  //               ),
+  //             ),
 
-              const SizedBox(height: 16),
+  //             const SizedBox(height: 16),
 
-              // Driver rating
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: AppColors.surfaceLight,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.lightGrey),
-                ),
-                child: Column(
-                  children: [
-                    Text(
-                      'Rate your driver',
-                      style: AppTextStyles.bodyMedium.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: List.generate(
-                        5,
-                        (index) => Icon(
-                          Icons.star_border,
-                          color: AppColors.warning,
-                          size: 32,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+  //             // Driver rating
+  //             Container(
+  //               padding: const EdgeInsets.all(16),
+  //               decoration: BoxDecoration(
+  //                 color: AppColors.surfaceLight,
+  //                 borderRadius: BorderRadius.circular(12),
+  //                 border: Border.all(color: AppColors.lightGrey),
+  //               ),
+  //               child: Column(
+  //                 children: [
+  //                   Text(
+  //                     'Rate your driver',
+  //                     style: AppTextStyles.bodyMedium.copyWith(
+  //                       fontWeight: FontWeight.w600,
+  //                     ),
+  //                   ),
+  //                   const SizedBox(height: 8),
+  //                   Row(
+  //                     mainAxisAlignment: MainAxisAlignment.center,
+  //                     children: List.generate(
+  //                       5,
+  //                       (index) => Icon(
+  //                         Icons.star_border,
+  //                         color: AppColors.warning,
+  //                         size: 32,
+  //                       ),
+  //                     ),
+  //                   ),
+  //                 ],
+  //               ),
+  //             ),
 
-              const SizedBox(height: 20),
+  //             const SizedBox(height: 20),
 
-              // Action buttons
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () {},
-                      style: OutlinedButton.styleFrom(
-                        side: const BorderSide(color: AppColors.lightGrey),
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                      ),
-                      child: Text(
-                        'Download Receipt',
-                        style: AppTextStyles.bodyMedium.copyWith(
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () {
-                        // Navigate to home screen
-                        Navigator.pushNamedAndRemoveUntil(
-                          context,
-                          '/home', // Navigate to home route
-                          (route) => false, // Remove all previous routes
-                        );
-                      },
-                      style: AppButtonStyles.primaryButton,
-                      child: const Text('Done'),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
+  //             // Action buttons
+  //             Row(
+  //               children: [
+  //                 Expanded(
+  //                   child: OutlinedButton(
+  //                     onPressed: () {},
+  //                     style: OutlinedButton.styleFrom(
+  //                       side: const BorderSide(color: AppColors.lightGrey),
+  //                       padding: const EdgeInsets.symmetric(vertical: 16),
+  //                     ),
+  //                     child: Text(
+  //                       'Download Receipt',
+  //                       style: AppTextStyles.bodyMedium.copyWith(
+  //                         color: AppColors.textSecondary,
+  //                       ),
+  //                     ),
+  //                   ),
+  //                 ),
+  //                 const SizedBox(width: 12),
+  //                 Expanded(
+  //                   child: ElevatedButton(
+  //                     onPressed: () {
+  //                       // Navigate to home screen
+  //                       Navigator.pushNamedAndRemoveUntil(
+  //                         context,
+  //                         '/home', // Navigate to home route
+  //                         (route) => false, // Remove all previous routes
+  //                       );
+  //                     },
+  //                     style: AppButtonStyles.primaryButton,
+  //                     child: const Text('Done'),
+  //                   ),
+  //                 ),
+  //               ],
+  //             ),
+  //           ],
+  //         ),
+  //       ),
+  //     ),
+  //   );
+  // }
 
   Widget _buildTripDetailsCard() {
     return Container(
