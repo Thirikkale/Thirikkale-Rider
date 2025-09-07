@@ -98,7 +98,8 @@ class RiderService {
       print('🆔 Driver ID: $riderId');
       print('👤 Name: $firstName $lastName');
 
-      final url = ApiConfig.completeProfile(riderId);
+      // final url = ApiConfig.completeProfile(riderId);
+      final url = RiderEndpoints.completeProfile(riderId);
 
       final headers = {
         'Authorization': 'Bearer $jwtToken',

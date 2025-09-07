@@ -261,6 +261,10 @@ class AuthProvider extends ChangeNotifier {
         // Update local state with the new names
         _firstName = firstName;
         _lastName = lastName;
+        if (_currentUser != null) {
+          _currentUser!.firstName = firstName;
+          _currentUser!.lastName = lastName;
+        }
 
         // Save updated information to local storage
         await _saveTokensToStorage();
@@ -312,19 +316,9 @@ class AuthProvider extends ChangeNotifier {
         print('Response Data: $responseData');
         await _storeJWTTokens(responseData);
 
-        _riderId = responseData['userId'];
-        _isLoggedIn = true;
-
-        // Store user info if available
-        if (responseData['firstName'] != null) {
-          _firstName = responseData['firstName'];
-        }
-        if (responseData['lastName'] != null) {
-          _lastName = responseData['lastName'];
-        }
-        if (responseData['phoneNumber'] != null) {
-          _verifiedPhoneNumber = responseData['phoneNumber'];
-        }
+        // --- FIX: Ensure state is logged in after checking status ---
+        _authState = AuthState.loggedIn;
+        // -----------------------------------------------------------
 
         print('✅ User status checked successfully');
         print('🆔 User ID: $_userId');
@@ -336,7 +330,7 @@ class AuthProvider extends ChangeNotifier {
           'success': true,
           'isNewRegistration': result['isNewRegistration'],
           'isAutoLogin': result['isAutoLogin'],
-          'hasCompleteProfile': _firstName == 'Driver' && _lastName != 'User',
+          'hasCompleteProfile': _firstName != null && _firstName!.isNotEmpty,
           'data': responseData,
         };
       } else {
@@ -376,12 +370,11 @@ class AuthProvider extends ChangeNotifier {
       if (loginResult['success'] == true) {
         // User exists and logged in successfully
         final userData = loginResult['data'];
-        _authToken = userData['token']; // Backend JWT token
-        _currentUser = UserModel.fromJson(userData['user']);
+        await _storeJWTTokens(userData);
         _authState = AuthState.loggedIn;
 
         print('✅ User exists and logged in successfully');
-        print('👤 User data: ${userData['user']}');
+        print('👤 User data: ${userData}');
         return true;
       } else {
         // Check if it's a "user not found" error (404)
@@ -612,8 +605,7 @@ class AuthProvider extends ChangeNotifier {
 
       if (registrationResult['success'] == true) {
         final userData = registrationResult['data'];
-        _authToken = userData['token']; // Backend JWT token
-        _currentUser = UserModel.fromJson(userData['user']);
+        await _storeJWTTokens(userData);
         _authState = AuthState.loggedIn;
 
         // If email or dateOfBirth were provided but not in the registration,
@@ -816,8 +808,7 @@ class AuthProvider extends ChangeNotifier {
 
       if (loginResult['success'] == true) {
         final userData = loginResult['data'];
-        _authToken = userData['token'];
-        _currentUser = UserModel.fromJson(userData['user']);
+        await _storeJWTTokens(userData);
         _authState = AuthState.loggedIn;
 
         print('✅ Auto-login successful');
@@ -853,6 +844,17 @@ class AuthProvider extends ChangeNotifier {
       _firstName = data['firstName'] ?? _firstName;
       _lastName = data['lastName'] ?? _lastName;
       _verifiedPhoneNumber = data['phoneNumber'] ?? _verifiedPhoneNumber;
+
+      // --- FIX STARTS HERE ---
+      // Also create the user model instance whenever tokens are stored
+      _currentUser = UserModel(
+        userId: _userId,
+        firstName: _firstName ?? '',
+        lastName: _lastName,
+        phoneNumber: _verifiedPhoneNumber ?? '',
+        // Add other fields from 'data' if available in your UserModel
+      );
+      // --- FIX ENDS HERE ---
 
       // Persist to local storage
       await _saveTokensToStorage();
@@ -891,7 +893,6 @@ class AuthProvider extends ChangeNotifier {
   }
 
   // Load tokens from SharedPreferences
-  // ignore: unused_element
   Future<void> _loadStoredTokens() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -917,12 +918,27 @@ class AuthProvider extends ChangeNotifier {
           );
         }
 
-        _isLoggedIn = _accessToken != null;
-
-        print('📱 Loaded stored tokens');
-        print('🎫 Access Token: ${_accessToken?.substring(0, 20)}...');
-        print('⏰ Expires at: $_tokenExpiresAt');
-        print('✅ Valid: $hasValidJWTToken');
+        // --- FIX STARTS HERE ---
+        // If we have a valid token after loading, set the state to loggedIn.
+        if (hasValidJWTToken) {
+          _authState = AuthState.loggedIn;
+          // Re-create the user model from stored data
+          _currentUser = UserModel(
+            userId: _userId,
+            firstName: _firstName ?? '',
+            lastName: _lastName,
+            phoneNumber: _verifiedPhoneNumber ?? '',
+            // Add other fields if necessary
+          );
+          _isLoggedIn = true; // Also update the private flag
+          print('✅ Stored tokens loaded and state set to loggedIn.');
+        } else {
+          // If token is expired or invalid, reset state
+          _authState = AuthState.initial;
+          _currentUser = null;
+          _isLoggedIn = false;
+        }
+        // --- FIX ENDS HERE ---
       }
     } catch (e) {
       print('❌ Error loading stored tokens: $e');
@@ -968,6 +984,9 @@ class AuthProvider extends ChangeNotifier {
 
       if (result['success'] == true) {
         await _storeJWTTokens(result['data']);
+        // --- FIX: Ensure state is loggedIn after refreshing ---
+        _authState = AuthState.loggedIn;
+        // -----------------------------------------------------
         print('✅ Token refreshed successfully');
         return true;
       } else {
@@ -982,6 +1001,15 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
+  /// Public method to refresh token - for use by other services
+  Future<String?> refreshAccessToken() async {
+    final success = await _refreshAccessToken();
+    if (success) {
+      return _accessToken;
+    }
+    return null;
+  }
+
   // Clear JWT tokens
   Future<void> _clearJWTTokens() async {
     _accessToken = null;
@@ -991,6 +1019,8 @@ class AuthProvider extends ChangeNotifier {
     _tokenExpiresAt = null;
     _userType = null;
     _isLoggedIn = false;
+    _currentUser = null;
+    _authState = AuthState.initial;
 
     // Clear from storage
     try {
@@ -1028,6 +1058,7 @@ class AuthProvider extends ChangeNotifier {
     _currentUser = null;
     _authToken = null;
     _clearError();
+    _clearJWTTokens(); // Use the more comprehensive clearing method
     notifyListeners();
   }
 

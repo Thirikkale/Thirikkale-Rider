@@ -1,3 +1,13 @@
+import java.util.Properties
+import java.io.FileInputStream
+
+// Load secrets.properties
+val secretsPropertiesFile = rootProject.file("secrets.properties")
+val secrets = Properties()
+if (secretsPropertiesFile.exists()) {
+    secrets.load(FileInputStream(secretsPropertiesFile))
+}
+
 plugins {
     id("com.android.application")
     id("kotlin-android")
@@ -25,11 +35,13 @@ android {
         applicationId = "com.example.thirikkale_rider"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = 23
+        minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
         multiDexEnabled = true
+
+        manifestPlaceholders["MAPS_API_KEY"] = secrets.getProperty("MAPS_API_KEY", "")
     }
 
     buildTypes {

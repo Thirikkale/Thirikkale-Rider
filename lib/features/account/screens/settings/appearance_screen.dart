@@ -32,13 +32,14 @@ class _AppearanceScreenState extends State<AppearanceScreen> {
     });
   }
 
-  Future<void> _saveThemePreference() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('selected_theme', _selectedTheme);
-    if (mounted) {
-      SnackbarHelper.showSuccessSnackBar(context, 'Theme saved successfully!');
-    }
-  }
+  // // COMMENT UNUSED METHODS
+  // Future<void> _saveThemePreference() async {
+  //   final prefs = await SharedPreferences.getInstance();
+  //   await prefs.setString('selected_theme', _selectedTheme);
+  //   if (mounted) {
+  //     SnackbarHelper.showSuccessSnackBar(context, 'Theme saved successfully!');
+  //   }
+  // }
 
   final List<Map<String, dynamic>> _themeOptions = [
     {'title': 'Light', 'description': 'Light theme', 'value': 'Light'},

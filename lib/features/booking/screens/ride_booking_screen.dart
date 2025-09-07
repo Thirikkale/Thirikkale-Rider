@@ -5,7 +5,6 @@ import 'package:thirikkale_rider/core/utils/snackbar_helper.dart';
 import 'package:thirikkale_rider/features/booking/widgets/Route_map.dart';
 import 'package:thirikkale_rider/features/booking/widgets/ride_options_bottom_sheet.dart';
 import 'package:thirikkale_rider/features/booking/widgets/payment_method_bottom_sheet.dart';
-import 'package:thirikkale_rider/features/booking/screens/pickup_time_screen.dart';
 import 'package:thirikkale_rider/features/booking/screens/ride_summary_screen.dart';
 
 class RideBookingScreen extends StatefulWidget {
@@ -17,7 +16,7 @@ class RideBookingScreen extends StatefulWidget {
 
 class _RideBookingScreenState extends State<RideBookingScreen> {
   // Add a state variable to hold the sheet's current height in pixels
-  double _sheetHeight =8;
+  double _sheetHeight = 8;
 
   @override
   void initState() {
@@ -137,29 +136,54 @@ class _RideBookingScreenState extends State<RideBookingScreen> {
     );
   }
 
+  // void _handleBookRide(RideBookingProvider bookingProvider) async {
+  //   try {
+  //     // Debug: Print the current schedule type
+  //     print('Current isRideScheduled: ${bookingProvider.isRideScheduled}');
+  //     // Check if the ride is scheduled
+  //     if (bookingProvider.isRideScheduled) {
+  //       print('Navigating to pickup time screen for scheduled ride');
+  //       if (mounted) {
+  //         Navigator.push(
+  //           context,
+  //           MaterialPageRoute(
+  //             builder: (context) => PickupTimeScreen(),
+  //           ),
+  //         );
+  //       }
+  //       return;
+  //     }
+
+  //     print('Proceeding with immediate ride booking');
+  //     if (mounted) {
+  //       Navigator.push(
+  //         context,
+  //         MaterialPageRoute(
+  //           builder: (context) => RideSummaryScreen(),
+  //         ),
+  //       );
+  //     }
+  //   } catch (e) {
+  //     if (mounted) {
+  //       SnackbarHelper.showErrorSnackBar(
+  //         context,
+  //         'Failed to book ride: ${e.toString()}',
+  //       );
+  //     }
+  //   }
+  // }
+
   void _handleBookRide(RideBookingProvider bookingProvider) async {
     try {
-      // Debug: Print the current schedule type
-      print('Current isRideScheduled: ${bookingProvider.isRideScheduled}');
-      // Check if the ride is scheduled
-      if (bookingProvider.isRideScheduled) {
-        print('Navigating to pickup time screen for scheduled ride');
-        if (mounted) {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => PickupTimeScreen(),
-            ),
-          );
-        }
-        return;
-      }
+      // The provider now handles getting the token and rider ID by itself.
+      // The UI's only job is to trigger the action.
+      print('Navigating to Ride Summary Screen...');
 
-      print('Proceeding with immediate ride booking');
       if (mounted) {
         Navigator.push(
           context,
           MaterialPageRoute(
+            // Navigate to a success/tracking screen
             builder: (context) => RideSummaryScreen(),
           ),
         );
@@ -168,7 +192,7 @@ class _RideBookingScreenState extends State<RideBookingScreen> {
       if (mounted) {
         SnackbarHelper.showErrorSnackBar(
           context,
-          'Failed to book ride: ${e.toString()}',
+          'Booking Failed: ${e.toString()}',
         );
       }
     }
