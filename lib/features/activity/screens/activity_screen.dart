@@ -2,6 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:thirikkale_rider/core/utils/app_dimension.dart';
 import 'package:thirikkale_rider/core/utils/app_styles.dart';
 import 'package:thirikkale_rider/features/activity/widgets/ride_history_card.dart';
+import 'package:thirikkale_rider/features/activity/widgets/scheduled_ride_card.dart';
+import 'package:thirikkale_rider/features/activity/widgets/ongoing_ride_card.dart';
+import 'package:thirikkale_rider/features/activity/widgets/completed_ride_card.dart';
+import 'package:thirikkale_rider/features/activity/widgets/cancelled_ride_card.dart';
+import 'package:thirikkale_rider/features/activity/widgets/complaint_ride_card.dart';
 import 'package:thirikkale_rider/features/activity/widgets/activity_tabs.dart';
 import 'package:thirikkale_rider/features/activity/screens/trip_details_screen.dart';
 import 'package:thirikkale_rider/widgets/bottom_navbar.dart';
@@ -177,6 +182,43 @@ class _ActivityScreenState extends State<ActivityScreen> {
     },
   ];
 
+  // Scheduled rides data
+  final List<Map<String, dynamic>> _scheduledActivities = [
+    {
+      'tripId': 'ID555551401',
+      'destination': 'Colombo Fort Railway Station',
+      'pickupLocation': 'Home',
+      'scheduledDate': 'Tomorrow',
+      'scheduledTime': '7:30 AM',
+      'estimatedFare': 'LKR 350.00',
+      'vehicleIcon': 'assets/icons/vehicles/tuk.png',
+      'vehicleType': 'Tuk',
+      'status': 'Scheduled',
+    },
+    {
+      'tripId': 'ID555551402',
+      'destination': 'Bandaranaike International Airport',
+      'pickupLocation': 'Office',
+      'scheduledDate': 'Oct 15',
+      'scheduledTime': '5:00 PM',
+      'estimatedFare': 'LKR 1,200.00',
+      'vehicleIcon': 'assets/icons/vehicles/ride.png',
+      'vehicleType': 'Ride',
+      'status': 'Scheduled',
+    },
+    {
+      'tripId': 'ID555551403',
+      'destination': 'Majestic City',
+      'pickupLocation': 'Home',
+      'scheduledDate': 'Oct 20',
+      'scheduledTime': '10:30 AM',
+      'estimatedFare': 'LKR 280.00',
+      'vehicleIcon': 'assets/icons/vehicles/tuk.png',
+      'vehicleType': 'Tuk',
+      'status': 'Scheduled',
+    },
+  ];
+
   final List<Map<String, dynamic>> _complaintActivities = [
     {
       'tripId': 'ID555551307',
@@ -239,10 +281,12 @@ class _ActivityScreenState extends State<ActivityScreen> {
       case 0:
         return _ongoingActivities;
       case 1:
-        return _completedActivities;
+        return _scheduledActivities;
       case 2:
-        return _complaintActivities;
+        return _completedActivities;
       case 3:
+        return _complaintActivities;
+      case 4:
         return _cancelledActivities;
       default:
         return _completedActivities;
@@ -254,10 +298,12 @@ class _ActivityScreenState extends State<ActivityScreen> {
       case 0:
         return 'You don\'t have any ongoing trips at the moment';
       case 1:
-        return 'You don\'t have any completed trips';
+        return 'You don\'t have any scheduled rides';
       case 2:
-        return 'You don\'t have any complaints';
+        return 'You don\'t have any completed trips';
       case 3:
+        return 'You don\'t have any complaints';
+      case 4:
         return 'You don\'t have any cancelled trips';
       default:
         return 'No activities found';
@@ -324,32 +370,197 @@ class _ActivityScreenState extends State<ActivityScreen> {
           children: activities.map((activity) {
             return Column(
               children: [
-                RideHistoryCard(
-                  mapImage: activity['mapImage'],
-                  destination: activity['destination'],
-                  date: activity['date'],
-                  price: activity['price'],
-                  vehicleIcon: activity['vehicleIcon'],
-                  onCardTap: () {
-                    // Navigate to trip details screen
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => TripDetailsScreen(
-                          tripData: activity,
-                        ),
-                      ),
-                    );
-                  },
-                  onRebookPressed: () {
-                    // Empty for future implementation
-                  },
-                ),
+                // Choose widget based on tab/activity type
+                _buildActivityCard(activity),
                 const SizedBox(height: AppDimensions.widgetSpacing),
               ],
             );
           }).toList(),
         ),
+      ),
+    );
+  }
+  
+  Widget _buildActivityCard(Map<String, dynamic> activity) {
+    // Select appropriate widget based on the selected tab
+    switch (_selectedTabIndex) {
+      case 0: // Ongoing tab
+        return OngoingRideCard(
+          destination: activity['destination'],
+          pickupLocation: activity['pickupLocation'],
+          estimatedFare: activity['estimatedFare'],
+          vehicleIcon: activity['vehicleIcon'],
+          status: activity['status'],
+          driverName: activity['driverName'],
+          driverRating: activity['driverRating'],
+          vehicleNumber: activity['vehicleNumber'],
+          onCardTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => TripDetailsScreen(
+                  tripData: activity,
+                ),
+              ),
+            );
+          },
+          onViewLiveLocationPressed: () {
+            // Implement live location tracking
+          },
+        );
+        
+      case 1: // Scheduled tab
+        return ScheduledRideCard(
+          destination: activity['destination'],
+          pickupLocation: activity['pickupLocation'],
+          scheduledDate: activity['scheduledDate'],
+          scheduledTime: activity['scheduledTime'],
+          estimatedFare: activity['estimatedFare'],
+          vehicleIcon: activity['vehicleIcon'],
+          onCardTap: () {
+            // Navigate directly to trip details screen
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => TripDetailsScreen(
+                  tripData: activity,
+                ),
+              ),
+            );
+          },
+          onCancelPressed: () {
+            _showCancelConfirmationDialog(activity['tripId']);
+          },
+        );
+        
+      case 2: // Completed tab
+        return CompletedRideCard(
+          destination: activity['destination'],
+          pickupLocation: activity['pickupLocation'],
+          date: activity['date'],
+          price: activity['actualFare'] ?? activity['price'],
+          vehicleIcon: activity['vehicleIcon'],
+          driverName: activity['driverName'],
+          driverRating: activity['driverRating'],
+          userRating: activity['rating'],
+          duration: activity['duration'],
+          distance: activity['distance'],
+          mapImage: activity['mapImage'],
+          onCardTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => TripDetailsScreen(
+                  tripData: activity,
+                ),
+              ),
+            );
+          },
+          onRebookPressed: () {
+            // Implement rebook functionality
+          },
+        );
+        
+      case 3: // Complaint tab
+        return ComplaintRideCard(
+          destination: activity['destination'],
+          pickupLocation: activity['pickupLocation'],
+          date: activity['date'],
+          price: activity['price'] ?? activity['actualFare'],
+          vehicleIcon: activity['vehicleIcon'],
+          complaint: activity['complaint'],
+          driverName: activity['driverName'],
+          driverRating: activity['driverRating'],
+          userRating: activity['rating'],
+          vehicleNumber: activity['vehicleNumber'],
+          distance: activity['distance'],
+          onCardTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => TripDetailsScreen(
+                  tripData: activity,
+                ),
+              ),
+            );
+          },
+          onContactSupportPressed: () {
+            // Implement contact support functionality
+          },
+        );
+        
+      case 4: // Cancelled tab
+        return CancelledRideCard(
+          destination: activity['destination'],
+          pickupLocation: activity['pickupLocation'],
+          date: activity['date'],
+          estimatedFare: activity['estimatedFare'] ?? activity['price'],
+          vehicleIcon: activity['vehicleIcon'],
+          cancelReason: activity['cancelReason'] ?? 'Cancelled by user',
+          distance: activity['distance'],
+          onCardTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => TripDetailsScreen(
+                  tripData: activity,
+                ),
+              ),
+            );
+          },
+          onRebookPressed: () {
+            // Implement rebook functionality
+          },
+        );
+        
+      default: // Fallback to basic ride history card
+        return RideHistoryCard(
+          mapImage: activity['mapImage'],
+          destination: activity['destination'],
+          date: activity['date'] ?? activity['scheduledDate'],
+          price: activity['price'] ?? activity['estimatedFare'],
+          vehicleIcon: activity['vehicleIcon'],
+          onCardTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => TripDetailsScreen(
+                  tripData: activity,
+                ),
+              ),
+            );
+          },
+          onRebookPressed: () {
+            // Empty for future implementation
+          },
+        );
+    }
+  }
+  // Removed _showScheduledRideOptions method as we now navigate directly to details
+  
+  void _showCancelConfirmationDialog(String tripId) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Cancel Scheduled Ride'),
+        content: const Text('Are you sure you want to cancel this scheduled ride?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('NO'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              // Implement actual cancellation
+              setState(() {
+                // Mock implementation - remove from list
+                _scheduledActivities.removeWhere((activity) => activity['tripId'] == tripId);
+              });
+            },
+            child: const Text('YES'),
+          ),
+        ],
       ),
     );
   }
