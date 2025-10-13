@@ -125,9 +125,9 @@ class _PlanYourRideScreenState extends State<PlanYourRideScreen> {
     if (bookingProvider.pickupAddress.isNotEmpty) {
       _pickupController.text = bookingProvider.pickupAddress;
     }
-    if (bookingProvider.destinationAddress.isNotEmpty) {
-      _destinationController.text = bookingProvider.destinationAddress;
-    }
+    // if (bookingProvider.destinationAddress.isNotEmpty) {
+    //   _destinationController.text = bookingProvider.destinationAddress;
+    // }
   }
 
   @override

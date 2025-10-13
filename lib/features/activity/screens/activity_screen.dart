@@ -536,7 +536,6 @@ class _ActivityScreenState extends State<ActivityScreen> {
         );
     }
   }
-  // Removed _showScheduledRideOptions method as we now navigate directly to details
   
   void _showCancelConfirmationDialog(String tripId) {
     showDialog(
