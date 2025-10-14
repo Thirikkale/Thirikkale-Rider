@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:thirikkale_rider/core/utils/app_styles.dart';
 import 'package:thirikkale_rider/core/utils/app_dimension.dart';
 import 'package:thirikkale_rider/core/utils/snackbar_helper.dart';
+import 'package:thirikkale_rider/core/utils/dialog_helper.dart';
 import 'package:thirikkale_rider/widgets/common/custom_appbar_name.dart';
 import 'package:thirikkale_rider/features/booking/widgets/route_map.dart';
 import 'package:thirikkale_rider/core/providers/auth_provider.dart';
@@ -1581,29 +1582,18 @@ class _RideTrackingScreenState extends State<RideTrackingScreen> {
   }
 
   void _showCancelConfirmation(BuildContext context) {
-    showDialog(
+    DialogHelper.showConfirmationDialog(
       context: context,
-      builder:
-          (context) => AlertDialog(
-            title: const Text('Cancel Ride?'),
-            content: const Text(
-              'Are you sure you want to cancel this ride? You may be charged a cancellation fee.',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Keep Ride'),
-              ),
-              TextButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                  _cancelRide();
-                },
-                style: TextButton.styleFrom(foregroundColor: Colors.red),
-                child: const Text('Cancel Ride'),
-              ),
-            ],
-          ),
+      title: 'Cancel Ride?',
+      content: 'Are you sure you want to cancel this ride? You may be charged a cancellation fee.',
+      confirmText: 'Cancel Ride',
+      cancelText: 'Keep Ride',
+      confirmButtonColor: AppColors.error,
+      titleIcon: Icons.warning,
+      titleIconColor: AppColors.warning,
+      onConfirm: () {
+        _cancelRide();
+      },
     );
   }
 

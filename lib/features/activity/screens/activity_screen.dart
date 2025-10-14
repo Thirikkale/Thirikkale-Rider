@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:thirikkale_rider/core/utils/app_dimension.dart';
 import 'package:thirikkale_rider/core/utils/app_styles.dart';
+import 'package:thirikkale_rider/core/utils/dialog_helper.dart';
 import 'package:thirikkale_rider/features/activity/widgets/ride_history_card.dart';
 import 'package:thirikkale_rider/features/activity/widgets/scheduled_ride_card.dart';
 import 'package:thirikkale_rider/features/activity/widgets/ongoing_ride_card.dart';
@@ -538,29 +539,22 @@ class _ActivityScreenState extends State<ActivityScreen> {
   }
   
   void _showCancelConfirmationDialog(String tripId) {
-    showDialog(
+    DialogHelper.showConfirmationDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Cancel Scheduled Ride'),
-        content: const Text('Are you sure you want to cancel this scheduled ride?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('NO'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              // Implement actual cancellation
-              setState(() {
-                // Mock implementation - remove from list
-                _scheduledActivities.removeWhere((activity) => activity['tripId'] == tripId);
-              });
-            },
-            child: const Text('YES'),
-          ),
-        ],
-      ),
+      title: 'Cancel Scheduled Ride',
+      content: 'Are you sure you want to cancel this scheduled ride?',
+      confirmText: 'YES',
+      cancelText: 'NO',
+      titleIcon: Icons.schedule_outlined,
+      titleIconColor: AppColors.warning,
+      confirmButtonColor: AppColors.error,
+      onConfirm: () {
+        // Implement actual cancellation
+        setState(() {
+          // Mock implementation - remove from list
+          _scheduledActivities.removeWhere((activity) => activity['tripId'] == tripId);
+        });
+      },
     );
   }
 }

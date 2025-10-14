@@ -59,28 +59,16 @@ class _PlanYourRideScreenState extends State<PlanYourRideScreen> {
 
   // TODO: update to show the bottom sheet
   void _showLocationPermissionDialog() {
-    showDialog(
+    DialogHelper.showConfirmationDialog(
       context: context,
-      builder:
-          (context) => AlertDialog(
-            title: const Text('Location Permission Required'),
-            content: const Text(
-              'Please enable location permission to use the map features.',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Cancel'),
-              ),
-              TextButton(
-                onPressed: () async {
-                  Navigator.pop(context);
-                  await LocationService.openLocationSettings();
-                },
-                child: const Text('Settings'),
-              ),
-            ],
-          ),
+      title: 'Location Permission Required',
+      content: 'Please enable location permission to use the map features.',
+      confirmText: 'Settings',
+      cancelText: 'Cancel',
+      titleIcon: Icons.location_on,
+      onConfirm: () async {
+        await LocationService.openLocationSettings();
+      },
     );
   }
 
