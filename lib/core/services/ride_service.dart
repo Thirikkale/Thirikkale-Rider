@@ -29,7 +29,10 @@ class RideService {
       'rideType': rideType,
       // You can add other optional fields from the DTO here if needed
       // 'passengerCount': 1,
-      // 'isSharedRide': false,
+      // 'isSharedRide': !isSolo,
+      // 'isSolo': false,
+      // 'isRideScheduled': false,
+      // 'isWomenOnly': false,
     });
 
     print('--- 🚗🚗🚗RideService: Requesting Ride ---');
