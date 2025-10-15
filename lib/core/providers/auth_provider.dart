@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:thirikkale_rider/core/services/auth_service.dart';
 import 'package:thirikkale_rider/core/services/rider_service.dart';
 import 'package:thirikkale_rider/models/user_model.dart';
+import 'package:thirikkale_rider/models/user_enums.dart';
 
 enum AuthState {
   initial,
@@ -883,6 +884,10 @@ class AuthProvider extends ChangeNotifier {
         'phoneNumber': _verifiedPhoneNumber,
         'riderId': _riderId,
         'profilePictureUrl': _profilePictureUrl,
+        // ADD THESE:
+        'gender': _currentUser?.gender?.name,
+        'genderVerified': _currentUser?.genderVerified,
+        'womenOnlyAccess': _currentUser?.womenOnlyAccess,
       };
 
       await prefs.setString('jwt_tokens', jsonEncode(tokenData));
@@ -912,25 +917,31 @@ class AuthProvider extends ChangeNotifier {
         _riderId = tokenData['riderId'];
         _profilePictureUrl = tokenData['profilePictureUrl'];
 
+        // Load gender from storage
+        final genderString = tokenData['gender'] as String?;
+        final genderVerified = tokenData['genderVerified'] as bool? ?? false;
+        final womenOnlyAccess = tokenData['womenOnlyAccess'] as bool? ?? false;
+
+        _currentUser = UserModel(
+          userId: _userId,
+          firstName: _firstName ?? '',
+          lastName: _lastName,
+          phoneNumber: _verifiedPhoneNumber ?? '',
+          gender: _parseGender(genderString),
+          genderVerified: genderVerified,
+          womenOnlyAccess: womenOnlyAccess,
+        );
+
         if (tokenData['tokenExpiresAt'] != null) {
           _tokenExpiresAt = DateTime.fromMillisecondsSinceEpoch(
             tokenData['tokenExpiresAt'],
           );
         }
 
-        // --- FIX STARTS HERE ---
         // If we have a valid token after loading, set the state to loggedIn.
         if (hasValidJWTToken) {
           _authState = AuthState.loggedIn;
-          // Re-create the user model from stored data
-          _currentUser = UserModel(
-            userId: _userId,
-            firstName: _firstName ?? '',
-            lastName: _lastName,
-            phoneNumber: _verifiedPhoneNumber ?? '',
-            // Add other fields if necessary
-          );
-          _isLoggedIn = true; // Also update the private flag
+          _isLoggedIn = true;
           print('✅ Stored tokens loaded and state set to loggedIn.');
         } else {
           // If token is expired or invalid, reset state
@@ -938,7 +949,6 @@ class AuthProvider extends ChangeNotifier {
           _currentUser = null;
           _isLoggedIn = false;
         }
-        // --- FIX ENDS HERE ---
       }
     } catch (e) {
       print('❌ Error loading stored tokens: $e');
@@ -1047,6 +1057,16 @@ class AuthProvider extends ChangeNotifier {
   void _clearError() {
     _errorMessage = null;
     notifyListeners();
+  }
+
+  // Helper to parse gender string to Gender enum
+  Gender? _parseGender(String? genderStr) {
+    if (genderStr == null) return null;
+    try {
+      return Gender.values.firstWhere((g) => g.name == genderStr);
+    } catch (_) {
+      return null;
+    }
   }
 
   void _clearAllData() {

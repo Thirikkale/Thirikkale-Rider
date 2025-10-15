@@ -6,6 +6,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:google_polyline_algorithm/google_polyline_algorithm.dart';
 import 'package:thirikkale_rider/core/providers/location_provider.dart';
+import 'package:thirikkale_rider/core/providers/auth_provider.dart';
 import 'package:thirikkale_rider/core/services/places_api_service.dart';
 import 'package:thirikkale_rider/core/services/location_service.dart';
 import 'package:thirikkale_rider/core/services/direction_service.dart';
@@ -18,6 +19,7 @@ import 'package:thirikkale_rider/features/booking/screens/location_search_screen
 import 'package:thirikkale_rider/features/booking/models/custom_marker.dart';
 import 'package:thirikkale_rider/widgets/common/custom_appbar_name.dart';
 import 'package:thirikkale_rider/core/providers/ride_booking_provider.dart';
+import 'package:thirikkale_rider/models/user_enums.dart';
 
 class PlanYourRideScreen extends StatefulWidget {
   const PlanYourRideScreen({super.key});
@@ -355,7 +357,7 @@ class _PlanYourRideScreenState extends State<PlanYourRideScreen> {
   }
 
   void _showErrorMessage(String message) {
-    SnackbarHelper.showErrorSnackBar(context, message);
+    SnackbarHelper.showErrorSnackBar(context, message, showAction: true);
   }
 
   // Map interaction methods
@@ -599,6 +601,7 @@ class _PlanYourRideScreenState extends State<PlanYourRideScreen> {
           currentMode == 'pickup'
               ? 'Pickup location set successfully!'
               : 'Drop-off location set successfully!',
+          showAction: true,
         );
       }
     }
@@ -627,6 +630,7 @@ class _PlanYourRideScreenState extends State<PlanYourRideScreen> {
           currentMode == 'pickup'
               ? 'Pickup location set successfully!'
               : 'Drop-off location set successfully!',
+          showAction: true,
         );
       }
 
@@ -682,6 +686,7 @@ class _PlanYourRideScreenState extends State<PlanYourRideScreen> {
       !bookingProvider.isRideScheduled
           ? 'Ride set for now'
           : 'Ride scheduled for later',
+      showAction: true,
     );
     setState(() {}); // To trigger UI update
   }
@@ -699,6 +704,27 @@ class _PlanYourRideScreenState extends State<PlanYourRideScreen> {
     SnackbarHelper.showInfoSnackBar(
       context,
       bookingProvider.isSolo ? 'Solo ride selected' : 'Shared ride selected',
+      showAction: true,
+    );
+    setState(() {}); // To trigger UI update
+  }
+
+  void _toggleWomenOnly() {
+    final bookingProvider = Provider.of<RideBookingProvider>(
+      context,
+      listen: false,
+    );
+    bookingProvider.setOptions(
+      isSolo: bookingProvider.isSolo,
+      isRideScheduled: bookingProvider.isRideScheduled,
+      isWomenOnly: !bookingProvider.isWomenOnly,
+    );
+    SnackbarHelper.showInfoSnackBar(
+      context,
+      bookingProvider.isWomenOnly
+          ? 'Women-only ride selected'
+          : 'Women-only ride disabled',
+      showAction: true,
     );
     setState(() {}); // To trigger UI update
   }
@@ -1077,6 +1103,10 @@ class _PlanYourRideScreenState extends State<PlanYourRideScreen> {
             bottom: kToolbarHeight + 255,
             child: Consumer<RideBookingProvider>(
               builder: (context, bookingProvider, _) {
+                // Get current user from AuthProvider to check gender
+                final authProvider = Provider.of<AuthProvider>(context, listen: false);
+                final isWoman = authProvider.currentUser?.gender == Gender.female;
+                
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
@@ -1184,7 +1214,61 @@ class _PlanYourRideScreenState extends State<PlanYourRideScreen> {
                         ),
                       ),
                     ),
-                    SizedBox(height: AppDimensions.widgetSpacing - 5),
+                    SizedBox(height: AppDimensions.widgetSpacing),
+
+                    // Women only button with text (only show if user is a woman)
+                    if (!isWoman)
+                      Material(
+                        elevation: 2,
+                        borderRadius: BorderRadius.circular(12),
+                        child: InkWell(
+                          onTap: _toggleWomenOnly,
+                          borderRadius: BorderRadius.circular(12),
+                          child: Container(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: AppDimensions.subSectionSpacingDown * 3,
+                              vertical: AppDimensions.subSectionSpacingDown * 3,
+                            ),
+                            decoration: BoxDecoration(
+                              color:
+                                  bookingProvider.isWomenOnly
+                                      ? AppColors.primaryBlue
+                                      : AppColors.white,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  bookingProvider.isWomenOnly
+                                      ? Icons.woman
+                                      : Icons.wc,
+                                  color:
+                                      bookingProvider.isWomenOnly
+                                          ? AppColors.white
+                                          : AppColors.primaryBlue,
+                                  size: 20,
+                                ),
+                                SizedBox(
+                                  width: AppDimensions.subSectionSpacingDown,
+                                ),
+                                
+                                Text(
+                                  bookingProvider.isWomenOnly ? 'Women' : 'all',
+                                  style: AppTextStyles.bodySmall.copyWith(
+                                    color:
+                                        bookingProvider.isWomenOnly
+                                            ? AppColors.white
+                                            : AppColors.primaryBlue,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    if (!isWoman) SizedBox(height: AppDimensions.widgetSpacing - 5),
 
                     FloatingActionButton(
                       heroTag: "focus_btn",
