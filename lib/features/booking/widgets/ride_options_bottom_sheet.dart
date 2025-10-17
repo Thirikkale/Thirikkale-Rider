@@ -9,12 +9,16 @@ class RideOptionsBottomSheet extends StatelessWidget {
   final VoidCallback onPaymentMethodTap;
   final Function(RideBookingProvider) onBookRide;
   final ScrollController scrollController;
+  final Map<String, double> vehiclePricing;
+  final bool isLoadingPricing;
 
   const RideOptionsBottomSheet({
     super.key,
     required this.onPaymentMethodTap,
     required this.onBookRide,
     required this.scrollController,
+    this.vehiclePricing = const {},
+    this.isLoadingPricing = false,
   });
 
   @override
@@ -67,10 +71,14 @@ class RideOptionsBottomSheet extends StatelessWidget {
       itemCount: bookingProvider.vehicleOptions.length,
       itemBuilder: (context, index) {
         final vehicle = bookingProvider.vehicleOptions[index];
+        final price = vehiclePricing[vehicle.id] ?? vehicle.defaultPricePerUnit;
+        
         return VehicleOptionCard(
           vehicle: vehicle,
           isSelected: bookingProvider.selectedVehicle?.id == vehicle.id,
           onTap: () => bookingProvider.setSelectVehicle(vehicle),
+          overridePrice: price,
+          isLoadingPrice: isLoadingPricing,
         );
       },
     );

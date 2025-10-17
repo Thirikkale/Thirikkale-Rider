@@ -6,12 +6,16 @@ class VehicleOptionCard extends StatelessWidget {
   final VehicleOption vehicle;
   final bool isSelected;
   final VoidCallback onTap;
+  final double? overridePrice;
+  final bool isLoadingPrice;
 
   const VehicleOptionCard({
     super.key,
     required this.vehicle,
     required this.isSelected,
     required this.onTap,
+    this.overridePrice,
+    this.isLoadingPrice = false,
   });
 
   @override
@@ -93,16 +97,35 @@ class VehicleOptionCard extends StatelessWidget {
               ),
 
               // Price
-              Text(
-                'Rs.${vehicle.defaultPricePerUnit.toInt()}',
-                style: AppTextStyles.bodyLarge.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color:
-                      isSelected
-                          ? AppColors.primaryBlue
-                          : AppColors.textPrimary,
-                ),
-              ),
+              isLoadingPrice
+                  ? SizedBox(
+                      width: 60,
+                      height: 20,
+                      child: Center(
+                        child: SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              isSelected
+                                  ? AppColors.primaryBlue
+                                  : AppColors.textSecondary,
+                            ),
+                          ),
+                        ),
+                      ),
+                    )
+                  : Text(
+                      'Rs.${(overridePrice ?? vehicle.defaultPricePerUnit).toInt()}',
+                      style: AppTextStyles.bodyLarge.copyWith(
+                        fontWeight: FontWeight.w700,
+                        color:
+                            isSelected
+                                ? AppColors.primaryBlue
+                                : AppColors.textPrimary,
+                      ),
+                    ),
             ],
           ),
         ),

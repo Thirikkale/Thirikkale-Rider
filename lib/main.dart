@@ -12,6 +12,7 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
   await EnvService.load();
+  imageCache.maximumSizeBytes = 100 << 20; // 100MB
   runApp(ThirikkaleApp());
 }
 

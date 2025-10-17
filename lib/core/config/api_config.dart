@@ -2,15 +2,16 @@ class ApiConfig {
   // Base URLs - Update this IP address to your backend server's IP
   // IMPORTANT: Replace 'YOUR_BACKEND_IP' with the actual IP address of your backend device
   // Example: 'http://192.168.1.100:8081/user-service/api/v1'
-  static const String ip = '10.157.52.7';
+  static const String ip = '192.168.137.1';
+
   static const String userServiceBaseUrl =
       'http://$ip:8081/user-service/api/v1';
   static const String rideServiceBaseUrl =
       'http://$ip:8082/ride-service/api/v1';
-
   static const String pricingServiceBaseUrl =
-      'http://$ip:8084/pricing-service/api/v1';
-    static const String pricingBaseUrl = '$pricingServiceBaseUrl/pricing';
+      'http://$ip:8084/pricing-service/api';
+
+  static const String pricingBaseUrl = '$pricingServiceBaseUrl/pricing';
   // User Service URLs
   static const String authBaseUrl = '$userServiceBaseUrl/auth';
   static const String ridersBaseUrl = '$userServiceBaseUrl/riders';
@@ -159,6 +160,15 @@ class ApiConfig {
   // Update pricing for a vehicle type (PUT)
   static String updateVehiclePricing(String vehicleType) =>
       '$pricingBaseUrl/vehicle/$vehicleType';
+
+  // Convenience endpoints for specific vehicle types used in the UI/business logic
+  // Note: OTHER vehicle type is intentionally ignored per requirements
+  static const String pricingVehicleTuk = '$pricingBaseUrl/vehicle/TUK';
+  static const String pricingVehicleRide = '$pricingBaseUrl/vehicle/RIDE';
+  static const String pricingVehiclePrimeRide =
+      '$pricingBaseUrl/vehicle/PRIME_RIDE';
+  static const String pricingVehicleRush = '$pricingBaseUrl/vehicle/RUSH';
+  static const String pricingVehicleSquad = '$pricingBaseUrl/vehicle/SQUAD';
 
   // Payment Management
   static const String createPayment = '$rideServiceBaseUrl/payments/create';

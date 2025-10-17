@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:thirikkale_rider/core/providers/ride_booking_provider.dart';
 import 'package:thirikkale_rider/core/utils/snackbar_helper.dart';
+import 'package:thirikkale_rider/core/services/pricing_service.dart';
 import 'package:thirikkale_rider/features/booking/widgets/Route_map.dart';
 import 'package:thirikkale_rider/features/booking/widgets/ride_options_bottom_sheet.dart';
 import 'package:thirikkale_rider/features/booking/widgets/payment_method_bottom_sheet.dart';
@@ -17,12 +18,15 @@ class RideBookingScreen extends StatefulWidget {
 class _RideBookingScreenState extends State<RideBookingScreen> {
   // Add a state variable to hold the sheet's current height in pixels
   double _sheetHeight = 8;
+  bool _isLoadingPricing = true;
+  Map<String, double> _vehiclePricing = {};
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _initializeBooking();
+      _loadVehiclePricing();
       // Set the initial sheet height after the first frame
       setState(() {
         // initialChildSize is 0.6, so we calculate the initial pixel height
@@ -33,6 +37,66 @@ class _RideBookingScreenState extends State<RideBookingScreen> {
 
   void _initializeBooking() {
     // No longer needed: all state is in provider, set by previous screen
+  }
+
+  Future<void> _loadVehiclePricing() async {
+    print('[RideBooking] Loading vehicle pricing...');
+    try {
+      final bookingProvider = Provider.of<RideBookingProvider>(context, listen: false);
+      final distance = bookingProvider.estimatedDistance ?? 5.0; // km
+      final waitingTime = 0.0; // minutes - can be updated if available
+      
+      print('[RideBooking] Calculating prices for distance: ${distance}km, waiting: ${waitingTime}min');
+      
+      final Map<String, double> pricing = {};
+      
+      // Define vehicle type mappings
+      final vehicleTypeMap = {
+        'tuk': 'TUK',
+        'ride': 'RIDE',
+        'rush': 'RUSH',
+        'prime': 'PRIME_RIDE',
+        'squad': 'SQUAD',
+      };
+      
+      // Calculate price for each vehicle type
+      for (final entry in vehicleTypeMap.entries) {
+        final vehicleId = entry.key;
+        final vehicleType = entry.value;
+        
+        try {
+          print('[RideBooking] Calculating price for $vehicleType...');
+          final priceData = await PricingService.calculatePrice(
+            vehicleType: vehicleType,
+            distanceKm: distance,
+            // waitingTimeMin: waitingTime,
+          );
+          
+          if (priceData != null && priceData['totalPrice'] != null) {
+            final totalPrice = (priceData['totalPrice'] as num).toDouble();
+            pricing[vehicleId] = totalPrice;
+            print('[RideBooking] $vehicleType price: Rs.$totalPrice');
+          } else {
+            print('[RideBooking] No price data returned for $vehicleType');
+          }
+        } catch (e) {
+          print('[RideBooking] Error calculating price for $vehicleType: $e');
+        }
+      }
+      
+      setState(() {
+        _vehiclePricing = pricing;
+        _isLoadingPricing = false;
+      });
+      
+      print('[RideBooking] Total pricing loaded: $_vehiclePricing');
+    } catch (e, stack) {
+      print('[RideBooking] Error loading pricing: $e');
+      print(stack);
+      setState(() {
+        _isLoadingPricing = false;
+      });
+    }
   }
 
   @override
@@ -97,6 +161,8 @@ class _RideBookingScreenState extends State<RideBookingScreen> {
                     scrollController: scrollController,
                     onPaymentMethodTap: _showPaymentMethodSheet,
                     onBookRide: _handleBookRide,
+                    vehiclePricing: _vehiclePricing,
+                    isLoadingPricing: _isLoadingPricing,
                   ),
                 );
               },
