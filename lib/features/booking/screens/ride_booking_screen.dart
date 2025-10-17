@@ -202,55 +202,25 @@ class _RideBookingScreenState extends State<RideBookingScreen> {
     );
   }
 
-  // void _handleBookRide(RideBookingProvider bookingProvider) async {
-  //   try {
-  //     // Debug: Print the current schedule type
-  //     print('Current isRideScheduled: ${bookingProvider.isRideScheduled}');
-  //     // Check if the ride is scheduled
-  //     if (bookingProvider.isRideScheduled) {
-  //       print('Navigating to pickup time screen for scheduled ride');
-  //       if (mounted) {
-  //         Navigator.push(
-  //           context,
-  //           MaterialPageRoute(
-  //             builder: (context) => PickupTimeScreen(),
-  //           ),
-  //         );
-  //       }
-  //       return;
-  //     }
-
-  //     print('Proceeding with immediate ride booking');
-  //     if (mounted) {
-  //       Navigator.push(
-  //         context,
-  //         MaterialPageRoute(
-  //           builder: (context) => RideSummaryScreen(),
-  //         ),
-  //       );
-  //     }
-  //   } catch (e) {
-  //     if (mounted) {
-  //       SnackbarHelper.showErrorSnackBar(
-  //         context,
-  //         'Failed to book ride: ${e.toString()}',
-  //       );
-  //     }
-  //   }
-  // }
-
   void _handleBookRide(RideBookingProvider bookingProvider) async {
     try {
-      // The provider now handles getting the token and rider ID by itself.
-      // The UI's only job is to trigger the action.
       print('Navigating to Ride Summary Screen...');
+      final selectedVehicle = bookingProvider.selectedVehicle;
+      final selectedVehicleId = selectedVehicle?.id;
+      final selectedPrice = selectedVehicleId != null ? _vehiclePricing[selectedVehicleId] : null;
+      final routeDuration = bookingProvider.routeDurationText;
+      final routeDistance = bookingProvider.routeDistanceText;
 
       if (mounted) {
         Navigator.push(
           context,
           MaterialPageRoute(
-            // Navigate to a success/tracking screen
-            builder: (context) => RideSummaryScreen(),
+            builder: (context) => RideSummaryScreen(
+              price: selectedPrice,
+              duration: routeDuration,
+              distance: routeDistance,
+              vehicle: selectedVehicle,
+            ),
           ),
         );
       }
@@ -258,7 +228,7 @@ class _RideBookingScreenState extends State<RideBookingScreen> {
       if (mounted) {
         SnackbarHelper.showErrorSnackBar(
           context,
-          'Booking Failed: ${e.toString()}',
+          'Booking Failed: ${e.toString()}',
         );
       }
     }
