@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -6,6 +7,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:thirikkale_rider/core/services/auth_service.dart';
 import 'package:thirikkale_rider/core/services/rider_service.dart';
+import 'package:thirikkale_rider/core/services/web_socket_service.dart';
 import 'package:thirikkale_rider/models/user_model.dart';
 
 enum AuthState {
@@ -24,6 +26,8 @@ enum AuthState {
 class AuthProvider extends ChangeNotifier {
   final AuthService _authService = AuthService();
   final RiderService _riderService = RiderService();
+  final WebSocketService _webSocketService = WebSocketService();
+  StreamSubscription<bool>? _webSocketConnectionSubscription;
 
   // State management
   AuthState _authState = AuthState.initial;
@@ -116,15 +120,73 @@ class AuthProvider extends ChangeNotifier {
 
   // Initialize AuthProvider - call this in main.dart
   Future<void> initialize() async {
-    await _loadStoredTokens();
+    _isLoading = true;
+    notifyListeners();
 
-    // If we have valid tokens, try to refresh them
-    if (_refreshToken != null && !hasValidJWTToken) {
-      print('🔄 Attempting to refresh stored tokens...');
-      await _refreshAccessToken();
+    try {
+      await _loadStoredTokens();
+
+      // If we have valid tokens, try to refresh them
+      if (_refreshToken != null && !hasValidJWTToken) {
+        print('🔄 Attempting to refresh stored tokens...');
+        await _refreshAccessToken();
+      }
+
+      // Connect WebSocket if user is logged in
+      if (_authState == AuthState.loggedIn && _accessToken != null) {
+        _connectWebSocket();
+      }
+    } catch (e) {
+      print('Error initializing AuthProvider: $e');
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  // Connect to WebSocket
+  void _connectWebSocket() {
+    if (_accessToken == null) {
+      print('⚠️ Cannot connect WebSocket: No access token');
+      return;
     }
 
-    notifyListeners();
+    if (_webSocketService.isConnected) {
+      print('ℹ️ WebSocket already connected');
+      return;
+    }
+
+    print('🔗 Connecting to WebSocket...');
+    _webSocketService.connect(_accessToken!);
+
+    // Listen to connection status
+    _webSocketConnectionSubscription?.cancel();
+    _webSocketConnectionSubscription = _webSocketService.connectionStream
+        .listen((isConnected) {
+          if (isConnected) {
+            print('✅ WebSocket connected successfully');
+          } else {
+            print('⚠️ WebSocket disconnected');
+            // Attempt reconnection after a delay if user is still logged in
+            if (_authState == AuthState.loggedIn) {
+              Future.delayed(const Duration(seconds: 5), () {
+                if (_authState == AuthState.loggedIn &&
+                    !_webSocketService.isConnected) {
+                  print('🔄 Attempting WebSocket reconnection...');
+                  _connectWebSocket();
+                }
+              });
+            }
+          }
+        });
+  }
+
+  // Disconnect WebSocket
+  void _disconnectWebSocket() {
+    print('🔌 Disconnecting WebSocket...');
+    _webSocketConnectionSubscription?.cancel();
+    _webSocketConnectionSubscription = null;
+    _webSocketService.disconnect();
   }
 
   // Set verified phone number
@@ -754,9 +816,13 @@ class AuthProvider extends ChangeNotifier {
   }
 
   // 7. Logout using RiderService
+  // Logout using RiderService
   Future<void> logout() async {
     try {
       print('🚪 Logging out using RiderService...');
+
+      // Disconnect WebSocket first
+      _disconnectWebSocket();
 
       // Logout from backend if we have a token
       if (_authToken != null) {
@@ -768,7 +834,6 @@ class AuthProvider extends ChangeNotifier {
           print('✅ Backend logout successful');
         } else {
           print('⚠️ Backend logout failed: ${logoutResult['error']}');
-          // Continue with local logout even if backend logout fails
         }
       }
 
@@ -845,8 +910,7 @@ class AuthProvider extends ChangeNotifier {
       _lastName = data['lastName'] ?? _lastName;
       _verifiedPhoneNumber = data['phoneNumber'] ?? _verifiedPhoneNumber;
 
-      // --- FIX STARTS HERE ---
-      // Also create the user model instance whenever tokens are stored
+      // Create the user model instance whenever tokens are stored
       _currentUser = UserModel(
         userId: _userId,
         firstName: _firstName ?? '',
@@ -854,10 +918,12 @@ class AuthProvider extends ChangeNotifier {
         phoneNumber: _verifiedPhoneNumber ?? '',
         // Add other fields from 'data' if available in your UserModel
       );
-      // --- FIX ENDS HERE ---
 
       // Persist to local storage
       await _saveTokensToStorage();
+
+      // Connect WebSocket after storing tokens
+      _connectWebSocket();
 
       print('✅ JWT tokens stored and persisted');
       notifyListeners();
@@ -918,27 +984,22 @@ class AuthProvider extends ChangeNotifier {
           );
         }
 
-        // --- FIX STARTS HERE ---
-        // If we have a valid token after loading, set the state to loggedIn.
+        // If we have a valid token after loading, set the state to loggedIn
         if (hasValidJWTToken) {
           _authState = AuthState.loggedIn;
-          // Re-create the user model from stored data
           _currentUser = UserModel(
             userId: _userId,
             firstName: _firstName ?? '',
             lastName: _lastName,
             phoneNumber: _verifiedPhoneNumber ?? '',
-            // Add other fields if necessary
           );
-          _isLoggedIn = true; // Also update the private flag
+          _isLoggedIn = true;
           print('✅ Stored tokens loaded and state set to loggedIn.');
         } else {
-          // If token is expired or invalid, reset state
           _authState = AuthState.initial;
           _currentUser = null;
           _isLoggedIn = false;
         }
-        // --- FIX ENDS HERE ---
       }
     } catch (e) {
       print('❌ Error loading stored tokens: $e');
@@ -984,9 +1045,12 @@ class AuthProvider extends ChangeNotifier {
 
       if (result['success'] == true) {
         await _storeJWTTokens(result['data']);
-        // --- FIX: Ensure state is loggedIn after refreshing ---
         _authState = AuthState.loggedIn;
-        // -----------------------------------------------------
+
+        // Reconnect WebSocket with new token
+        _disconnectWebSocket();
+        _connectWebSocket();
+
         print('✅ Token refreshed successfully');
         return true;
       } else {
@@ -1021,6 +1085,9 @@ class AuthProvider extends ChangeNotifier {
     _isLoggedIn = false;
     _currentUser = null;
     _authState = AuthState.initial;
+
+    // Disconnect WebSocket
+    _disconnectWebSocket();
 
     // Clear from storage
     try {
@@ -1073,6 +1140,12 @@ class AuthProvider extends ChangeNotifier {
     _verificationId = null;
     _clearError();
     notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    _disconnectWebSocket();
+    super.dispose();
   }
 
   // Convenience methods for checking auth flow state

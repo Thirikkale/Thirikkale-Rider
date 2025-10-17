@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:thirikkale_rider/core/providers/ride_tracking_provider.dart';
+import 'package:thirikkale_rider/core/services/web_socket_service.dart';
 import 'package:thirikkale_rider/core/utils/app_styles.dart';
 import 'package:thirikkale_rider/core/utils/app_dimension.dart';
 import 'package:thirikkale_rider/core/utils/snackbar_helper.dart';
@@ -51,6 +53,7 @@ class _RideTrackingScreenState extends State<RideTrackingScreen> {
   RideState currentState = RideState.pending;
   Map<String, dynamic>? currentRideData;
   StreamSubscription<Map<String, dynamic>>? _statusSubscription;
+  StreamSubscription<Map<String, dynamic>>? _rideUpdatesSubscription;
   bool isLoading = true;
   String? errorMessage;
 
@@ -99,18 +102,185 @@ class _RideTrackingScreenState extends State<RideTrackingScreen> {
 
   final int actualPrice = 275;
   final int savings = 45;
+  final WebSocketService _webSocketService = WebSocketService();
 
   @override
   void initState() {
     super.initState();
-    _startRideStatusPolling();
+    _startRideMonitoring();
   }
 
   @override
   void dispose() {
     _statusSubscription?.cancel();
-    RideStatusService.stopRideStatusPolling();
+    _rideUpdatesSubscription?.cancel();
     super.dispose();
+  }
+
+  void _startRideMonitoring() async {
+    try {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final rideBookingProvider = Provider.of<RideBookingProvider>(
+        context,
+        listen: false,
+      );
+
+      String? token = await authProvider.getCurrentToken();
+      token ??= await authProvider.refreshAccessToken();
+
+      final rideId = rideBookingProvider.rideId;
+
+      if (rideId.isEmpty) {
+        setState(() {
+          errorMessage = 'Unable to track ride: Missing ride ID';
+          isLoading = false;
+        });
+        return;
+      }
+
+      print('🎯 Starting ride monitoring for ride ID: $rideId');
+
+      // 1. Start polling for initial status (as fallback)
+      _startPollingFallback(rideId, token!);
+
+      // 2. Subscribe to WebSocket updates for real-time notifications
+      _subscribeToRideUpdates(rideId);
+    } catch (e) {
+      setState(() {
+        errorMessage = 'Error starting ride tracking: $e';
+        isLoading = false;
+      });
+    }
+  }
+
+  void _startPollingFallback(String rideId, String token) {
+    _statusSubscription = RideStatusService.startRideStatusPolling(
+      rideId: rideId,
+      token: token,
+      interval: const Duration(
+        seconds: 10,
+      ), // Reduced frequency since WebSocket is primary
+    ).listen(
+      (rideData) {
+        setState(() {
+          currentRideData = rideData;
+          isLoading = false;
+          errorMessage = null;
+          _updateRideState(rideData);
+        });
+      },
+      onError: (error) {
+        if (error.toString().contains('Authentication failed')) {
+          _handleAuthError();
+        } else {
+          setState(() {
+            errorMessage = 'Failed to get ride updates: $error';
+            isLoading = false;
+          });
+        }
+      },
+    );
+  }
+
+  void _subscribeToRideUpdates(String rideId) {
+    // Check if WebSocket is connected
+    if (!_webSocketService.isConnected) {
+      print('⚠️ WebSocket not connected. Waiting for connection...');
+
+      // Wait for connection before subscribing
+      _webSocketService.connectionStream.listen((isConnected) {
+        if (isConnected && mounted) {
+          _performRideUpdatesSubscription(rideId);
+        }
+      });
+    } else {
+      _performRideUpdatesSubscription(rideId);
+    }
+  }
+
+  void _performRideUpdatesSubscription(String rideId) {
+    final updateStream = _webSocketService.subscribeToRideUpdates(rideId);
+
+    if (updateStream == null) {
+      print('⚠️ Could not subscribe to ride updates');
+      return;
+    }
+
+    _rideUpdatesSubscription = updateStream.listen(
+      (updateData) {
+        print('📬 Received real-time ride update: $updateData');
+
+        // Update state immediately based on WebSocket data
+        if (mounted) {
+          setState(() {
+            currentRideData = updateData;
+            isLoading = false;
+            errorMessage = null;
+            _updateRideState(updateData);
+          });
+        }
+      },
+      onError: (error) {
+        print('❌ Error in ride updates stream: $error');
+      },
+    );
+
+    print('✅ Subscribed to ride updates via WebSocket');
+  }
+
+  void _updateRideState(Map<String, dynamic> rideData) {
+    final status = rideData['status'] as String?;
+
+    // Extract coordinates from ride data
+    _currentPickupLat = (rideData['pickupLatitude'] as num?)?.toDouble();
+    _currentPickupLng = (rideData['pickupLongitude'] as num?)?.toDouble();
+    _currentDestLat = (rideData['dropoffLatitude'] as num?)?.toDouble();
+    _currentDestLng = (rideData['dropoffLongitude'] as num?)?.toDouble();
+
+    switch (status) {
+      case 'PENDING':
+        currentState = RideState.pending;
+        break;
+      case 'ACCEPTED':
+        currentState = RideState.accepted;
+        _updateDriverInfo(rideData);
+        // When ride is accepted, also subscribe to location updates
+        _subscribeToLocationUpdates(rideData['id'] as String);
+        break;
+      case 'DRIVER_ARRIVED':
+        currentState = RideState.driverArrived;
+        _updateDriverInfo(rideData);
+        break;
+      case 'IN_PROGRESS':
+        currentState = RideState.inProgress;
+        _updateDriverInfo(rideData);
+        break;
+      case 'COMPLETED':
+        currentState = RideState.completed;
+        _updateDriverInfo(rideData);
+        break;
+      case 'CANCELLED':
+      case 'CANCELLED_BY_RIDER':
+      case 'CANCELLED_BY_DRIVER':
+      case 'CANCELLED_BY_SYSTEM':
+        currentState = RideState.cancelled;
+        break;
+      default:
+        currentState = RideState.pending;
+    }
+
+    print('📊 Ride state updated to: $currentState');
+  }
+
+  void _subscribeToLocationUpdates(String rideId) {
+    // Use the existing RideTrackingProvider for location updates
+    final rideTrackingProvider = Provider.of<RideTrackingProvider>(
+      context,
+      listen: false,
+    );
+
+    rideTrackingProvider.startTracking(rideId);
+    print('📍 Started tracking driver location for ride: $rideId');
   }
 
   void _startRideStatusPolling() async {
@@ -172,45 +342,6 @@ class _RideTrackingScreenState extends State<RideTrackingScreen> {
         isLoading = false;
       });
     }
-  }
-
-  void _updateRideState(Map<String, dynamic> rideData) {
-    final status = rideData['status'] as String?;
-
-    // Extract coordinates from ride data
-    _currentPickupLat = (rideData['pickupLatitude'] as num?)?.toDouble();
-    _currentPickupLng = (rideData['pickupLongitude'] as num?)?.toDouble();
-    _currentDestLat = (rideData['dropoffLatitude'] as num?)?.toDouble();
-    _currentDestLng = (rideData['dropoffLongitude'] as num?)?.toDouble();
-
-    switch (status) {
-      case 'PENDING':
-        currentState = RideState.pending;
-        break;
-      case 'ACCEPTED':
-        currentState = RideState.accepted;
-        _updateDriverInfo(rideData);
-        break;
-      case 'DRIVER_ARRIVED':
-        currentState = RideState.driverArrived;
-        _updateDriverInfo(rideData);
-        break;
-      case 'IN_PROGRESS':
-        currentState = RideState.inProgress;
-        _updateDriverInfo(rideData);
-        break;
-      case 'COMPLETED':
-        currentState = RideState.completed;
-        _updateDriverInfo(rideData);
-        break;
-      case 'CANCELLED':
-        currentState = RideState.cancelled;
-        break;
-      default:
-        currentState = RideState.pending;
-    }
-
-    print('📊 Ride state updated to: $currentState');
   }
 
   void _updateDriverInfo(Map<String, dynamic> rideData) {
