@@ -9,7 +9,11 @@ import 'package:thirikkale_rider/features/booking/widgets/route_map.dart';
 import 'package:thirikkale_rider/features/booking/screens/ride_tracking_screen.dart';
 
 class RideSummaryScreen extends StatefulWidget {
-  const RideSummaryScreen({super.key});
+  final double? price;
+  final String? duration;
+  final String? distance;
+  final dynamic vehicle;
+  const RideSummaryScreen({super.key, this.price, this.duration, this.distance, this.vehicle});
 
   @override
   State<RideSummaryScreen> createState() => _RideSummaryScreenState();
@@ -135,7 +139,8 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
 
   Widget _buildBottomDetailsContainer(RideBookingProvider bookingProvider) {
     final selectedVehicle = bookingProvider.selectedVehicle;
-    final basePrice = selectedVehicle?.defaultPricePerUnit ?? 0;
+    // Use the passed price if available, otherwise use default
+    final basePrice = widget.price ?? selectedVehicle?.defaultPricePerUnit ?? 0;
     final discountPercentage =
         bookingProvider.hasPromotion
             ? bookingProvider.promotionDiscountPercentage
@@ -239,9 +244,9 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
                                 ],
                               ),
                               const SizedBox(height: 4),
-                              // Show route duration if available, otherwise fallback
+                              // Show passed duration if available, otherwise use provider or fallback
                               Text(
-                                bookingProvider.routeDurationText ?? selectedVehicle.estimatedTime,
+                                widget.duration ?? bookingProvider.routeDurationText ?? selectedVehicle.estimatedTime,
                                 style: AppTextStyles.bodyMedium.copyWith(
                                   color: AppColors.textSecondary,
                                 ),
@@ -357,6 +362,44 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildBottomDetailsContainerWithPrice() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black12,
+            blurRadius: 8,
+            offset: Offset(0, -2),
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (widget.vehicle != null)
+            Row(
+              children: [
+                Image.asset(widget.vehicle.iconAsset, width: 48, height: 48),
+                const SizedBox(width: 12),
+                Text(widget.vehicle.name, style: AppTextStyles.heading3),
+              ],
+            ),
+          const SizedBox(height: 12),
+          if (widget.distance != null)
+            Text('Distance: ${widget.distance}', style: AppTextStyles.bodyLarge),
+          if (widget.duration != null)
+            Text('Estimated Time: ${widget.duration}', style: AppTextStyles.bodyLarge),
+          if (widget.price != null)
+            Text('Price: Rs.${widget.price!.toStringAsFixed(0)}', style: AppTextStyles.heading2.copyWith(color: AppColors.primaryBlue)),
+        ],
       ),
     );
   }
