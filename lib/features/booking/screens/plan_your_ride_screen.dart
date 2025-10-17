@@ -49,6 +49,10 @@ class _PlanYourRideScreenState extends State<PlanYourRideScreen> {
   LatLng? _selectedPickupCoords;
   LatLng? _selectedDestinationCoords;
 
+  // Route metrics
+  String? _routeDistance; // e.g., "12.3 km"
+  String? _routeDuration; // e.g., "24 mins"
+
   @override
   void initState() {
     super.initState();
@@ -292,6 +296,8 @@ class _PlanYourRideScreenState extends State<PlanYourRideScreen> {
       double? estimatedPrice;
       double? estimatedDuration;
       double? estimatedDistance;
+      String? routeDistanceText;
+      String? routeDurationText;
       // Try to get estimates from directions service if both coordinates are available
       if (pickupLat != null &&
           pickupLng != null &&
@@ -302,9 +308,22 @@ class _PlanYourRideScreenState extends State<PlanYourRideScreen> {
           destination: LatLng(destLat, destLng),
         );
         if (directions != null) {
-          // Parse duration and distance from String to double
-          estimatedDuration = double.tryParse(directions.duration);
-          estimatedDistance = double.tryParse(directions.distance);
+          // Parse duration and distance from String to double for calculations
+          // Extract numeric values from strings like "12.3 km" or "24 mins"
+          final durationParts = directions.duration.split(' ');
+          final distanceParts = directions.distance.split(' ');
+          
+          if (durationParts.isNotEmpty) {
+            estimatedDuration = double.tryParse(durationParts[0]);
+          }
+          
+          if (distanceParts.isNotEmpty) {
+            estimatedDistance = double.tryParse(distanceParts[0]);
+          }
+          
+          // Store the formatted text versions for display
+          routeDistanceText = directions.distance;
+          routeDurationText = directions.duration;
         }
       }
 
@@ -324,6 +343,10 @@ class _PlanYourRideScreenState extends State<PlanYourRideScreen> {
       bookingProvider.estimatedPrice = estimatedPrice;
       bookingProvider.estimatedDuration = estimatedDuration;
       bookingProvider.estimatedDistance = estimatedDistance;
+      
+      // Pass the formatted text strings as well for display purposes
+      bookingProvider.routeDistanceText = routeDistanceText;
+      bookingProvider.routeDurationText = routeDurationText;
 
       // Hide loading dialog
       if (mounted) Navigator.pop(context);
@@ -796,6 +819,9 @@ class _PlanYourRideScreenState extends State<PlanYourRideScreen> {
             _polylines.add(polyline);
             _markers.clear();
             _markers.addAll([pickupMarker, destinationMarker]);
+            // Update metrics in UI
+            _routeDistance = directions.distance; // already string
+            _routeDuration = directions.duration; // already string
           });
 
           // Adjust camera to show entire route
@@ -809,11 +835,23 @@ class _PlanYourRideScreenState extends State<PlanYourRideScreen> {
       } else {
         // Fallback to direct line if directions service fails
         _showMarkersOnly();
+        if (mounted) {
+          setState(() {
+            _routeDistance = null;
+            _routeDuration = null;
+          });
+        }
       }
     } catch (e) {
       print('Error calculating route: $e');
       // Still show markers even if route calculation fails
       _showMarkersOnly();
+      if (mounted) {
+        setState(() {
+          _routeDistance = null;
+          _routeDuration = null;
+        });
+      }
     }
   }
 
@@ -1424,6 +1462,8 @@ class _PlanYourRideScreenState extends State<PlanYourRideScreen> {
                                           setState(() {
                                             _destinationController.clear();
                                             _selectedDestinationCoords = null;
+                                            _routeDistance = null;
+                                            _routeDuration = null;
                                           });
                                         }
                                       },
@@ -1459,6 +1499,8 @@ class _PlanYourRideScreenState extends State<PlanYourRideScreen> {
                             height: AppDimensions.sectionSpacing / 2,
                           ),
 
+                          // We'll store metrics but not display them here.
+                          // They will be passed to the next screens.
                           SizedBox(
                             width: double.infinity,
                             child: ElevatedButton(

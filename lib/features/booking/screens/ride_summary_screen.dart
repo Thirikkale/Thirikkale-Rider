@@ -239,8 +239,9 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
                                 ],
                               ),
                               const SizedBox(height: 4),
+                              // Show route duration if available, otherwise fallback
                               Text(
-                                selectedVehicle.estimatedTime,
+                                bookingProvider.routeDurationText ?? selectedVehicle.estimatedTime,
                                 style: AppTextStyles.bodyMedium.copyWith(
                                   color: AppColors.textSecondary,
                                 ),
@@ -305,6 +306,25 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
                         color: AppColors.lightGrey,
                         margin: const EdgeInsets.symmetric(vertical: 16),
                       ),
+                      
+                      // Show distance if available
+                      if (bookingProvider.routeDistanceText != null)
+                        Row(
+                          children: [
+                            const Icon(
+                              Icons.map_outlined,
+                              size: 18,
+                              color: AppColors.primaryBlue,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              "Distance: ${bookingProvider.routeDistanceText!}",
+                              style: AppTextStyles.bodyMedium,
+                            ),
+                          ],
+                        ),
+                        
+                      const SizedBox(height: 12),
 
                       // Choose Ride button
                       SizedBox(

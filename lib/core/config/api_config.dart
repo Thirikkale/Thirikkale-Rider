@@ -2,12 +2,15 @@ class ApiConfig {
   // Base URLs - Update this IP address to your backend server's IP
   // IMPORTANT: Replace 'YOUR_BACKEND_IP' with the actual IP address of your backend device
   // Example: 'http://192.168.1.100:8081/user-service/api/v1'
-  static const String ip = '192.168.137.1';
+  static const String ip = '10.157.52.7';
   static const String userServiceBaseUrl =
       'http://$ip:8081/user-service/api/v1';
   static const String rideServiceBaseUrl =
       'http://$ip:8082/ride-service/api/v1';
 
+  static const String pricingServiceBaseUrl =
+      'http://$ip:8084/pricing-service/api/v1';
+    static const String pricingBaseUrl = '$pricingServiceBaseUrl/pricing';
   // User Service URLs
   static const String authBaseUrl = '$userServiceBaseUrl/auth';
   static const String ridersBaseUrl = '$userServiceBaseUrl/riders';
@@ -143,6 +146,19 @@ class ApiConfig {
       '$rideServiceBaseUrl/preferences/rider/$riderId';
   static String deleteRiderPreferences(String riderId) =>
       '$rideServiceBaseUrl/preferences/rider/$riderId';
+
+  // =================== PRICING SERVICE ENDPOINTS ===================
+  // Mirrors PricingController mappings under /api/pricing
+  // Calculate price (supports both POST with body and GET with query params)
+  static const String pricingCalculate = '$pricingBaseUrl/calculate';
+  // Get all vehicle pricing entries
+  static const String pricingAll = '$pricingBaseUrl/all';
+  // Get pricing for a vehicle type
+  static String getPricingByVehicle(String vehicleType) =>
+      '$pricingBaseUrl/vehicle/$vehicleType';
+  // Update pricing for a vehicle type (PUT)
+  static String updateVehiclePricing(String vehicleType) =>
+      '$pricingBaseUrl/vehicle/$vehicleType';
 
   // Payment Management
   static const String createPayment = '$rideServiceBaseUrl/payments/create';

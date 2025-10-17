@@ -27,6 +27,10 @@ class RideBookingProvider extends ChangeNotifier {
   double? _actualDuration;
   double? _estimatedDistance;
   double? _actualDistance;
+  
+  // Formatted text versions for UI display
+  String? _routeDistanceText;  // e.g. "12.3 km"
+  String? _routeDurationText;  // e.g. "24 mins"
 
   // Default ride type
   bool _isSolo = true;
@@ -91,6 +95,8 @@ class RideBookingProvider extends ChangeNotifier {
   double? get actualDuration => _actualDuration;
   double? get estimatedDistance => _estimatedDistance;
   double? get actualDistance => _actualDistance;
+  String? get routeDistanceText => _routeDistanceText;
+  String? get routeDurationText => _routeDurationText;
   VehicleOption? get vehicleType => _vehicleType;
   bool get isSolo => _isSolo;
   bool get isRideScheduled => _isRideScheduled;
@@ -189,6 +195,16 @@ class RideBookingProvider extends ChangeNotifier {
 
   set actualDistance(double? value) {
     _actualDistance = value;
+    notifyListeners();
+  }
+  
+  set routeDistanceText(String? value) {
+    _routeDistanceText = value;
+    notifyListeners();
+  }
+  
+  set routeDurationText(String? value) {
+    _routeDurationText = value;
     notifyListeners();
   }
 
