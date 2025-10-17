@@ -467,6 +467,28 @@ class RideBookingProvider extends ChangeNotifier {
     return 'REGULAR';
   }
 
+  String _getBackendVehicleType() {
+    // Map vehicle IDs to backend vehicle types
+    if (_vehicleType == null) {
+      return 'RIDE'; // Default fallback
+    }
+    
+    switch (_vehicleType!.id.toLowerCase()) {
+      case 'tuk':
+        return 'TUK';
+      case 'ride':
+        return 'RIDE';
+      case 'rush':
+        return 'RUSH';
+      case 'prime':
+        return 'PRIME_RIDE';
+      case 'squad':
+        return 'SQUAD';
+      default:
+        return 'RIDE';
+    }
+  }
+
   // Booking methods
   Future<Map<String, dynamic>> bookRide() async {
     // Check if AuthProvider is available and the user is logged in
@@ -492,6 +514,7 @@ class RideBookingProvider extends ChangeNotifier {
     notifyListeners();
 
     final String backendRideType = _getBackendRideType();
+    final String backendVehicleType = _getBackendVehicleType();
 
     try {
       final response = await RideService.requestRide(
@@ -502,8 +525,10 @@ class RideBookingProvider extends ChangeNotifier {
         dropoffLocation: _destinationAddress,
         dropoffLatitude: _destLat!,
         dropoffLongitude: _destLng!,
-        rideType: backendRideType, // e.g., "TUK"
+        rideType: backendRideType, // e.g., "REGULAR", "SHARED", "PREMIUM"
         token: token,
+        vehicleType: backendVehicleType, // e.g., "TUK", "RIDE", "RUSH", "PRIME_RIDE", "SQUAD"
+        distanceKm: _estimatedDistance ?? 0.0, // Pass distance
       );
 
       _handleSuccessfulBooking(response);

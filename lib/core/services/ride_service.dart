@@ -14,6 +14,8 @@ class RideService {
     required double dropoffLongitude,
     required String rideType,
     required String token,
+    String? vehicleType,
+    double? distanceKm,
   }) async {
     final url = Uri.parse(ApiConfig.requestRide);
     final headers = ApiConfig.getAuthHeaders(token);
@@ -27,6 +29,8 @@ class RideService {
       'dropoffLatitude': dropoffLatitude,
       'dropoffLongitude': dropoffLongitude,
       'rideType': rideType,
+      'vehicleType': vehicleType ?? rideType, // Use vehicleType or fallback to rideType
+      'distanceKm': distanceKm ?? 0.0, // Provide distance or default to 0
       // You can add other optional fields from the DTO here if needed
       // 'passengerCount': 1,
       // 'isSharedRide': !isSolo,
