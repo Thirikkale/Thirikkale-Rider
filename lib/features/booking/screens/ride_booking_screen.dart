@@ -5,6 +5,7 @@ import 'package:thirikkale_rider/core/utils/snackbar_helper.dart';
 import 'package:thirikkale_rider/core/services/pricing_service.dart';
 import 'package:thirikkale_rider/features/booking/widgets/Route_map.dart';
 import 'package:thirikkale_rider/features/booking/widgets/ride_options_bottom_sheet.dart';
+import 'package:thirikkale_rider/features/booking/screens/pickup_time_screen.dart';
 import 'package:thirikkale_rider/features/booking/widgets/payment_method_bottom_sheet.dart';
 import 'package:thirikkale_rider/features/booking/screens/ride_summary_screen.dart';
 
@@ -204,6 +205,27 @@ class _RideBookingScreenState extends State<RideBookingScreen> {
 
   void _handleBookRide(RideBookingProvider bookingProvider) async {
     try {
+      // If scheduled, go to pickup time selection first
+      if (bookingProvider.isRideScheduled) {
+        final selectedVehicle = bookingProvider.selectedVehicle;
+        final selectedVehicleId = selectedVehicle?.id;
+        final selectedPrice = selectedVehicleId != null ? _vehiclePricing[selectedVehicleId] : null;
+        final routeDuration = bookingProvider.routeDurationText;
+        final routeDistance = bookingProvider.routeDistanceText;
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => PickupTimeScreen(
+              price: selectedPrice,
+              duration: routeDuration,
+              distance: routeDistance,
+              vehicle: selectedVehicle,
+            ),
+          ),
+        );
+        return;
+      }
+
       print('Navigating to Ride Summary Screen...');
       final selectedVehicle = bookingProvider.selectedVehicle;
       final selectedVehicleId = selectedVehicle?.id;

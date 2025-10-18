@@ -7,6 +7,7 @@ import 'package:thirikkale_rider/core/utils/snackbar_helper.dart';
 import 'package:thirikkale_rider/widgets/common/custom_appbar_name.dart';
 import 'package:thirikkale_rider/features/booking/widgets/route_map.dart';
 import 'package:thirikkale_rider/features/booking/screens/ride_tracking_screen.dart';
+import 'package:thirikkale_rider/features/activity/screens/activity_screen.dart';
 
 class RideSummaryScreen extends StatefulWidget {
   final double? price;
@@ -35,13 +36,8 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
       context,
       listen: false,
     );
-    // Determine if this is an immediate ride or scheduled ride
-    final now = DateTime.now();
-    final scheduledDateTime = bookingProvider.scheduledDateTime;
-    final isImmediate =
-        scheduledDateTime != null &&
-        scheduledDateTime.difference(now).inMinutes < 5;
-    bookingProvider.setScheduleType(isImmediate);
+  // Do not override isRideScheduled here; it is set by previous screens.
+  // We only fetch promotions on entry.
     // Fetch available promotions
     bookingProvider.fetchAvailablePromotions();
   }
@@ -312,8 +308,31 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
                         margin: const EdgeInsets.symmetric(vertical: 16),
                       ),
                       
+                      // Show pickup time (scheduled or now)
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.access_time,
+                            size: 18,
+                            color: AppColors.primaryBlue,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            bookingProvider.isRideScheduled 
+                              ? 'Scheduled: '
+                                '${bookingProvider.scheduledDateTime!.day.toString().padLeft(2, '0')}/'
+                                '${bookingProvider.scheduledDateTime!.month.toString().padLeft(2, '0')}/'
+                                '${bookingProvider.scheduledDateTime!.year} '
+                                '${bookingProvider.scheduledDateTime!.hour.toString().padLeft(2, '0')}'
+                                ':${bookingProvider.scheduledDateTime!.minute.toString().padLeft(2, '0')}'
+                              : 'Pickup: Now',
+                            style: AppTextStyles.bodyMedium,
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
                       // Show distance if available
-                      if (bookingProvider.routeDistanceText != null)
+                      if (widget.distance != null || bookingProvider.routeDistanceText != null)
                         Row(
                           children: [
                             const Icon(
@@ -323,12 +342,11 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
                             ),
                             const SizedBox(width: 8),
                             Text(
-                              "Distance: ${bookingProvider.routeDistanceText!}",
+                              "Distance: ${widget.distance ?? bookingProvider.routeDistanceText ?? ''}",
                               style: AppTextStyles.bodyMedium,
                             ),
                           ],
                         ),
-                        
                       const SizedBox(height: 12),
 
                       // Choose Ride button
@@ -366,43 +384,7 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
     );
   }
 
-  Widget _buildBottomDetailsContainerWithPrice() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black12,
-            blurRadius: 8,
-            offset: Offset(0, -2),
-          ),
-        ],
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (widget.vehicle != null)
-            Row(
-              children: [
-                Image.asset(widget.vehicle.iconAsset, width: 48, height: 48),
-                const SizedBox(width: 12),
-                Text(widget.vehicle.name, style: AppTextStyles.heading3),
-              ],
-            ),
-          const SizedBox(height: 12),
-          if (widget.distance != null)
-            Text('Distance: ${widget.distance}', style: AppTextStyles.bodyLarge),
-          if (widget.duration != null)
-            Text('Estimated Time: ${widget.duration}', style: AppTextStyles.bodyLarge),
-          if (widget.price != null)
-            Text('Price: Rs.${widget.price!.toStringAsFixed(0)}', style: AppTextStyles.heading2.copyWith(color: AppColors.primaryBlue)),
-        ],
-      ),
-    );
-  }
+  // Removed unused _buildBottomDetailsContainerWithPrice()
 
   Widget _buildPaymentMethodRow(RideBookingProvider bookingProvider) {
     final paymentMethod = bookingProvider.selectedPaymentMethod;
@@ -495,6 +477,17 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
   }
 
   void _confirmBooking(RideBookingProvider bookingProvider) async {
+    // If scheduled, do not call booking API; go to Scheduled tab to view scheduled bookings
+    if (bookingProvider.isRideScheduled) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const ActivityScreen(initialTabIndex: 1),
+        ),
+      );
+      return;
+    }
+
     try {
       await bookingProvider.bookRide();
       if (mounted) {
@@ -510,18 +503,17 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder:
-                (context) => RideTrackingScreen(
-                  pickupAddress: bookingProvider.pickupAddress,
-                  destinationAddress: bookingProvider.destinationAddress,
-                  pickupLat: bookingProvider.pickupLat,
-                  pickupLng: bookingProvider.pickupLng,
-                  destLat: bookingProvider.destLat,
-                  destLng: bookingProvider.destLng,
-                  scheduledDateTime:
-                      bookingProvider.scheduledDateTime ?? DateTime.now(),
-                  estimatedPrice: (bookingProvider.estimatedPrice ?? 0).toInt(),
-                ),
+            builder: (context) => RideTrackingScreen(
+              pickupAddress: bookingProvider.pickupAddress,
+              destinationAddress: bookingProvider.destinationAddress,
+              pickupLat: bookingProvider.pickupLat,
+              pickupLng: bookingProvider.pickupLng,
+              destLat: bookingProvider.destLat,
+              destLng: bookingProvider.destLng,
+              scheduledDateTime:
+                  bookingProvider.scheduledDateTime ?? DateTime.now(),
+              estimatedPrice: (bookingProvider.estimatedPrice ?? 0).toInt(),
+            ),
           ),
         );
       }
@@ -529,8 +521,7 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
       if (mounted) {
         final now = DateTime.now();
         final scheduledDateTime = bookingProvider.scheduledDateTime;
-        final isImmediate =
-            scheduledDateTime != null &&
+        final isImmediate = scheduledDateTime != null &&
             scheduledDateTime.difference(now).inMinutes < 5;
         SnackbarHelper.showErrorSnackBar(
           context,
