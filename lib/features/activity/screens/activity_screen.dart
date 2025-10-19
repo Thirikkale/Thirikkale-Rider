@@ -10,6 +10,7 @@ import 'package:thirikkale_rider/features/activity/widgets/cancelled_ride_card.d
 import 'package:thirikkale_rider/features/activity/widgets/complaint_ride_card.dart';
 import 'package:thirikkale_rider/features/activity/widgets/activity_tabs.dart';
 import 'package:thirikkale_rider/features/activity/screens/trip_details_screen.dart';
+import 'package:thirikkale_rider/features/activity/screens/scheduled_ride_details_screen.dart';
 import 'package:thirikkale_rider/widgets/bottom_navbar.dart';
 import 'package:provider/provider.dart';
 import 'package:thirikkale_rider/core/providers/auth_provider.dart';
@@ -555,6 +556,7 @@ class _ActivityScreenState extends State<ActivityScreen> {
         );
         
       case 1: // Scheduled tab
+        final status = activity['status']?.toString().toUpperCase();
         return ScheduledRideCard(
           destination: activity['destination'],
           pickupLocation: activity['pickupLocation'],
@@ -562,18 +564,20 @@ class _ActivityScreenState extends State<ActivityScreen> {
           scheduledTime: activity['scheduledTime'],
           estimatedFare: activity['estimatedFare'],
           vehicleIcon: activity['vehicleIcon'],
+          status: status,
           onCardTap: () {
-            // Navigate directly to trip details screen
+            // Navigate to scheduled ride details screen
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => TripDetailsScreen(
-                  tripData: activity,
+                builder: (context) => ScheduledRideDetailsScreen(
+                  ride: activity,
+                  raw: activity,
                 ),
               ),
             );
           },
-          onCancelPressed: () {
+          onCancelPressed: (status == 'CANCELLED' || status == 'DISPATCHED') ? null : () {
             _showCancelConfirmationDialog(activity['tripId']);
           },
         );
@@ -692,12 +696,19 @@ class _ActivityScreenState extends State<ActivityScreen> {
       titleIcon: Icons.schedule_outlined,
       titleIconColor: AppColors.warning,
       confirmButtonColor: AppColors.error,
-      onConfirm: () {
-        // Implement actual cancellation
-        setState(() {
-          // Mock implementation - remove from list
-          _scheduledActivities.removeWhere((activity) => activity['tripId'] == tripId);
-        });
+      onConfirm: () async {
+        try {
+          final auth = context.read<AuthProvider?>();
+          final token = await auth?.getCurrentToken();
+          await ScheduledRideService.cancelById(tripId, token: token);
+          // Refresh the list
+          await _loadScheduledRides();
+        } catch (e) {
+          // Show error
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Cancellation failed: ${e.toString()}')),
+          );
+        }
       },
     );
   }

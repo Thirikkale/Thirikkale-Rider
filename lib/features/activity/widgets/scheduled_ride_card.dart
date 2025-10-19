@@ -9,6 +9,7 @@ class ScheduledRideCard extends StatelessWidget {
   final String scheduledTime;
   final String estimatedFare;
   final String vehicleIcon;
+  final String? status;
   final VoidCallback onCardTap;
   final VoidCallback? onCancelPressed;
 
@@ -20,6 +21,7 @@ class ScheduledRideCard extends StatelessWidget {
     required this.scheduledTime,
     required this.estimatedFare,
     required this.vehicleIcon,
+    this.status,
     required this.onCardTap,
     this.onCancelPressed,
   });
@@ -60,11 +62,32 @@ class ScheduledRideCard extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        'Scheduled Ride',
-                        style: AppTextStyles.bodyMedium.copyWith(
-                          color: AppColors.textSecondary,
-                        ),
+                      Row(
+                        children: [
+                          Text(
+                            'Scheduled Ride',
+                            style: AppTextStyles.bodyMedium.copyWith(
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                          if (status != null) ...[
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: _getStatusColor(status!),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                _getStatusText(status!),
+                                style: AppTextStyles.bodySmall.copyWith(
+                                  color: AppColors.white,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
                       const SizedBox(height: 4),
                       Text(
@@ -122,21 +145,25 @@ class ScheduledRideCard extends StatelessWidget {
                     ),
                   ],
                 ),
-                TextButton(
-                  onPressed: onCancelPressed,
-                  style: TextButton.styleFrom(
-                    foregroundColor: AppColors.error,
-                    backgroundColor: AppColors.error.withOpacity(0.1),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
+                if (onCancelPressed != null && (status == 'SCHEDULED' || status == 'GROUPING')) ...[
+                  TextButton(
+                    onPressed: onCancelPressed,
+                    style: TextButton.styleFrom(
+                      foregroundColor: AppColors.error,
+                      backgroundColor: AppColors.error.withOpacity(0.1),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
                     ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
+                    child: const Text('Cancel'),
                   ),
-                  child: const Text('Cancel'),
-                ),
+                ] else ...[
+                  const SizedBox.shrink(),
+                ],
               ],
             ),
           ],
@@ -179,5 +206,43 @@ class ScheduledRideCard extends StatelessWidget {
         ),
       ],
     );
+  }
+
+  Color _getStatusColor(String status) {
+    switch (status.toUpperCase()) {
+      case 'CANCELLED':
+        return AppColors.error;
+      case 'DISPATCHED':
+        return AppColors.primaryBlue;
+      case 'CONFIRMED':
+        return AppColors.primaryGreen;
+      case 'PENDING':
+        return AppColors.warning;
+      case 'SCHEDULED':
+        return AppColors.primaryBlue;
+      case 'GROUPING':
+        return AppColors.warning;
+      default:
+        return AppColors.textSecondary;
+    }
+  }
+
+  String _getStatusText(String status) {
+    switch (status.toUpperCase()) {
+      case 'CANCELLED':
+        return 'Cancelled';
+      case 'DISPATCHED':
+        return 'Dispatched';
+      case 'CONFIRMED':
+        return 'Confirmed';
+      case 'PENDING':
+        return 'Pending';
+      case 'SCHEDULED':
+        return 'Scheduled';
+      case 'GROUPING':
+        return 'Grouping';
+      default:
+        return status;
+    }
   }
 }

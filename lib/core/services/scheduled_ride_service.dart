@@ -107,4 +107,23 @@ class ScheduledRideService {
     }
     throw Exception('Unexpected scheduled rides response format');
   }
+
+  // Cancel a scheduled ride by ID
+  static Future<void> cancelById(String rideId, {String? token}) async {
+    final url = ScheduledRideEndpoints.deleteById(rideId);
+    final headers = {
+      ...ApiConfig.defaultHeaders,
+      if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
+    };
+    final response = await http.delete(Uri.parse(url), headers: headers);
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw Exception('Failed to cancel ride (${response.statusCode})');
+    }
+
+    final data = jsonDecode(response.body);
+    if (data is Map && data['status'] != null && data['status'].toString().startsWith('ERROR:')) {
+      throw Exception(data['status']);
+    }
+  }
 }
