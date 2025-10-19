@@ -398,13 +398,16 @@ class _PickupTimeScreenState extends State<PickupTimeScreen> {
   }
 
   void _confirmPickupTime() {
-    final scheduledDateTime = DateTime(
+    final scheduledDateTime = DateTime.utc(
       selectedDate.year,
       selectedDate.month,
       selectedDate.day,
       selectedHour,
       selectedMinute,
     );
+    // Log the UTC pickup time
+    print('[PickupTimeScreen] Selected UTC pickup time: '
+        '${scheduledDateTime.toIso8601String()}');
     // Set scheduledDateTime in provider
     Provider.of<RideBookingProvider>(context, listen: false)
         .setScheduledDateTime(scheduledDateTime);

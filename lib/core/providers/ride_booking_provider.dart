@@ -570,7 +570,7 @@ class RideBookingProvider extends ChangeNotifier {
         dropoffLongitude: _destLng!,
         passengers: _participantCount ?? 1,
         isSharedRide: !_isSolo,
-        scheduledTime: _scheduledDateTime!.toIso8601String(),
+        scheduledTime: _scheduledDateTime!.toUtc().toIso8601String(),
         rideType: _vehicleType?.name ?? '',
         vehicleType: _vehicleType?.id ?? '',
         distanceKm: _estimatedDistance,
@@ -580,17 +580,17 @@ class RideBookingProvider extends ChangeNotifier {
         specialRequests: null,
       );
       
-      // print('📅 Scheduling ride with DTO:');
-      // print('  Rider ID: ${dto.riderId}');
-      // print('  Pickup: ${dto.pickupAddress} (${dto.pickupLatitude}, ${dto.pickupLongitude})');
-      // print('  Dropoff: ${dto.dropoffAddress} (${dto.dropoffLatitude}, ${dto.dropoffLongitude})');
-      // print('  Scheduled Time: ${dto.scheduledTime}');
-      // print('  Vehicle Type: ${dto.vehicleType} (${dto.rideType})');
-      // print('  Passengers: ${dto.passengers}');
-      // print('  Shared Ride: ${dto.isSharedRide}');
-      // print('  Women Only: ${dto.isWomenOnly}');
-      // print('  Distance: ${dto.distanceKm} km');
-      // print('  Max Fare: LKR ${dto.maxFare}');
+      print('📅 Scheduling ride with DTO:');
+      print('  Rider ID: ${dto.riderId}');
+      print('  Pickup: ${dto.pickupAddress} (${dto.pickupLatitude}, ${dto.pickupLongitude})');
+      print('  Dropoff: ${dto.dropoffAddress} (${dto.dropoffLatitude}, ${dto.dropoffLongitude})');
+      print('  Scheduled Time: ${dto.scheduledTime}');
+      print('  Vehicle Type: ${dto.vehicleType} (${dto.rideType})');
+      print('  Passengers: ${dto.passengers}');
+      print('  Shared Ride: ${dto.isSharedRide}');
+      print('  Women Only: ${dto.isWomenOnly}');
+      print('  Distance: ${dto.distanceKm} km');
+      print('  Max Fare: LKR ${dto.maxFare}');
       await ScheduledRideService.createScheduledRide(dto);
     } finally {
       _isBookingRide = false;

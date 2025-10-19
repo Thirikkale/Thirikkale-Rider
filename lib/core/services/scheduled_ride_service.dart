@@ -12,7 +12,7 @@ class ScheduledRideCreateRequestDto {
   final double dropoffLongitude;
   final int passengers;
   final bool isSharedRide;
-  final String scheduledTime; // ISO 8601
+  final String scheduledTime; // ISO 8601 UTC
   final String rideType;
   final String vehicleType;
   final double? distanceKm;
