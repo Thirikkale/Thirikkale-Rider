@@ -8,7 +8,6 @@ import 'package:thirikkale_rider/widgets/common/custom_appbar_name.dart';
 import 'package:thirikkale_rider/features/booking/widgets/route_map.dart';
 import 'package:thirikkale_rider/features/booking/screens/ride_tracking_screen.dart';
 import 'package:thirikkale_rider/features/activity/screens/activity_screen.dart';
-import 'package:thirikkale_rider/core/services/scheduled_ride_service.dart';
 
 class RideSummaryScreen extends StatefulWidget {
   final double? price;

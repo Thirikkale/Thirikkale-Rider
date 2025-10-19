@@ -83,4 +83,28 @@ class ScheduledRideService {
       throw Exception(errorMsg);
     }
   }
+
+  // Fetch scheduled rides for a rider
+  static Future<List<Map<String, dynamic>>> getRidesByRider(
+      {required String riderId, String? token}) async {
+    final url = ScheduledRideEndpoints.byRider(riderId);
+    final headers = {
+      ...ApiConfig.defaultHeaders,
+      if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
+    };
+    final response = await http.get(Uri.parse(url), headers: headers);
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw Exception('Failed to fetch scheduled rides (${response.statusCode})');
+    }
+
+    final data = jsonDecode(response.body);
+    if (data is List) {
+      return data.cast<Map<String, dynamic>>();
+    }
+    if (data is Map && data['data'] is List) {
+      return (data['data'] as List).cast<Map<String, dynamic>>();
+    }
+    throw Exception('Unexpected scheduled rides response format');
+  }
 }
