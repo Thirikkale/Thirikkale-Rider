@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:thirikkale_rider/core/providers/auth_provider.dart';
 import 'package:thirikkale_rider/core/services/ride_service.dart';
+import 'package:thirikkale_rider/core/services/scheduled_ride_service.dart' show ScheduledRideCreateRequestDto, ScheduledRideService;
 import 'package:thirikkale_rider/features/booking/models/vehicle_option.dart';
 
 class RideBookingProvider extends ChangeNotifier {
+  // Public getter for AuthProvider
+  AuthProvider? get authProvider => _authProvider;
   AuthProvider? _authProvider;
   // Expose default vehicle options for UI
   List<VehicleOption> get vehicleOptions => VehicleOption.getDefaultOptions();
@@ -537,6 +540,58 @@ class RideBookingProvider extends ChangeNotifier {
       print('Booking failed in Provider: $e');
       _handleBookingError(e);
       rethrow;
+    } finally {
+      _isBookingRide = false;
+      notifyListeners();
+    }
+  }
+  
+  Future<void> scheduleRide({double? price}) async {
+    if (_authProvider == null || !_authProvider!.isLoggedIn) {
+      throw Exception('User is not logged in.');
+    }
+    final String? userId = _authProvider!.userId;
+    if (userId == null) {
+      throw Exception('User session is invalid. Please log in again.');
+    }
+    if (_vehicleType == null || _pickupAddress.isNotEmpty == false || _destinationAddress.isNotEmpty == false) {
+      throw Exception('Cannot schedule ride: Missing required information');
+    }
+    _isBookingRide = true;
+    notifyListeners();
+    try {
+      final dto = ScheduledRideCreateRequestDto(
+        riderId: userId,
+        pickupAddress: _pickupAddress,
+        pickupLatitude: _pickupLat!,
+        pickupLongitude: _pickupLng!,
+        dropoffAddress: _destinationAddress,
+        dropoffLatitude: _destLat!,
+        dropoffLongitude: _destLng!,
+        passengers: _participantCount ?? 1,
+        isSharedRide: !_isSolo,
+        scheduledTime: _scheduledDateTime!.toIso8601String(),
+        rideType: _vehicleType?.name ?? '',
+        vehicleType: _vehicleType?.id ?? '',
+        distanceKm: _estimatedDistance,
+        waitingTimeMin: null,
+        isWomenOnly: _isWomenOnly,
+        maxFare: price,
+        specialRequests: null,
+      );
+      
+      // print('📅 Scheduling ride with DTO:');
+      // print('  Rider ID: ${dto.riderId}');
+      // print('  Pickup: ${dto.pickupAddress} (${dto.pickupLatitude}, ${dto.pickupLongitude})');
+      // print('  Dropoff: ${dto.dropoffAddress} (${dto.dropoffLatitude}, ${dto.dropoffLongitude})');
+      // print('  Scheduled Time: ${dto.scheduledTime}');
+      // print('  Vehicle Type: ${dto.vehicleType} (${dto.rideType})');
+      // print('  Passengers: ${dto.passengers}');
+      // print('  Shared Ride: ${dto.isSharedRide}');
+      // print('  Women Only: ${dto.isWomenOnly}');
+      // print('  Distance: ${dto.distanceKm} km');
+      // print('  Max Fare: LKR ${dto.maxFare}');
+      await ScheduledRideService.createScheduledRide(dto);
     } finally {
       _isBookingRide = false;
       notifyListeners();

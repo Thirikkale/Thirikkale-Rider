@@ -8,6 +8,7 @@ import 'package:thirikkale_rider/widgets/common/custom_appbar_name.dart';
 import 'package:thirikkale_rider/features/booking/widgets/route_map.dart';
 import 'package:thirikkale_rider/features/booking/screens/ride_tracking_screen.dart';
 import 'package:thirikkale_rider/features/activity/screens/activity_screen.dart';
+import 'package:thirikkale_rider/core/services/scheduled_ride_service.dart';
 
 class RideSummaryScreen extends StatefulWidget {
   final double? price;
@@ -446,13 +447,13 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
           'icon': Icons.credit_card,
           'description': 'Pay securely with your card',
         };
-      case 'digital':
-        return {
-          'id': 'digital',
-          'name': 'Digital Wallet',
-          'icon': Icons.account_balance_wallet,
-          'description': 'Use mobile wallet or UPI',
-        };
+      // case 'digital':
+      //   return {
+      //     'id': 'digital',
+      //     'name': 'Digital Wallet',
+      //     'icon': Icons.account_balance_wallet,
+      //     'description': 'Use mobile wallet or UPI',
+      //   };
       default:
         return {
           'id': 'cash',
@@ -477,14 +478,30 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
   }
 
   void _confirmBooking(RideBookingProvider bookingProvider) async {
-    // If scheduled, do not call booking API; go to Scheduled tab to view scheduled bookings
     if (bookingProvider.isRideScheduled) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (context) => const ActivityScreen(initialTabIndex: 1),
-        ),
-      );
+      try {
+        await bookingProvider.scheduleRide(price: widget.price);
+        if (mounted) {
+          SnackbarHelper.showSuccessSnackBar(
+            context,
+            'Scheduled ride created successfully!',
+          );
+          await Future.delayed(const Duration(milliseconds: 1200));
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const ActivityScreen(initialTabIndex: 1),
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          SnackbarHelper.showErrorSnackBar(
+            context,
+            'Failed to schedule ride: ${e.toString()}',
+          );
+        }
+      }
       return;
     }
 

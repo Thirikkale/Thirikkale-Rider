@@ -26,12 +26,12 @@ class PaymentMethodBottomSheet extends StatelessWidget {
         'icon': Icons.credit_card,
         'description': 'Pay securely with your card'
       },
-      {
-        'id': 'digital',
-        'name': 'Digital Wallet',
-        'icon': Icons.account_balance_wallet,
-        'description': 'Use mobile wallet or UPI'
-      },
+      // {
+      //   'id': 'digital',
+      //   'name': 'Digital Wallet',
+      //   'icon': Icons.account_balance_wallet,
+      //   'description': 'Use mobile wallet or UPI'
+      // },
     ];
 
     return Container(
