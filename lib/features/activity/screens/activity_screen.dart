@@ -308,12 +308,20 @@ class _ActivityScreenState extends State<ActivityScreen> {
       _scheduledError = null;
     });
     try {
+      print('🔍 Fetching scheduled rides for rider ID: $riderId');
       final list = await ScheduledRideService.getRidesByRider(
           riderId: riderId, token: token);
+      
+      // Log the raw data received from the API
+      print('📊 Raw scheduled rides data received: $list');
+      
       setState(() {
         _scheduledApiActivities = list
             .map<Map<String, dynamic>>((e) => _mapScheduledRideToCard(e))
             .toList();
+        
+        // Log the processed data that will be displayed
+        print('🗂️ Processed scheduled rides data: $_scheduledApiActivities');
       });
     } catch (e) {
       setState(() {
@@ -328,6 +336,11 @@ class _ActivityScreenState extends State<ActivityScreen> {
   }
 
   Map<String, dynamic> _mapScheduledRideToCard(Map<String, dynamic> e) {
+    // Log the individual ride data being processed
+    print('🔄 Processing ride data: $e');
+    print('🆔 Ride ID: ${e['id']}');
+    print('👤 Driver ID in this ride: ${e['driverId']}');
+    
     String vehicleType = (e['vehicleType'] ?? '').toString();
     String icon = _vehicleIconFor(vehicleType);
     // Parse ISO time and present simple date/time strings
@@ -343,6 +356,7 @@ class _ActivityScreenState extends State<ActivityScreen> {
     String scheduledTime = dt != null
         ? _formatTime(dt)
         : (e['scheduledTime']?.toString() ?? '');
+    
     return {
       'tripId': e['id']?.toString() ?? '',
       'destination': e['dropoffAddress'] ?? e['dropoff_address'] ?? '',
@@ -353,6 +367,8 @@ class _ActivityScreenState extends State<ActivityScreen> {
       'vehicleIcon': icon,
       'vehicleType': vehicleType,
       'status': (e['status'] ?? 'Scheduled').toString(),
+      'driverId': e['driverId']?.toString(),
+      'raw': e,
     };
   }
 
@@ -564,6 +580,7 @@ class _ActivityScreenState extends State<ActivityScreen> {
           scheduledTime: activity['scheduledTime'],
           estimatedFare: activity['estimatedFare'],
           vehicleIcon: activity['vehicleIcon'],
+          driverId: activity['driverId']?.toString() ?? '',
           status: status,
           onCardTap: () {
             // Navigate to scheduled ride details screen
@@ -572,7 +589,7 @@ class _ActivityScreenState extends State<ActivityScreen> {
               MaterialPageRoute(
                 builder: (context) => ScheduledRideDetailsScreen(
                   ride: activity,
-                  raw: activity,
+                  raw: activity['raw'],
                 ),
               ),
             );

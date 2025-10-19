@@ -55,6 +55,9 @@ class ApiConfig {
       '$driversBaseUrl/$driverId/profile';
   static String uploadDriverProfilePhoto(String driverId) =>
       '$driversBaseUrl/$driverId/profile-photo';
+  // Driver Card/Details
+  static String getDriverCard(String driverId) =>
+      '$driversBaseUrl/$driverId/card';
 
   // Driver Document Management
   static String uploadDriverDocuments(String driverId) =>

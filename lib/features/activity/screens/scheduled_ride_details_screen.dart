@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:thirikkale_rider/core/providers/auth_provider.dart';
 import 'package:thirikkale_rider/core/services/scheduled_ride_service.dart';
+import 'package:thirikkale_rider/core/services/driver_service.dart';
 import 'package:thirikkale_rider/core/utils/app_styles.dart';
 import 'package:thirikkale_rider/core/utils/app_dimension.dart';
 import 'package:thirikkale_rider/core/utils/dialog_helper.dart';
@@ -22,11 +23,25 @@ class _ScheduledRideDetailsScreenState extends State<ScheduledRideDetailsScreen>
   bool _cancelling = false;
   String? _error;
   double? _pickupLat, _pickupLng, _destLat, _destLng;
+  Map<String, dynamic>? _driverDetails;
+  bool _loadingDriver = false;
 
   @override
   void initState() {
     super.initState();
+    // Log the ride data received by this screen
+    print('📱 ScheduledRideDetailsScreen initialized with ride data:');
+    print('📝 Ride: ${widget.ride}');
+    if (widget.raw != null) {
+      print('📝 Raw: ${widget.raw}');
+    }
+    
+    // Log driver ID specifically
+    final driverId = widget.ride['driverId'];
+    print('🚕 Driver ID in ride: $driverId (${driverId.runtimeType})');
+    
     _geocodeAddresses();
+    _fetchDriverDetails();
   }
 
   @override
@@ -128,6 +143,69 @@ class _ScheduledRideDetailsScreenState extends State<ScheduledRideDetailsScreen>
       }
     } catch (e) {
       print('Geocoding error: $e');
+    }
+  }
+
+  Future<void> _fetchDriverDetails() async {
+    final rawRide = widget.raw ?? {};
+    final status = (widget.ride['status'] ?? '').toString().toUpperCase();
+    
+    
+    // Look for the driverId field - this is the ID of the driver assigned to the ride
+    String? driverId;
+    
+    // Check ride object
+    driverId = widget.ride['driverId']?.toString();
+    
+    // Check raw data if available
+    if ((driverId == null || driverId == "null" || driverId.isEmpty) && rawRide.isNotEmpty) {
+      driverId = rawRide['driverId']?.toString();
+    }
+    
+    // If no driver ID is found, there's no driver assigned yet
+    if (driverId == null || driverId == "null" || driverId.isEmpty) {
+      print('❌ No driver ID found for this ride');
+      return;
+    }
+    
+    // From the logs, we found that sometimes driverId is the same as riderId,
+    // which is not correct (a user cannot be their own driver)
+    final riderId = widget.ride['riderId']?.toString() ?? '';
+    if (driverId == riderId) {
+      print('⚠️ Driver ID matches Rider ID - this is likely a data error');
+      // We still proceed in case this is somehow intentional
+    }
+    
+    print('🚗 Found driver ID: $driverId - Fetching driver details');
+    setState(() {
+      _loadingDriver = true;
+    });
+
+    try {
+      final driverService = DriverService();
+      final auth = context.read<AuthProvider?>();
+      final token = await auth?.getCurrentToken();
+      print('📊 Requesting driver data for ID: $driverId');
+
+      final driverData = token != null
+          ? await driverService.getDriverCardAuthenticated(driverId, token)
+          : await driverService.getDriverCard(driverId);
+      
+      print('📊 Driver data received: $driverData');
+
+      if (mounted) {
+        setState(() {
+          _driverDetails = driverData;
+          _loadingDriver = false;
+        });
+      }
+    } catch (e) {
+      print('Failed to fetch driver details: $e');
+      if (mounted) {
+        setState(() {
+          _loadingDriver = false;
+        });
+      }
     }
   }
 
@@ -268,6 +346,121 @@ class _ScheduledRideDetailsScreenState extends State<ScheduledRideDetailsScreen>
     
     list.add(const SizedBox(height: 16));
     
+    // Driver details section (only show when driver is available)
+    if (_driverDetails != null) {
+      list.add(Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppColors.surfaceLight,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          children: [
+            // Driver profile picture or avatar
+            CircleAvatar(
+              radius: 24,
+              backgroundColor: AppColors.primaryBlue.withValues(alpha: 0.1),
+              backgroundImage: _driverDetails!['profilePicUrl'] != null
+                  ? NetworkImage(_driverDetails!['profilePicUrl'])
+                  : null,
+              child: _driverDetails!['profilePicUrl'] == null
+                  ? Icon(Icons.person, color: AppColors.primaryBlue, size: 24)
+                  : null,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Driver',
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                  Text(
+                    _driverDetails!['name'] ?? 'Driver',
+                    style: AppTextStyles.bodyLarge.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  if (_driverDetails!['contactNumber'] != null)
+                    Text(
+                      _driverDetails!['contactNumber'],
+                      style: AppTextStyles.bodyMedium.copyWith(
+                        color: AppColors.primaryBlue,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: AppColors.primaryGreen.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Text(
+                'Assigned',
+                style: AppTextStyles.bodySmall.copyWith(
+                  color: AppColors.primaryGreen,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ));
+      list.add(const SizedBox(height: 16));
+    } else if (_loadingDriver) {
+      // Show loading indicator while fetching driver details
+      list.add(Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppColors.surfaceLight,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          children: [
+            CircleAvatar(
+              radius: 24,
+              backgroundColor: AppColors.lightGrey,
+              child: SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryBlue),
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Driver',
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                  Text(
+                    'Loading driver details...',
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ));
+      list.add(const SizedBox(height: 16));
+    }
+    
     // Map section
     list.add(Container(
       height: 200,
@@ -349,11 +542,74 @@ class _ScheduledRideDetailsScreenState extends State<ScheduledRideDetailsScreen>
       if (participants.isEmpty) {
         list.add(Text('No participants listed', style: AppTextStyles.bodyMedium));
       }
-      list.addAll(participants.map((p) => ListTile(
-            leading: const CircleAvatar(child: Icon(Icons.person)),
-            title: Text(p['name'] ?? 'Rider'),
-            subtitle: Text(p['phone'] ?? ''),
-          )));
+      // } else {
+      //   // Show rider details in card-like rows when driver is available
+      //   final driverAvailable = ride['driverId'] != null && ride['driverId'].toString().isNotEmpty;
+
+      //   if (driverAvailable) {
+      //     for (var participant in participants) {
+      //       list.add(Container(
+      //         margin: const EdgeInsets.only(bottom: 8),
+      //         padding: const EdgeInsets.all(12),
+      //         decoration: BoxDecoration(
+      //           color: AppColors.surfaceLight,
+      //           borderRadius: BorderRadius.circular(8),
+      //           border: Border.all(color: AppColors.lightGrey),
+      //         ),
+      //         child: Row(
+      //           children: [
+      //             CircleAvatar(
+      //               backgroundColor: AppColors.primaryBlue.withValues(alpha: 0.1),
+      //               child: Icon(Icons.person, color: AppColors.primaryBlue),
+      //             ),
+      //             const SizedBox(width: 12),
+      //             Expanded(
+      //               child: Column(
+      //                 crossAxisAlignment: CrossAxisAlignment.start,
+      //                 children: [
+      //                   Text(
+      //                     participant['name'] ?? 'Rider',
+      //                     style: AppTextStyles.bodyMedium.copyWith(
+      //                       fontWeight: FontWeight.w500,
+      //                     ),
+      //                   ),
+      //                   if (participant['phone'] != null && participant['phone'].toString().isNotEmpty)
+      //                     Text(
+      //                       participant['phone'].toString(),
+      //                       style: AppTextStyles.bodySmall.copyWith(
+      //                         color: AppColors.textSecondary,
+      //                       ),
+      //                     ),
+      //                 ],
+      //               ),
+      //             ),
+      //             Container(
+      //               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      //               decoration: BoxDecoration(
+      //                 color: AppColors.primaryGreen.withValues(alpha: 0.1),
+      //                 borderRadius: BorderRadius.circular(4),
+      //               ),
+      //               child: Text(
+      //                 'Joined',
+      //                 style: AppTextStyles.bodySmall.copyWith(
+      //                   color: AppColors.primaryGreen,
+      //                   fontWeight: FontWeight.w500,
+      //                 ),
+      //               ),
+      //             ),
+      //           ],
+      //         ),
+      //       ));
+      //     }
+      //   } else {
+      //     // Fallback to list tiles for other statuses
+      //     list.addAll(participants.map((p) => ListTile(
+      //           leading: const CircleAvatar(child: Icon(Icons.person)),
+      //           title: Text(p['name'] ?? 'Rider'),
+      //           subtitle: Text(p['phone'] ?? ''),
+      //         )));
+      //   }
+      // }
       list.add(const SizedBox(height: 16));
     }
     if (_error != null) {
@@ -361,6 +617,7 @@ class _ScheduledRideDetailsScreenState extends State<ScheduledRideDetailsScreen>
     }
     list.add(const Spacer());
     
+    // cancel button
     final status = ride['status']?.toString().toUpperCase();
     if (status == 'SCHEDULED' || status == 'GROUPING') {
       list.add(SizedBox(

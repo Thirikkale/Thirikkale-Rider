@@ -88,23 +88,49 @@ class ScheduledRideService {
   static Future<List<Map<String, dynamic>>> getRidesByRider(
       {required String riderId, String? token}) async {
     final url = ScheduledRideEndpoints.byRider(riderId);
+    print('📲 Fetching scheduled rides from: $url');
+    
     final headers = {
       ...ApiConfig.defaultHeaders,
       if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
     };
+    
+    
     final response = await http.get(Uri.parse(url), headers: headers);
+    
+    print('📥 Scheduled rides response status: ${response.statusCode}');
 
     if (response.statusCode < 200 || response.statusCode >= 300) {
+      print('❌ Failed to fetch scheduled rides: ${response.statusCode}');
       throw Exception('Failed to fetch scheduled rides (${response.statusCode})');
     }
 
     final data = jsonDecode(response.body);
+    print('🔍 Decoded scheduled rides data type: ${data.runtimeType}');
+    
     if (data is List) {
-      return data.cast<Map<String, dynamic>>();
+      print('📋 Found ${data.length} scheduled rides (list format)');
+      final result = data.cast<Map<String, dynamic>>();
+      // Log a sample of the first ride's data
+      if (result.isNotEmpty) {
+        print('🚕 Sample ride data: ${result.first}');
+        print('🚕 Sample ride driverId: ${result.first['driverId']}');
+      }
+      return result;
     }
+    
     if (data is Map && data['data'] is List) {
-      return (data['data'] as List).cast<Map<String, dynamic>>();
+      print('📋 Found ${(data['data'] as List).length} scheduled rides (map.data format)');
+      final result = (data['data'] as List).cast<Map<String, dynamic>>();
+      // Log a sample of the first ride's data
+      if (result.isNotEmpty) {
+        print('🚕 Sample ride data: ${result.first}');
+        print('🚕 Sample ride driverId: ${result.first['driverId']}');
+      }
+      return result;
     }
+    
+    print('⚠️ Unexpected scheduled rides response format: $data');
     throw Exception('Unexpected scheduled rides response format');
   }
 

@@ -10,6 +10,7 @@ class ScheduledRideCard extends StatelessWidget {
   final String estimatedFare;
   final String vehicleIcon;
   final String? status;
+  final String? driverId; // Added driverId
   final VoidCallback onCardTap;
   final VoidCallback? onCancelPressed;
 
@@ -22,6 +23,7 @@ class ScheduledRideCard extends StatelessWidget {
     required this.estimatedFare,
     required this.vehicleIcon,
     this.status,
+    this.driverId, // Added driverId
     required this.onCardTap,
     this.onCancelPressed,
   });
