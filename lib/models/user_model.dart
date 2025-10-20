@@ -4,8 +4,8 @@ class UserModel {
   // Main user fields
   final String? userId;
   final String phoneNumber;
-  final String firstName;
-  final String? lastName;
+  late final String firstName;
+  late final String? lastName;
   final String? email;
   final DateTime? dateOfBirth;
   final String? emergencyContactName;

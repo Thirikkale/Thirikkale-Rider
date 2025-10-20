@@ -3,7 +3,7 @@ class VehicleOption {
   final String name;
   final String description;
   final String iconAsset;
-  final double price;
+  final double defaultPricePerUnit;
   final String estimatedTime;
   final int capacity;
   final List<String> features;
@@ -14,7 +14,7 @@ class VehicleOption {
     required this.name,
     required this.description,
     required this.iconAsset,
-    required this.price,
+    required this.defaultPricePerUnit,
     required this.estimatedTime,
     required this.capacity,
     this.features = const [],
@@ -27,7 +27,7 @@ class VehicleOption {
         name: 'Tuk',
         description: 'Affordable rides for everyday trips',
         iconAsset: 'assets/icons/vehicles/tuk.png',
-        price: 200.0,
+        defaultPricePerUnit: 130.0,
         estimatedTime: '16:30 - 3 min away',
         capacity: 3,
         features: ['Affordable', 'Quick'],
@@ -37,7 +37,7 @@ class VehicleOption {
         name: 'Ride',
         description: 'Comfortable and reliable rides',
         iconAsset: 'assets/icons/vehicles/ride.png',
-        price: 130.0,
+        defaultPricePerUnit: 150.0,
         estimatedTime: '16:00 - 10 min away',
         capacity: 4,
         features: ['Comfortable', 'AC'],
@@ -47,20 +47,30 @@ class VehicleOption {
         name: 'Rush',
         description: 'Fast and efficient transportation',
         iconAsset: 'assets/icons/vehicles/rush.png',
-        price: 130.0,
+        defaultPricePerUnit: 110.0,
         estimatedTime: '15:00 - 5 min away',
         capacity: 2,
         features: ['Fast', 'Beat Traffic'],
       ),
       VehicleOption(
-        id: 'primeRide',
+        id: 'prime',
         name: 'Prime Ride',
         description: 'Fast and efficient transportation',
         iconAsset: 'assets/icons/vehicles/primeRide.png',
-        price: 180.0,
+        defaultPricePerUnit: 180.0,
         estimatedTime: '15:00 - 5 min away',
         capacity: 4,
         features: ['AC', 'More comfortable'],
+      ),
+      VehicleOption(
+        id: 'squad',
+        name: 'Squad',
+        description: 'Group ride for up to 6',
+        iconAsset: 'assets/icons/vehicles/squad.png',
+        defaultPricePerUnit: 300.0,
+        estimatedTime: '16:45 - 15 min away',
+        capacity: 6,
+        features: ['Group', 'Spacious'],
       ),
     ];
   }

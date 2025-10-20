@@ -4,25 +4,22 @@ import 'package:thirikkale_rider/core/utils/app_styles.dart';
 import 'package:thirikkale_rider/core/utils/app_dimension.dart';
 import 'package:thirikkale_rider/widgets/common/custom_appbar_name.dart';
 import 'package:thirikkale_rider/features/booking/screens/ride_summary_screen.dart';
+import 'package:provider/provider.dart';
+import 'package:thirikkale_rider/core/providers/ride_booking_provider.dart';
+
 
 class PickupTimeScreen extends StatefulWidget {
-  final String pickupAddress;
-  final String destinationAddress;
-  final double? pickupLat;
-  final double? pickupLng;
-  final double? destLat;
-  final double? destLng;
-  final String? initialRideType;
+  final double? price;
+  final String? duration;
+  final String? distance;
+  final dynamic vehicle;
 
   const PickupTimeScreen({
     super.key,
-    required this.pickupAddress,
-    required this.destinationAddress,
-    this.pickupLat,
-    this.pickupLng,
-    this.destLat,
-    this.destLng,
-    this.initialRideType,
+    this.price,
+    this.duration,
+    this.distance,
+    this.vehicle,
   });
 
   @override
@@ -30,6 +27,7 @@ class PickupTimeScreen extends StatefulWidget {
 }
 
 class _PickupTimeScreenState extends State<PickupTimeScreen> {
+  // Use provider for scheduled date/time
   DateTime selectedDate = DateTime.now();
   int selectedHour = DateTime.now().hour;
   int selectedMinute = DateTime.now().minute;
@@ -400,26 +398,28 @@ class _PickupTimeScreenState extends State<PickupTimeScreen> {
   }
 
   void _confirmPickupTime() {
-    final scheduledDateTime = DateTime(
+    final scheduledDateTime = DateTime.utc(
       selectedDate.year,
       selectedDate.month,
       selectedDate.day,
       selectedHour,
       selectedMinute,
     );
+    // Log the UTC pickup time
+    print('[PickupTimeScreen] Selected UTC pickup time: '
+        '${scheduledDateTime.toIso8601String()}');
+    // Set scheduledDateTime in provider
+    Provider.of<RideBookingProvider>(context, listen: false)
+        .setScheduledDateTime(scheduledDateTime);
 
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => RideSummaryScreen(
-          pickupAddress: widget.pickupAddress,
-          destinationAddress: widget.destinationAddress,
-          pickupLat: widget.pickupLat,
-          pickupLng: widget.pickupLng,
-          destLat: widget.destLat,
-          destLng: widget.destLng,
-          scheduledDateTime: scheduledDateTime,
-          rideType: widget.initialRideType,
+          price: widget.price,
+          duration: widget.duration,
+          distance: widget.distance,
+          vehicle: widget.vehicle,
         ),
       ),
     );

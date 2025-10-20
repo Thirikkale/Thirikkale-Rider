@@ -2,20 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../core/utils/app_styles.dart';
 import '../../../widgets/common/custom_appbar_name.dart';
+import 'package:provider/provider.dart';
+import 'package:thirikkale_rider/core/providers/ride_booking_provider.dart';
 
 class RideSelectionScreen extends StatefulWidget {
-  final String pickupLocation;
-  final String dropoffLocation;
-  final DateTime selectedDate;
-  final TimeOfDay selectedTime;
-
-  const RideSelectionScreen({
-    super.key,
-    required this.pickupLocation,
-    required this.dropoffLocation,
-    required this.selectedDate,
-    required this.selectedTime,
-  });
+  const RideSelectionScreen({super.key});
 
   @override
   State<RideSelectionScreen> createState() => _RideSelectionScreenState();
@@ -23,8 +14,8 @@ class RideSelectionScreen extends StatefulWidget {
 
 class _RideSelectionScreenState extends State<RideSelectionScreen>
     with TickerProviderStateMixin {
-  String selectedRideType = 'Solo';
-  String selectedPaymentMethod = 'wallet';
+  late String selectedRideType;
+  late String selectedPaymentMethod;
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
 
@@ -42,6 +33,13 @@ class _RideSelectionScreenState extends State<RideSelectionScreen>
       'description': 'Share with others',
       'price': 75,
       'eta': '10-15 min',
+    },
+    {
+      'type': 'Squad',
+      'icon': Icons.groups,
+      'description': 'Group ride for up to 6',
+      'price': 300,
+      'eta': '15-20 min',
     },
   ];
 
@@ -68,6 +66,13 @@ class _RideSelectionScreenState extends State<RideSelectionScreen>
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final provider = Provider.of<RideBookingProvider>(context, listen: false);
+      setState(() {
+        selectedRideType = provider.isSolo ? 'Solo' : 'Shared';
+        selectedPaymentMethod = provider.selectedPaymentMethod;
+      });
+    });
     _animationController = AnimationController(
       duration: const Duration(milliseconds: 800),
       vsync: this,
@@ -122,6 +127,7 @@ class _RideSelectionScreenState extends State<RideSelectionScreen>
   }
 
   Widget _buildTripSummary() {
+    final provider = Provider.of<RideBookingProvider>(context, listen: false);
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -149,7 +155,7 @@ class _RideSelectionScreenState extends State<RideSelectionScreen>
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
-                  widget.pickupLocation,
+                  provider.pickupAddress,
                   style: AppTextStyles.bodyMedium,
                 ),
               ),
@@ -166,7 +172,7 @@ class _RideSelectionScreenState extends State<RideSelectionScreen>
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
-                  widget.dropoffLocation,
+                  provider.destinationAddress,
                   style: AppTextStyles.bodyMedium,
                 ),
               ),
@@ -182,7 +188,9 @@ class _RideSelectionScreenState extends State<RideSelectionScreen>
               ),
               const SizedBox(width: 12),
               Text(
-                '${_formatDate(widget.selectedDate)} at ${widget.selectedTime.format(context)}',
+                provider.scheduledDateTime != null
+                  ? '${_formatDate(provider.scheduledDateTime!)} at ${TimeOfDay.fromDateTime(provider.scheduledDateTime!).format(context)}'
+                  : 'No time selected',
                 style: AppTextStyles.bodyMedium.copyWith(
                   color: AppColors.primaryBlue,
                 ),
@@ -212,7 +220,6 @@ class _RideSelectionScreenState extends State<RideSelectionScreen>
 
   Widget _buildRideTypeCard(Map<String, dynamic> rideType) {
     final isSelected = selectedRideType == rideType['type'];
-    
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       child: Material(
@@ -223,6 +230,13 @@ class _RideSelectionScreenState extends State<RideSelectionScreen>
             HapticFeedback.lightImpact();
             setState(() {
               selectedRideType = rideType['type'];
+              final provider = Provider.of<RideBookingProvider>(context, listen: false);
+              // Only set vehicle type, do not set isSchedule or ride type
+              final vehicle = provider.vehicleOptions.firstWhere(
+                (v) => v.name.toLowerCase().contains(selectedRideType.toLowerCase()) || v.id.toLowerCase() == selectedRideType.toLowerCase(),
+                orElse: () => provider.vehicleOptions.first,
+              );
+              provider.setSelectVehicle(vehicle);
             });
           },
           child: Container(
@@ -331,6 +345,8 @@ class _RideSelectionScreenState extends State<RideSelectionScreen>
             HapticFeedback.lightImpact();
             setState(() {
               selectedPaymentMethod = method['id'];
+              final provider = Provider.of<RideBookingProvider>(context, listen: false);
+              provider.selectedPaymentMethod = selectedPaymentMethod;
             });
           },
           child: Container(
@@ -493,6 +509,7 @@ class _RideSelectionScreenState extends State<RideSelectionScreen>
     HapticFeedback.mediumImpact();
     
     // Show booking confirmation
+    final provider = Provider.of<RideBookingProvider>(context, listen: false);
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -533,7 +550,9 @@ class _RideSelectionScreenState extends State<RideSelectionScreen>
                     style: AppTextStyles.bodySmall,
                   ),
                   Text(
-                    'Time: ${_formatDate(widget.selectedDate)} at ${widget.selectedTime.format(context)}',
+                    provider.scheduledDateTime != null
+                      ? 'Time: ${_formatDate(provider.scheduledDateTime!)} at ${TimeOfDay.fromDateTime(provider.scheduledDateTime!).format(context)}'
+                      : 'Time: No time selected',
                     style: AppTextStyles.bodySmall,
                   ),
                 ],

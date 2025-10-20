@@ -2,33 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:thirikkale_rider/core/providers/ride_booking_provider.dart';
 import 'package:thirikkale_rider/core/utils/snackbar_helper.dart';
+import 'package:thirikkale_rider/core/services/pricing_service.dart';
 import 'package:thirikkale_rider/features/booking/widgets/Route_map.dart';
 import 'package:thirikkale_rider/features/booking/widgets/ride_options_bottom_sheet.dart';
-import 'package:thirikkale_rider/features/booking/widgets/payment_method_bottom_sheet.dart';
 import 'package:thirikkale_rider/features/booking/screens/pickup_time_screen.dart';
+import 'package:thirikkale_rider/features/booking/widgets/payment_method_bottom_sheet.dart';
 import 'package:thirikkale_rider/features/booking/screens/ride_summary_screen.dart';
 
 class RideBookingScreen extends StatefulWidget {
-  final String pickupAddress;
-  final String destinationAddress;
-  final double? pickupLat;
-  final double? pickupLng;
-  final double? destLat;
-  final double? destLng;
-  final String? initialRideType;
-  final String? initialScheduleType;
-
-  const RideBookingScreen({
-    super.key,
-    required this.pickupAddress,
-    required this.destinationAddress,
-    this.pickupLat,
-    this.pickupLng,
-    this.destLat,
-    this.destLng,
-    this.initialRideType,
-    this.initialScheduleType,
-  });
+  const RideBookingScreen({super.key});
 
   @override
   State<RideBookingScreen> createState() => _RideBookingScreenState();
@@ -36,13 +18,16 @@ class RideBookingScreen extends StatefulWidget {
 
 class _RideBookingScreenState extends State<RideBookingScreen> {
   // Add a state variable to hold the sheet's current height in pixels
-  double _sheetHeight =8;
+  double _sheetHeight = 8;
+  bool _isLoadingPricing = true;
+  Map<String, double> _vehiclePricing = {};
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _initializeBooking();
+      _loadVehiclePricing();
       // Set the initial sheet height after the first frame
       setState(() {
         // initialChildSize is 0.6, so we calculate the initial pixel height
@@ -52,42 +37,67 @@ class _RideBookingScreenState extends State<RideBookingScreen> {
   }
 
   void _initializeBooking() {
-    final bookingProvider = Provider.of<RideBookingProvider>(
-      context,
-      listen: false,
-    );
-    
-    // Debug: Print what we're initializing with
-    print('Initializing booking with:');
-    print('  - initialRideType: ${widget.initialRideType}');
-    print('  - initialScheduleType: ${widget.initialScheduleType}');
-    
-    // Set schedule type FIRST if provided
-    if (widget.initialScheduleType != null) {
-      print('Setting schedule type to: ${widget.initialScheduleType}');
-      bookingProvider.setScheduleType(widget.initialScheduleType!);
+    // No longer needed: all state is in provider, set by previous screen
+  }
+
+  Future<void> _loadVehiclePricing() async {
+    print('[RideBooking] Loading vehicle pricing...');
+    try {
+      final bookingProvider = Provider.of<RideBookingProvider>(context, listen: false);
+      final distance = bookingProvider.estimatedDistance ?? 5.0; // km
+      final waitingTime = 0.0; // minutes - can be updated if available
+      
+      print('[RideBooking] Calculating prices for distance: ${distance}km, waiting: ${waitingTime}min');
+      
+      final Map<String, double> pricing = {};
+      
+      // Define vehicle type mappings
+      final vehicleTypeMap = {
+        'tuk': 'TUK',
+        'ride': 'RIDE',
+        'rush': 'RUSH',
+        'prime': 'PRIME_RIDE',
+        'squad': 'SQUAD',
+      };
+      
+      // Calculate price for each vehicle type
+      for (final entry in vehicleTypeMap.entries) {
+        final vehicleId = entry.key;
+        final vehicleType = entry.value;
+        
+        try {
+          print('[RideBooking] Calculating price for $vehicleType...');
+          final priceData = await PricingService.calculatePrice(
+            vehicleType: vehicleType,
+            distanceKm: distance,
+            // waitingTimeMin: waitingTime,
+          );
+          
+          if (priceData != null && priceData['totalPrice'] != null) {
+            final totalPrice = (priceData['totalPrice'] as num).toDouble();
+            pricing[vehicleId] = totalPrice;
+            print('[RideBooking] $vehicleType price: Rs.$totalPrice');
+          } else {
+            print('[RideBooking] No price data returned for $vehicleType');
+          }
+        } catch (e) {
+          print('[RideBooking] Error calculating price for $vehicleType: $e');
+        }
+      }
+      
+      setState(() {
+        _vehiclePricing = pricing;
+        _isLoadingPricing = false;
+      });
+      
+      print('[RideBooking] Total pricing loaded: $_vehiclePricing');
+    } catch (e, stack) {
+      print('[RideBooking] Error loading pricing: $e');
+      print(stack);
+      setState(() {
+        _isLoadingPricing = false;
+      });
     }
-    
-    // Set initial vehicle selection if we have a ride type
-    if (widget.initialRideType != null) {
-      bookingProvider.setInitialVehicleByRideType(widget.initialRideType);
-    }
-    
-    // Then set trip details, preserving the vehicle selection if we set one
-    bookingProvider.setTripDetails(
-      pickup: widget.pickupAddress,
-      destination: widget.destinationAddress,
-      pickupLat: widget.pickupLat,
-      pickupLng: widget.pickupLng,
-      destLat: widget.destLat,
-      destLng: widget.destLng,
-      preserveVehicleSelection: widget.initialRideType != null, // Preserve if we have initial ride type
-    );
-    
-    // Debug: Print final state
-    print('Final booking provider state:');
-    print('  - scheduleType: ${bookingProvider.scheduleType}');
-    print('  - selectedVehicle: ${bookingProvider.selectedVehicle?.name}');
   }
 
   @override
@@ -152,6 +162,8 @@ class _RideBookingScreenState extends State<RideBookingScreen> {
                     scrollController: scrollController,
                     onPaymentMethodTap: _showPaymentMethodSheet,
                     onBookRide: _handleBookRide,
+                    vehiclePricing: _vehiclePricing,
+                    isLoadingPricing: _isLoadingPricing,
                   ),
                 );
               },
@@ -193,47 +205,43 @@ class _RideBookingScreenState extends State<RideBookingScreen> {
 
   void _handleBookRide(RideBookingProvider bookingProvider) async {
     try {
-      // Debug: Print the current schedule type
-      print('Current schedule type: ${bookingProvider.scheduleType}');
-      
-      // Check if the ride is scheduled
-      if (bookingProvider.scheduleType != 'now') {
-        print('Navigating to pickup time screen for scheduled ride');
-        // Navigate to pickup time screen for scheduled rides
-        if (mounted) {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => PickupTimeScreen(
-                pickupAddress: widget.pickupAddress,
-                destinationAddress: widget.destinationAddress,
-                pickupLat: widget.pickupLat,
-                pickupLng: widget.pickupLng,
-                destLat: widget.destLat,
-                destLng: widget.destLng,
-                initialRideType: widget.initialRideType,
-              ),
+      // If scheduled, go to pickup time selection first
+      if (bookingProvider.isRideScheduled) {
+        final selectedVehicle = bookingProvider.selectedVehicle;
+        final selectedVehicleId = selectedVehicle?.id;
+        final selectedPrice = selectedVehicleId != null ? _vehiclePricing[selectedVehicleId] : null;
+        final routeDuration = bookingProvider.routeDurationText;
+        final routeDistance = bookingProvider.routeDistanceText;
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => PickupTimeScreen(
+              price: selectedPrice,
+              duration: routeDuration,
+              distance: routeDistance,
+              vehicle: selectedVehicle,
             ),
-          );
-        }
+          ),
+        );
         return;
       }
 
-      print('Proceeding with immediate ride booking');
-      // For immediate rides, navigate to summary screen
+      print('Navigating to Ride Summary Screen...');
+      final selectedVehicle = bookingProvider.selectedVehicle;
+      final selectedVehicleId = selectedVehicle?.id;
+      final selectedPrice = selectedVehicleId != null ? _vehiclePricing[selectedVehicleId] : null;
+      final routeDuration = bookingProvider.routeDurationText;
+      final routeDistance = bookingProvider.routeDistanceText;
+
       if (mounted) {
         Navigator.push(
           context,
           MaterialPageRoute(
             builder: (context) => RideSummaryScreen(
-              pickupAddress: widget.pickupAddress,
-              destinationAddress: widget.destinationAddress,
-              pickupLat: widget.pickupLat,
-              pickupLng: widget.pickupLng,
-              destLat: widget.destLat,
-              destLng: widget.destLng,
-              scheduledDateTime: DateTime.now(), // For immediate rides, use current time
-              rideType: widget.initialRideType,
+              price: selectedPrice,
+              duration: routeDuration,
+              distance: routeDistance,
+              vehicle: selectedVehicle,
             ),
           ),
         );
@@ -242,7 +250,7 @@ class _RideBookingScreenState extends State<RideBookingScreen> {
       if (mounted) {
         SnackbarHelper.showErrorSnackBar(
           context,
-          'Failed to book ride: ${e.toString()}',
+          'Booking Failed: ${e.toString()}',
         );
       }
     }

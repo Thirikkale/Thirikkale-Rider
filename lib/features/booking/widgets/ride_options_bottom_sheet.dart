@@ -9,12 +9,16 @@ class RideOptionsBottomSheet extends StatelessWidget {
   final VoidCallback onPaymentMethodTap;
   final Function(RideBookingProvider) onBookRide;
   final ScrollController scrollController;
+  final Map<String, double> vehiclePricing;
+  final bool isLoadingPricing;
 
   const RideOptionsBottomSheet({
     super.key,
     required this.onPaymentMethodTap,
     required this.onBookRide,
     required this.scrollController,
+    this.vehiclePricing = const {},
+    this.isLoadingPricing = false,
   });
 
   @override
@@ -67,10 +71,14 @@ class RideOptionsBottomSheet extends StatelessWidget {
       itemCount: bookingProvider.vehicleOptions.length,
       itemBuilder: (context, index) {
         final vehicle = bookingProvider.vehicleOptions[index];
+        final price = vehiclePricing[vehicle.id] ?? vehicle.defaultPricePerUnit;
+        
         return VehicleOptionCard(
           vehicle: vehicle,
           isSelected: bookingProvider.selectedVehicle?.id == vehicle.id,
-          onTap: () => bookingProvider.selectVehicle(vehicle),
+          onTap: () => bookingProvider.setSelectVehicle(vehicle),
+          overridePrice: price,
+          isLoadingPrice: isLoadingPricing,
         );
       },
     );
@@ -90,15 +98,58 @@ class RideOptionsBottomSheet extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Payment method selector
-          PaymentMethodSelector(
-            selectedMethod: bookingProvider.selectedPaymentMethod,
-            onTap: onPaymentMethodTap,
-          ),
+            // Distance and Duration info (if available)
+            if (bookingProvider.routeDistanceText != null || 
+                bookingProvider.routeDurationText != null)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    if (bookingProvider.routeDistanceText != null)
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.route,
+                            size: 16,
+                            color: AppColors.primaryBlue,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            bookingProvider.routeDistanceText!,
+                            style: AppTextStyles.bodyMedium,
+                          ),
+                        ],
+                      ),
+                    if (bookingProvider.routeDistanceText != null &&
+                        bookingProvider.routeDurationText != null)
+                      const SizedBox(width: 16),
+                    if (bookingProvider.routeDurationText != null)
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.access_time,
+                            size: 16,
+                            color: AppColors.primaryBlue,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            bookingProvider.routeDurationText!,
+                            style: AppTextStyles.bodyMedium,
+                          ),
+                        ],
+                      ),
+                  ],
+                ),
+              ),
+              
+            // Payment method selector
+            PaymentMethodSelector(
+              selectedMethod: bookingProvider.selectedPaymentMethod,
+              onTap: onPaymentMethodTap,
+            ),
 
-          const SizedBox(height: 16),
-
-          // Book ride button
+            const SizedBox(height: 16),          // Book ride button
           Padding(
             padding: const EdgeInsets.only(bottom: 16, left: 16, right: 16),
             child: SizedBox(

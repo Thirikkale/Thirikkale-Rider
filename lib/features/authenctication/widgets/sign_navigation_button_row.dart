@@ -22,16 +22,21 @@ class SignNavigationButtonRow extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        // Back button
-        CustomBackButton(
-          onPressed: onBack ?? () => Navigator.pop(context),
-          width: 106,
+        // Back button - takes equal space
+        Expanded(
+          child: CustomBackButton(
+            onPressed: onBack ?? () => Navigator.pop(context),
+            text: backText,
+          ),
         ),
-        
-        // Next button
-        CustomNextButton(
-          onPressed: nextEnabled ? onNext : null,
-          width: 106,
+
+        const SizedBox(width: 145), // Spacing between buttons
+        // Next button - takes equal space
+        Expanded(
+          child: CustomNextButton(
+            onPressed: nextEnabled ? onNext : null,
+            text: nextText,
+          ),
         ),
       ],
     );

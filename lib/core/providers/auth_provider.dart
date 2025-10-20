@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -6,7 +7,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:thirikkale_rider/core/services/auth_service.dart';
 import 'package:thirikkale_rider/core/services/rider_service.dart';
+import 'package:thirikkale_rider/core/services/web_socket_service.dart';
 import 'package:thirikkale_rider/models/user_model.dart';
+import 'package:thirikkale_rider/models/user_enums.dart';
 
 enum AuthState {
   initial,
@@ -24,6 +27,8 @@ enum AuthState {
 class AuthProvider extends ChangeNotifier {
   final AuthService _authService = AuthService();
   final RiderService _riderService = RiderService();
+  final WebSocketService _webSocketService = WebSocketService();
+  StreamSubscription<bool>? _webSocketConnectionSubscription;
 
   // State management
   AuthState _authState = AuthState.initial;
@@ -116,15 +121,73 @@ class AuthProvider extends ChangeNotifier {
 
   // Initialize AuthProvider - call this in main.dart
   Future<void> initialize() async {
-    await _loadStoredTokens();
+    _isLoading = true;
+    notifyListeners();
 
-    // If we have valid tokens, try to refresh them
-    if (_refreshToken != null && !hasValidJWTToken) {
-      print('🔄 Attempting to refresh stored tokens...');
-      await _refreshAccessToken();
+    try {
+      await _loadStoredTokens();
+
+      // If we have valid tokens, try to refresh them
+      if (_refreshToken != null && !hasValidJWTToken) {
+        print('🔄 Attempting to refresh stored tokens...');
+        await _refreshAccessToken();
+      }
+
+      // Connect WebSocket if user is logged in
+      if (_authState == AuthState.loggedIn && _accessToken != null) {
+        _connectWebSocket();
+      }
+    } catch (e) {
+      print('Error initializing AuthProvider: $e');
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  // Connect to WebSocket
+  void _connectWebSocket() {
+    if (_accessToken == null) {
+      print('⚠️ Cannot connect WebSocket: No access token');
+      return;
     }
 
-    notifyListeners();
+    if (_webSocketService.isConnected) {
+      print('ℹ️ WebSocket already connected');
+      return;
+    }
+
+    print('🔗 Connecting to WebSocket...');
+    _webSocketService.connect(_accessToken!);
+
+    // Listen to connection status
+    _webSocketConnectionSubscription?.cancel();
+    _webSocketConnectionSubscription = _webSocketService.connectionStream
+        .listen((isConnected) {
+          if (isConnected) {
+            print('✅ WebSocket connected successfully');
+          } else {
+            print('⚠️ WebSocket disconnected');
+            // Attempt reconnection after a delay if user is still logged in
+            if (_authState == AuthState.loggedIn) {
+              Future.delayed(const Duration(seconds: 5), () {
+                if (_authState == AuthState.loggedIn &&
+                    !_webSocketService.isConnected) {
+                  print('🔄 Attempting WebSocket reconnection...');
+                  _connectWebSocket();
+                }
+              });
+            }
+          }
+        });
+  }
+
+  // Disconnect WebSocket
+  void _disconnectWebSocket() {
+    print('🔌 Disconnecting WebSocket...');
+    _webSocketConnectionSubscription?.cancel();
+    _webSocketConnectionSubscription = null;
+    _webSocketService.disconnect();
   }
 
   // Set verified phone number
@@ -258,33 +321,28 @@ class AuthProvider extends ChangeNotifier {
       );
 
       if (result['success'] == true) {
-        // Update local state with the new names
-        _firstName = firstName;
-        _lastName = lastName;
+        print('✅ Profile completion successful!');
 
-        // Save updated information to local storage
-        await _saveTokensToStorage();
+        // Update local user data
+        _firstName = result['firstName'] ?? firstName;
+        _lastName = result['lastName'] ?? lastName;
 
-        print('✅ Driver profile completed successfully');
-        print('👤 Updated Name: $_firstName $_lastName');
+        // Update tokens if provided (backend sends new tokens after profile completion)
+        if (result['accessToken'] != null && result['refreshToken'] != null) {
+          await _storeJWTTokens(result);
+        }
 
         notifyListeners();
         return true;
       } else {
         final errorMessage = result['error'] ?? 'Profile completion failed';
-
-        // Handle token expiry or authentication errors
-        if (result['statusCode'] == 401 || result['statusCode'] == 403) {
-          _setError('Session expired. Please login again.');
-          // Clear JWT tokens and logout
-          await logout();
-        } else {
-          _setError(errorMessage);
-        }
+        _setError(errorMessage);
+        print('❌ Profile completion failed: $errorMessage');
         return false;
       }
     } catch (e) {
       _setError('Profile completion error: $e');
+      print('❌ Exception during profile completion: $e');
       return false;
     } finally {
       _setLoading(false);
@@ -312,19 +370,9 @@ class AuthProvider extends ChangeNotifier {
         print('Response Data: $responseData');
         await _storeJWTTokens(responseData);
 
-        _riderId = responseData['userId'];
-        _isLoggedIn = true;
-
-        // Store user info if available
-        if (responseData['firstName'] != null) {
-          _firstName = responseData['firstName'];
-        }
-        if (responseData['lastName'] != null) {
-          _lastName = responseData['lastName'];
-        }
-        if (responseData['phoneNumber'] != null) {
-          _verifiedPhoneNumber = responseData['phoneNumber'];
-        }
+        // --- FIX: Ensure state is logged in after checking status ---
+        _authState = AuthState.loggedIn;
+        // -----------------------------------------------------------
 
         print('✅ User status checked successfully');
         print('🆔 User ID: $_userId');
@@ -336,7 +384,7 @@ class AuthProvider extends ChangeNotifier {
           'success': true,
           'isNewRegistration': result['isNewRegistration'],
           'isAutoLogin': result['isAutoLogin'],
-          'hasCompleteProfile': _firstName == 'Driver' && _lastName != 'User',
+          'hasCompleteProfile': _firstName != null && _firstName!.isNotEmpty,
           'data': responseData,
         };
       } else {
@@ -376,12 +424,11 @@ class AuthProvider extends ChangeNotifier {
       if (loginResult['success'] == true) {
         // User exists and logged in successfully
         final userData = loginResult['data'];
-        _authToken = userData['token']; // Backend JWT token
-        _currentUser = UserModel.fromJson(userData['user']);
+        await _storeJWTTokens(userData);
         _authState = AuthState.loggedIn;
 
         print('✅ User exists and logged in successfully');
-        print('👤 User data: ${userData['user']}');
+        print('👤 User data: ${userData}');
         return true;
       } else {
         // Check if it's a "user not found" error (404)
@@ -612,8 +659,7 @@ class AuthProvider extends ChangeNotifier {
 
       if (registrationResult['success'] == true) {
         final userData = registrationResult['data'];
-        _authToken = userData['token']; // Backend JWT token
-        _currentUser = UserModel.fromJson(userData['user']);
+        await _storeJWTTokens(userData);
         _authState = AuthState.loggedIn;
 
         // If email or dateOfBirth were provided but not in the registration,
@@ -762,9 +808,13 @@ class AuthProvider extends ChangeNotifier {
   }
 
   // 7. Logout using RiderService
+  // Logout using RiderService
   Future<void> logout() async {
     try {
       print('🚪 Logging out using RiderService...');
+
+      // Disconnect WebSocket first
+      _disconnectWebSocket();
 
       // Logout from backend if we have a token
       if (_authToken != null) {
@@ -776,7 +826,6 @@ class AuthProvider extends ChangeNotifier {
           print('✅ Backend logout successful');
         } else {
           print('⚠️ Backend logout failed: ${logoutResult['error']}');
-          // Continue with local logout even if backend logout fails
         }
       }
 
@@ -816,8 +865,7 @@ class AuthProvider extends ChangeNotifier {
 
       if (loginResult['success'] == true) {
         final userData = loginResult['data'];
-        _authToken = userData['token'];
-        _currentUser = UserModel.fromJson(userData['user']);
+        await _storeJWTTokens(userData);
         _authState = AuthState.loggedIn;
 
         print('✅ Auto-login successful');
@@ -854,8 +902,20 @@ class AuthProvider extends ChangeNotifier {
       _lastName = data['lastName'] ?? _lastName;
       _verifiedPhoneNumber = data['phoneNumber'] ?? _verifiedPhoneNumber;
 
+      // Create the user model instance whenever tokens are stored
+      _currentUser = UserModel(
+        userId: _userId,
+        firstName: _firstName ?? '',
+        lastName: _lastName,
+        phoneNumber: _verifiedPhoneNumber ?? '',
+        // Add other fields from 'data' if available in your UserModel
+      );
+
       // Persist to local storage
       await _saveTokensToStorage();
+
+      // Connect WebSocket after storing tokens
+      _connectWebSocket();
 
       print('✅ JWT tokens stored and persisted');
       notifyListeners();
@@ -881,6 +941,10 @@ class AuthProvider extends ChangeNotifier {
         'phoneNumber': _verifiedPhoneNumber,
         'riderId': _riderId,
         'profilePictureUrl': _profilePictureUrl,
+        // ADD THESE:
+        'gender': _currentUser?.gender?.name,
+        'genderVerified': _currentUser?.genderVerified,
+        'womenOnlyAccess': _currentUser?.womenOnlyAccess,
       };
 
       await prefs.setString('jwt_tokens', jsonEncode(tokenData));
@@ -891,7 +955,6 @@ class AuthProvider extends ChangeNotifier {
   }
 
   // Load tokens from SharedPreferences
-  // ignore: unused_element
   Future<void> _loadStoredTokens() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -911,18 +974,43 @@ class AuthProvider extends ChangeNotifier {
         _riderId = tokenData['riderId'];
         _profilePictureUrl = tokenData['profilePictureUrl'];
 
+        // Load gender from storage
+        final genderString = tokenData['gender'] as String?;
+        final genderVerified = tokenData['genderVerified'] as bool? ?? false;
+        final womenOnlyAccess = tokenData['womenOnlyAccess'] as bool? ?? false;
+
+        _currentUser = UserModel(
+          userId: _userId,
+          firstName: _firstName ?? '',
+          lastName: _lastName,
+          phoneNumber: _verifiedPhoneNumber ?? '',
+          gender: _parseGender(genderString),
+          genderVerified: genderVerified,
+          womenOnlyAccess: womenOnlyAccess,
+        );
+
         if (tokenData['tokenExpiresAt'] != null) {
           _tokenExpiresAt = DateTime.fromMillisecondsSinceEpoch(
             tokenData['tokenExpiresAt'],
           );
         }
 
-        _isLoggedIn = _accessToken != null;
-
-        print('📱 Loaded stored tokens');
-        print('🎫 Access Token: ${_accessToken?.substring(0, 20)}...');
-        print('⏰ Expires at: $_tokenExpiresAt');
-        print('✅ Valid: $hasValidJWTToken');
+        // If we have a valid token after loading, set the state to loggedIn
+        if (hasValidJWTToken) {
+          _authState = AuthState.loggedIn;
+          _currentUser = UserModel(
+            userId: _userId,
+            firstName: _firstName ?? '',
+            lastName: _lastName,
+            phoneNumber: _verifiedPhoneNumber ?? '',
+          );
+          _isLoggedIn = true;
+          print('✅ Stored tokens loaded and state set to loggedIn.');
+        } else {
+          _authState = AuthState.initial;
+          _currentUser = null;
+          _isLoggedIn = false;
+        }
       }
     } catch (e) {
       print('❌ Error loading stored tokens: $e');
@@ -968,6 +1056,12 @@ class AuthProvider extends ChangeNotifier {
 
       if (result['success'] == true) {
         await _storeJWTTokens(result['data']);
+        _authState = AuthState.loggedIn;
+
+        // Reconnect WebSocket with new token
+        _disconnectWebSocket();
+        _connectWebSocket();
+
         print('✅ Token refreshed successfully');
         return true;
       } else {
@@ -982,6 +1076,15 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
+  /// Public method to refresh token - for use by other services
+  Future<String?> refreshAccessToken() async {
+    final success = await _refreshAccessToken();
+    if (success) {
+      return _accessToken;
+    }
+    return null;
+  }
+
   // Clear JWT tokens
   Future<void> _clearJWTTokens() async {
     _accessToken = null;
@@ -991,6 +1094,11 @@ class AuthProvider extends ChangeNotifier {
     _tokenExpiresAt = null;
     _userType = null;
     _isLoggedIn = false;
+    _currentUser = null;
+    _authState = AuthState.initial;
+
+    // Disconnect WebSocket
+    _disconnectWebSocket();
 
     // Clear from storage
     try {
@@ -1019,6 +1127,16 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  // Helper to parse gender string to Gender enum
+  Gender? _parseGender(String? genderStr) {
+    if (genderStr == null) return null;
+    try {
+      return Gender.values.firstWhere((g) => g.name == genderStr);
+    } catch (_) {
+      return null;
+    }
+  }
+
   void _clearAllData() {
     _isPhoneVerified = false;
     _verifiedPhoneNumber = null;
@@ -1028,6 +1146,7 @@ class AuthProvider extends ChangeNotifier {
     _currentUser = null;
     _authToken = null;
     _clearError();
+    _clearJWTTokens(); // Use the more comprehensive clearing method
     notifyListeners();
   }
 
@@ -1042,6 +1161,12 @@ class AuthProvider extends ChangeNotifier {
     _verificationId = null;
     _clearError();
     notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    _disconnectWebSocket();
+    super.dispose();
   }
 
   // Convenience methods for checking auth flow state

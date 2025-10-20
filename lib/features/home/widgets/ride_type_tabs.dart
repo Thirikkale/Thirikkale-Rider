@@ -1,28 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:thirikkale_rider/core/utils/app_styles.dart';
 
-class RideTypeTabs extends StatefulWidget {
+class RideTypeTabs extends StatelessWidget {
   final ValueChanged<int>? onTabChanged;
-  final int initialSelectedIndex;
+  final int selectedIndex;
 
   const RideTypeTabs({
     super.key,
     this.onTabChanged,
-    this.initialSelectedIndex = 0,
+    this.selectedIndex = 0,
   });
-
-  @override
-  State<RideTypeTabs> createState() => _RideTypeTabsState();
-}
-
-class _RideTypeTabsState extends State<RideTypeTabs> {
-  late int _selectedTabIndex;
-
-  @override
-  void initState() {
-    super.initState();
-    _selectedTabIndex = widget.initialSelectedIndex;
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -32,24 +19,20 @@ class _RideTypeTabsState extends State<RideTypeTabs> {
       ),
       child: Row(
         children: [
-          _buildTab(0, 'Solo', 'assets/icons/vehicles/solo_car.png'),
-          _buildTab(1, 'Shared', 'assets/icons/vehicles/shared_car.png'),
+          _buildTab(context, 0, 'Solo', 'assets/icons/vehicles/solo_car.png'),
+          _buildTab(context, 1, 'Shared', 'assets/icons/vehicles/shared_car.png'),
         ],
       ),
     );
   }
 
-  Widget _buildTab(int index, String title, String iconPath) {
-    final isSelected = _selectedTabIndex == index;
+  Widget _buildTab(BuildContext context, int index, String title, String iconPath) {
+    final isSelected = selectedIndex == index;
 
     return Expanded(
       child: InkWell(
         onTap: () {
-          setState(() {
-            _selectedTabIndex = index;
-          });
-          // Call the callback if provided
-          widget.onTabChanged?.call(index);
+          onTabChanged?.call(index);
         },
         child: Column(
           mainAxisSize: MainAxisSize.min,

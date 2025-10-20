@@ -9,7 +9,6 @@ class SimpleMapTest extends StatefulWidget {
 }
 
 class _SimpleMapTestState extends State<SimpleMapTest> {
-  GoogleMapController? _controller;
   bool _mapLoaded = false;
 
   @override
@@ -23,7 +22,6 @@ class _SimpleMapTestState extends State<SimpleMapTest> {
         children: [
           GoogleMap(
             onMapCreated: (GoogleMapController controller) {
-              _controller = controller;
               setState(() {
                 _mapLoaded = true;
               });

@@ -17,11 +17,12 @@
     <application
         android:label="Thirikkale"
         android:name="${applicationName}"
-        android:icon="@mipmap/launcher_icon">
+        android:icon="@mipmap/launcher_icon"
+        android:enableOnBackInvokedCallback="true">
 
         <!-- Google Maps -->
         <meta-data android:name="com.google.android.geo.API_KEY"
-                   android:value="AIzaSyC0vXbtKKYgW7M3pudJ92ONvFgcVTu2u-E"/>
+                   android:value="${MAPS_API_KEY}"/>
 
         <activity
             android:name=".MainActivity"
