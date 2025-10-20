@@ -2,16 +2,17 @@ class ApiConfig {
   // Base URLs - Update this IP address to your backend server's IP
   // IMPORTANT: Replace 'YOUR_BACKEND_IP' with the actual IP address of your backend device
   // Example: 'http://192.168.1.100:8081/user-service/api/v1'
-  static const String ip = '10.123.57.7';
 
-  static const String userServiceBaseUrl =
-      'http://$ip:8081/user-service/api/v1';
-  static const String rideServiceBaseUrl =
-      'http://$ip:8082/ride-service/api/v1';
-  static const String pricingServiceBaseUrl =
-      'http://$ip:8084/pricing-service/api';
-  static const String scheduleServiceBaseUrl =
-      'http://$ip:8085/scheduling-service/api';
+  static const String baseIP = 'http://10.138.196.69';
+
+  static const String userServiceBaseUrl = '$baseIP:8081/user-service/api/v1';
+  static const String rideServiceBaseUrl = '$baseIP:8082/ride-service/api/v1';
+
+  static const String rideServiceSocketUrl = '$baseIP:8082/ride-service';
+
+  static const String pricingServiceBaseUrl = '$baseIP:8084/pricing-service/api';
+  
+  static const String scheduleServiceBaseUrl = '$baseIP:8085/scheduling-service/api';
 
   static const String pricingBaseUrl = '$pricingServiceBaseUrl/pricing';
   // Scheduled rides base: http://$ip:8085/scheduling-service/api/scheduled-rides
