@@ -10,7 +10,11 @@ import 'package:thirikkale_rider/features/activity/widgets/cancelled_ride_card.d
 import 'package:thirikkale_rider/features/activity/widgets/complaint_ride_card.dart';
 import 'package:thirikkale_rider/features/activity/widgets/activity_tabs.dart';
 import 'package:thirikkale_rider/features/activity/screens/trip_details_screen.dart';
+import 'package:thirikkale_rider/features/activity/screens/scheduled_ride_details_screen.dart';
 import 'package:thirikkale_rider/widgets/bottom_navbar.dart';
+import 'package:provider/provider.dart';
+import 'package:thirikkale_rider/core/providers/auth_provider.dart';
+import 'package:thirikkale_rider/core/services/scheduled_ride_service.dart';
 import 'package:thirikkale_rider/widgets/common/custom_appbar_name.dart';
 
 class ActivityScreen extends StatefulWidget {
@@ -24,11 +28,19 @@ class ActivityScreen extends StatefulWidget {
 
 class _ActivityScreenState extends State<ActivityScreen> {
   late int _selectedTabIndex;
+  // State for scheduled rides from API
+  bool _scheduledLoading = false;
+  String? _scheduledError;
+  List<Map<String, dynamic>> _scheduledApiActivities = [];
 
   @override
   void initState() {
     super.initState();
     _selectedTabIndex = widget.initialTabIndex;
+    // Preload scheduled rides if landing on Scheduled tab
+    if (_selectedTabIndex == 1) {
+      _loadScheduledRides();
+    }
   }
 
   // Sample data for different activity types
@@ -275,6 +287,130 @@ class _ActivityScreenState extends State<ActivityScreen> {
     setState(() {
       _selectedTabIndex = index;
     });
+    if (index == 1) {
+      _loadScheduledRides();
+    }
+  }
+
+  Future<void> _loadScheduledRides() async {
+    final auth = context.read<AuthProvider?>();
+    final riderId = auth?.userId;
+    final token = await auth?.getCurrentToken();
+    if (riderId == null) {
+      setState(() {
+        _scheduledError = 'Not logged in';
+        _scheduledApiActivities = [];
+      });
+      return;
+    }
+    setState(() {
+      _scheduledLoading = true;
+      _scheduledError = null;
+    });
+    try {
+      print('🔍 Fetching scheduled rides for rider ID: $riderId');
+      final list = await ScheduledRideService.getRidesByRider(
+          riderId: riderId, token: token);
+      
+      // Log the raw data received from the API
+      print('📊 Raw scheduled rides data received: $list');
+      
+      setState(() {
+        _scheduledApiActivities = list
+            .map<Map<String, dynamic>>((e) => _mapScheduledRideToCard(e))
+            .toList();
+        
+        // Log the processed data that will be displayed
+        print('🗂️ Processed scheduled rides data: $_scheduledApiActivities');
+      });
+    } catch (e) {
+      setState(() {
+        _scheduledError = e.toString();
+        _scheduledApiActivities = [];
+      });
+    } finally {
+      setState(() {
+        _scheduledLoading = false;
+      });
+    }
+  }
+
+  Map<String, dynamic> _mapScheduledRideToCard(Map<String, dynamic> e) {
+    // Log the individual ride data being processed
+    print('🔄 Processing ride data: $e');
+    print('🆔 Ride ID: ${e['id']}');
+    print('👤 Driver ID in this ride: ${e['driverId']}');
+    
+    String vehicleType = (e['vehicleType'] ?? '').toString();
+    String icon = _vehicleIconFor(vehicleType);
+    // Parse ISO time and present simple date/time strings
+    String scheduledIso = (e['scheduledTime'] ?? e['scheduled_at'] ?? '')
+        .toString();
+    DateTime? dt;
+    try {
+      if (scheduledIso.isNotEmpty) dt = DateTime.parse(scheduledIso).toLocal();
+    } catch (_) {}
+    String scheduledDate = dt != null
+        ? _formatDate(dt)
+        : (e['scheduledDate']?.toString() ?? '');
+    String scheduledTime = dt != null
+        ? _formatTime(dt)
+        : (e['scheduledTime']?.toString() ?? '');
+    
+    return {
+      'tripId': e['id']?.toString() ?? '',
+      'destination': e['dropoffAddress'] ?? e['dropoff_address'] ?? '',
+      'pickupLocation': e['pickupAddress'] ?? e['pickup_address'] ?? '',
+      'scheduledDate': scheduledDate,
+      'scheduledTime': scheduledTime,
+      'estimatedFare': _formatLkr(e['maxFare'] ?? e['estimatedFare']),
+      'vehicleIcon': icon,
+      'vehicleType': vehicleType,
+      'status': (e['status'] ?? 'Scheduled').toString(),
+      'driverId': e['driverId']?.toString(),
+      'raw': e,
+    };
+  }
+
+  String _vehicleIconFor(String vehicleType) {
+    switch (vehicleType.toUpperCase()) {
+      case 'TUK':
+        return 'assets/icons/vehicles/tuk.png';
+      case 'RIDE':
+      case 'PRIME_RIDE':
+        return 'assets/icons/vehicles/ride.png';
+      case 'RUSH':
+        return 'assets/icons/vehicles/rush.png';
+      case 'SQUAD':
+        return 'assets/icons/vehicles/squad.png';
+      default:
+        return 'assets/icons/vehicles/ride.png';
+    }
+  }
+
+  String _formatDate(DateTime dt) {
+    // Simple: e.g., Oct 19
+    const months = [
+      'Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'
+    ];
+    return '${months[dt.month - 1]} ${dt.day}';
+  }
+
+  String _formatTime(DateTime dt) {
+    final h = dt.hour % 12 == 0 ? 12 : dt.hour % 12;
+    final m = dt.minute.toString().padLeft(2, '0');
+    final ampm = dt.hour >= 12 ? 'PM' : 'AM';
+    return '$h:$m $ampm';
+    }
+
+  String _formatLkr(dynamic v) {
+    if (v == null) return '';
+    try {
+      final n = (v is num) ? v : num.parse(v.toString());
+      return 'LKR ${n.toStringAsFixed(2)}';
+    } catch (_) {
+      return v.toString();
+    }
   }
 
   List<Map<String, dynamic>> _getCurrentActivities() {
@@ -282,6 +418,13 @@ class _ActivityScreenState extends State<ActivityScreen> {
       case 0:
         return _ongoingActivities;
       case 1:
+        // Prefer API data when available
+        if (_scheduledLoading) {
+          return [];
+        }
+        if (_scheduledApiActivities.isNotEmpty) {
+          return _scheduledApiActivities;
+        }
         return _scheduledActivities;
       case 2:
         return _completedActivities;
@@ -328,9 +471,11 @@ class _ActivityScreenState extends State<ActivityScreen> {
           
           // Activity content
           Expanded(
-            child: currentActivities.isEmpty
-                ? _buildEmptyState()
-                : _buildActivityList(currentActivities),
+            child: (_selectedTabIndex == 1 && _scheduledLoading)
+                ? const Center(child: CircularProgressIndicator())
+                : currentActivities.isEmpty
+                    ? _buildEmptyState()
+                    : _buildActivityList(currentActivities),
           ),
         ],
       ),
@@ -368,7 +513,22 @@ class _ActivityScreenState extends State<ActivityScreen> {
           vertical: AppDimensions.pageVerticalPadding,
         ),
         child: Column(
-          children: activities.map((activity) {
+          children: [
+            if (_selectedTabIndex == 1 && _scheduledLoading)
+              const Padding(
+                padding: EdgeInsets.all(16.0),
+                child: Center(child: CircularProgressIndicator()),
+              ),
+            if (_selectedTabIndex == 1 && _scheduledError != null)
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Text(
+                  _scheduledError!,
+                  style: AppTextStyles.bodyMedium
+                      .copyWith(color: AppColors.error),
+                ),
+              ),
+            ...activities.map((activity) {
             return Column(
               children: [
                 // Choose widget based on tab/activity type
@@ -376,7 +536,8 @@ class _ActivityScreenState extends State<ActivityScreen> {
                 const SizedBox(height: AppDimensions.widgetSpacing),
               ],
             );
-          }).toList(),
+            }).toList(),
+          ],
         ),
       ),
     );
@@ -411,6 +572,7 @@ class _ActivityScreenState extends State<ActivityScreen> {
         );
         
       case 1: // Scheduled tab
+        final status = activity['status']?.toString().toUpperCase();
         return ScheduledRideCard(
           destination: activity['destination'],
           pickupLocation: activity['pickupLocation'],
@@ -418,18 +580,21 @@ class _ActivityScreenState extends State<ActivityScreen> {
           scheduledTime: activity['scheduledTime'],
           estimatedFare: activity['estimatedFare'],
           vehicleIcon: activity['vehicleIcon'],
+          driverId: activity['driverId']?.toString() ?? '',
+          status: status,
           onCardTap: () {
-            // Navigate directly to trip details screen
+            // Navigate to scheduled ride details screen
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => TripDetailsScreen(
-                  tripData: activity,
+                builder: (context) => ScheduledRideDetailsScreen(
+                  ride: activity,
+                  raw: activity['raw'],
                 ),
               ),
             );
           },
-          onCancelPressed: () {
+          onCancelPressed: (status == 'CANCELLED' || status == 'DISPATCHED') ? null : () {
             _showCancelConfirmationDialog(activity['tripId']);
           },
         );
@@ -548,12 +713,19 @@ class _ActivityScreenState extends State<ActivityScreen> {
       titleIcon: Icons.schedule_outlined,
       titleIconColor: AppColors.warning,
       confirmButtonColor: AppColors.error,
-      onConfirm: () {
-        // Implement actual cancellation
-        setState(() {
-          // Mock implementation - remove from list
-          _scheduledActivities.removeWhere((activity) => activity['tripId'] == tripId);
-        });
+      onConfirm: () async {
+        try {
+          final auth = context.read<AuthProvider?>();
+          final token = await auth?.getCurrentToken();
+          await ScheduledRideService.cancelById(tripId, token: token);
+          // Refresh the list
+          await _loadScheduledRides();
+        } catch (e) {
+          // Show error
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Cancellation failed: ${e.toString()}')),
+          );
+        }
       },
     );
   }
