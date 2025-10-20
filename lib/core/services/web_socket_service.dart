@@ -13,6 +13,12 @@ class WebSocketService {
   final StreamController<bool> _connectionController =
       StreamController<bool>.broadcast();
 
+  final StreamController<Map<String, dynamic>> _rideAcceptedController =
+      StreamController<Map<String, dynamic>>.broadcast();
+
+  Stream<Map<String, dynamic>> get rideAcceptedStream =>
+      _rideAcceptedController.stream;
+
   Stream<bool> get connectionStream => _connectionController.stream;
   bool get isConnected => _isConnected;
 
@@ -115,6 +121,33 @@ class WebSocketService {
     };
 
     return streamController.stream;
+  }
+
+  void subscribeToRideAcceptance(String riderId) {
+    if (_stompClient == null || !_isConnected) {
+      print('⚠️ Cannot subscribe to ride acceptance - not connected');
+      return;
+    }
+
+    _stompClient!.subscribe(
+      destination: '/user/$riderId/queue/ride-accepted',
+      callback: (StompFrame frame) {
+        print('📨📨📨 FLUTTER: Ride accepted event received');
+        print('📨📨📨 FLUTTER: Frame body: ${frame.body}');
+
+        if (frame.body != null) {
+          try {
+            final data = jsonDecode(frame.body!);
+            print('📨📨📨 FLUTTER: Parsed ride accepted data: $data');
+            _rideAcceptedController.add(data);
+          } catch (e) {
+            print('❌❌❌ FLUTTER: Error parsing ride accepted event: $e');
+          }
+        }
+      },
+    );
+
+    print('🔔 Subscribed to ride acceptance events for rider: $riderId');
   }
 
   void disconnect() {

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:google_polyline_algorithm/google_polyline_algorithm.dart';
+import 'package:provider/provider.dart'; // ADD THIS
+import 'package:thirikkale_rider/core/providers/ride_tracking_provider.dart'; // ADD THIS
 import 'package:thirikkale_rider/core/services/direction_service.dart';
 import 'package:thirikkale_rider/core/utils/app_styles.dart';
 import 'package:thirikkale_rider/features/booking/models/custom_marker.dart';
@@ -15,6 +17,7 @@ class RouteMap extends StatefulWidget {
   final double? destLng;
   final double bottomPadding;
   final bool showBackButton;
+  final bool showDriverLocation; // ADD THIS - to enable/disable driver tracking
 
   const RouteMap({
     super.key,
@@ -26,6 +29,7 @@ class RouteMap extends StatefulWidget {
     this.destLng,
     this.bottomPadding = 0,
     this.showBackButton = true,
+    this.showDriverLocation = false, // ADD THIS - default to false
   });
 
   @override
@@ -37,7 +41,7 @@ class _RouteMapState extends State<RouteMap> {
   Set<Marker> _markers = {};
   Set<Polyline> _polylines = {};
   bool _isLoadingRoute = true;
-  // String? _duration;
+  BitmapDescriptor? _driverIcon; // ADD THIS - cache the driver icon
 
   @override
   void initState() {
@@ -46,6 +50,9 @@ class _RouteMapState extends State<RouteMap> {
       'RouteMap initState - Pickup: ${widget.pickupLat}, ${widget.pickupLng}, Dest: ${widget.destLat}, ${widget.destLng}',
     );
     _initializeMap();
+    if (widget.showDriverLocation) {
+      _createDriverIcon(); // ADD THIS
+    }
   }
 
   @override
@@ -65,6 +72,14 @@ class _RouteMapState extends State<RouteMap> {
   void dispose() {
     _mapController?.dispose();
     super.dispose();
+  }
+
+  // ADD THIS METHOD - Create custom driver marker icon
+  Future<void> _createDriverIcon() async {
+    _driverIcon = await CustomMarker.createCircleMarker(
+      AppColors.primaryBlue,
+      'Driver',
+    );
   }
 
   void _initializeMap() async {
@@ -95,7 +110,7 @@ class _RouteMapState extends State<RouteMap> {
             title: 'Pickup Location',
             snippet: widget.pickupAddress,
           ),
-          anchor: const Offset(0.5, 1.0), // Bottom center for pill marker
+          anchor: const Offset(0.5, 1.0),
         ),
       );
     }
@@ -107,7 +122,7 @@ class _RouteMapState extends State<RouteMap> {
           markerId: const MarkerId('destination'),
           position: LatLng(widget.destLat!, widget.destLng!),
           icon: destinationIcon,
-          anchor: const Offset(0.5, 1.0), // Bottom center for pill marker
+          anchor: const Offset(0.5, 1.0),
         ),
       );
     }
@@ -119,6 +134,40 @@ class _RouteMapState extends State<RouteMap> {
     }
     print('RouteMap: Created ${markers.length} markers');
     _showInfoWindows();
+  }
+
+  // ADD THIS METHOD - Update markers to include driver location
+  void _updateMarkersWithDriver(LatLng driverLocation) {
+    final updatedMarkers = Set<Marker>.from(_markers);
+
+    // Remove old driver marker if it exists
+    updatedMarkers.removeWhere((marker) => marker.markerId.value == 'driver');
+
+    // Add new driver marker
+    if (_driverIcon != null) {
+      updatedMarkers.add(
+        Marker(
+          markerId: const MarkerId('driver'),
+          position: driverLocation,
+          icon: _driverIcon!,
+          infoWindow: const InfoWindow(
+            title: 'Driver',
+            snippet: 'On the way to you',
+          ),
+          anchor: const Offset(0.5, 0.5),
+          rotation: 0, // You can calculate bearing for better accuracy
+        ),
+      );
+    }
+
+    if (mounted) {
+      setState(() {
+        _markers = updatedMarkers;
+      });
+
+      // Optionally animate camera to show driver
+      _mapController?.animateCamera(CameraUpdate.newLatLng(driverLocation));
+    }
   }
 
   void _showInfoWindows() async {
@@ -153,9 +202,10 @@ class _RouteMapState extends State<RouteMap> {
       if (directions != null) {
         final polylinePoints = decodePolyline(directions.polylinePoints);
         if (polylinePoints.isNotEmpty) {
-          final polylineLatLngs = polylinePoints
-              .map((p) => LatLng(p[0].toDouble(), p[1].toDouble()))
-              .toList();
+          final polylineLatLngs =
+              polylinePoints
+                  .map((p) => LatLng(p[0].toDouble(), p[1].toDouble()))
+                  .toList();
           final polyline = Polyline(
             polylineId: const PolylineId('route'),
             points: polylineLatLngs,
@@ -169,7 +219,6 @@ class _RouteMapState extends State<RouteMap> {
           if (mounted) {
             setState(() {
               _polylines = {polyline};
-              // _duration = directions.duration;
               _isLoadingRoute = false;
             });
           }
@@ -262,17 +311,43 @@ class _RouteMapState extends State<RouteMap> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.location_off, size: 64, color: AppColors.textSecondary),
+              Icon(
+                Icons.location_off,
+                size: 64,
+                color: AppColors.textSecondary,
+              ),
               const SizedBox(height: 16),
               Text('Unable to load map', style: AppTextStyles.bodyLarge),
               const SizedBox(height: 8),
-              Text('Location coordinates not available', style: AppTextStyles.bodySmall),
+              Text(
+                'Location coordinates not available',
+                style: AppTextStyles.bodySmall,
+              ),
             ],
           ),
         ),
       );
     }
 
+    // MODIFY THIS - Wrap with Consumer to listen to driver location
+    return widget.showDriverLocation
+        ? Consumer<RideTrackingProvider>(
+          builder: (context, rideTrackingProvider, child) {
+            // Update driver marker when location changes
+            if (rideTrackingProvider.driverLocation != null) {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                _updateMarkersWithDriver(rideTrackingProvider.driverLocation!);
+              });
+            }
+
+            return _buildMapWidget();
+          },
+        )
+        : _buildMapWidget();
+  }
+
+  // ADD THIS METHOD - Extract map widget to avoid duplication
+  Widget _buildMapWidget() {
     return Stack(
       children: [
         GoogleMap(
@@ -348,36 +423,7 @@ class _RouteMapState extends State<RouteMap> {
             ),
           ),
         ),
-        // if (_duration != null && !_isLoadingRoute)
-        //   Positioned(
-        //     top: 80,
-        //     left: 0,
-        //     right: 0,
-        //     child: Center(
-        //       child: Container(
-        //         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        //         decoration: BoxDecoration(
-        //           color: Colors.black87,
-        //           borderRadius: BorderRadius.circular(20),
-        //         ),
-        //         child: Row(
-        //           mainAxisSize: MainAxisSize.min,
-        //           children: [
-        //             const Icon(Icons.access_time, color: Colors.white, size: 16),
-        //             const SizedBox(width: 4),
-        //             Text(
-        //               _duration!,
-        //               style: AppTextStyles.bodySmall.copyWith(color: Colors.white),
-        //             ),
-        //           ],
-        //         ),
-        //       ),
-        //     ),
-        //   ),
-        if (_isLoadingRoute)
-          const Center(
-            child: CircularProgressIndicator(),
-          ),
+        if (_isLoadingRoute) const Center(child: CircularProgressIndicator()),
       ],
     );
   }
