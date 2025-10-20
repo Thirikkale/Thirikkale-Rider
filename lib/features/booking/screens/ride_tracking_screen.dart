@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:thirikkale_rider/core/providers/ride_tracking_provider.dart';
+import 'package:thirikkale_rider/core/services/web_socket_service.dart';
 import 'package:thirikkale_rider/core/utils/app_styles.dart';
 import 'package:thirikkale_rider/core/utils/app_dimension.dart';
 import 'package:thirikkale_rider/core/utils/snackbar_helper.dart';
@@ -10,14 +12,15 @@ import 'package:thirikkale_rider/features/booking/widgets/route_map.dart';
 import 'package:thirikkale_rider/core/providers/auth_provider.dart';
 import 'package:thirikkale_rider/core/providers/ride_booking_provider.dart';
 import 'package:thirikkale_rider/core/services/ride_status_service.dart';
+import 'package:url_launcher/url_launcher.dart'; // ✅ Add this for phone calls
 
 enum RideState {
-  pending, // Ride request submitted, looking for driver
-  accepted, // Driver accepted, on the way to pickup
-  driverArrived, // Driver has arrived at pickup location
-  inProgress, // Ride is in progress
-  completed, // Ride completed
-  cancelled, // Ride cancelled
+  pending,
+  accepted,
+  driverArrived,
+  inProgress,
+  completed,
+  cancelled,
 }
 
 class RideTrackingScreen extends StatefulWidget {
@@ -52,6 +55,9 @@ class _RideTrackingScreenState extends State<RideTrackingScreen> {
   RideState currentState = RideState.pending;
   Map<String, dynamic>? currentRideData;
   StreamSubscription<Map<String, dynamic>>? _statusSubscription;
+  StreamSubscription<Map<String, dynamic>>? _rideUpdatesSubscription;
+  StreamSubscription<Map<String, dynamic>>? _rideAcceptedSubscription;
+
   bool isLoading = true;
   String? errorMessage;
 
@@ -67,54 +73,44 @@ class _RideTrackingScreenState extends State<RideTrackingScreen> {
   double? _currentDestLat;
   double? _currentDestLng;
 
-  // Legacy variables for old UI components
-  double sliderValue = 0.5;
-  bool isSliderActive = false;
   int searchProgress = 0;
-  final List<Map<String, dynamic>> currentRiders = [
-    {
-      'name': 'Sarah Kumar',
-      'rating': 4.8,
-      'profileImage': 'assets/images/default_profile.png',
-      'pickupLocation': 'Colombo Fort',
-      'dropLocation': 'Bambalapitiya',
-    },
-    {
-      'name': 'John Silva',
-      'rating': 4.6,
-      'profileImage': 'assets/images/default_profile.png',
-      'pickupLocation': 'Pettah',
-      'dropLocation': 'Mount Lavinia',
-    },
-  ];
+  Timer? _searchProgressTimer;
 
-  final Map<String, dynamic> driverInfo = {
-    'name': 'Pradeep Fernando',
-    'rating': 4.9,
-    'vehicleNumber': 'CAB-1234',
-    'vehicleModel': 'Toyota Axio',
-    'profileImage': 'assets/images/default_profile.png',
-    'phoneNumber': '+94 77 123 4567',
-    'eta': '5 min',
-  };
-
-  final int actualPrice = 275;
-  final int savings = 45;
+  final WebSocketService _webSocketService = WebSocketService();
 
   @override
   void initState() {
     super.initState();
-    _startRideStatusPolling();
+    _startRideMonitoring();
+    _subscribeToRideAcceptance();
+    _startSearchAnimation(); // ✅ Add search animation
   }
 
   @override
   void dispose() {
     _statusSubscription?.cancel();
-    RideStatusService.stopRideStatusPolling();
+    _rideUpdatesSubscription?.cancel();
+    _rideAcceptedSubscription?.cancel();
+    _searchProgressTimer?.cancel(); // ✅ Cancel timer
     super.dispose();
   }
 
-  void _startRideStatusPolling() async {
+  // ✅ Add search animation for pending state
+  void _startSearchAnimation() {
+    _searchProgressTimer = Timer.periodic(const Duration(milliseconds: 100), (
+      timer,
+    ) {
+      if (currentState == RideState.pending && mounted) {
+        setState(() {
+          searchProgress = (searchProgress + 1) % 101;
+        });
+      } else {
+        timer.cancel();
+      }
+    });
+  }
+
+  void _startRideMonitoring() async {
     try {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       final rideBookingProvider = Provider.of<RideBookingProvider>(
@@ -122,51 +118,24 @@ class _RideTrackingScreenState extends State<RideTrackingScreen> {
         listen: false,
       );
 
-      // Get current token or refresh if needed
       String? token = await authProvider.getCurrentToken();
-
-      // Check whether the token is expired
       token ??= await authProvider.refreshAccessToken();
 
       final rideId = rideBookingProvider.rideId;
 
       if (rideId.isEmpty) {
         setState(() {
-          errorMessage =
-              'Unable to track ride: Missing authentication or ride ID';
+          errorMessage = 'Unable to track ride: Missing ride ID';
           isLoading = false;
         });
         return;
       }
 
-      print('🎯 Starting ride tracking for ride ID: $rideId');
-      print('🔑 Token length: ${token?.length}');
+      print('🎯 Starting ride monitoring for ride ID: $rideId');
 
-      _statusSubscription = RideStatusService.startRideStatusPolling(
-        rideId: rideId,
-        token: token!,
-        interval: const Duration(seconds: 5),
-      ).listen(
-        (rideData) {
-          setState(() {
-            currentRideData = rideData;
-            isLoading = false;
-            errorMessage = null;
-            _updateRideState(rideData);
-          });
-        },
-        onError: (error) {
-          setState(() {
-            errorMessage = 'Failed to get ride updates: $error';
-            isLoading = false;
-          });
-
-          // If it's an auth error, try to refresh token and retry
-          if (error.toString().contains('Authentication failed')) {
-            _handleAuthError();
-          }
-        },
-      );
+      _subscribeToRideAcceptance();
+      _subscribeToRideUpdates(rideId);
+      _startPollingFallback(rideId, token!);
     } catch (e) {
       setState(() {
         errorMessage = 'Error starting ride tracking: $e';
@@ -175,10 +144,154 @@ class _RideTrackingScreenState extends State<RideTrackingScreen> {
     }
   }
 
+  void _subscribeToRideAcceptance() {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final riderId = authProvider.userId;
+
+    if (riderId != null) {
+      if (!_webSocketService.isConnected) {
+        _webSocketService.connectionStream.listen((isConnected) {
+          if (isConnected) {
+            _performRideAcceptanceSubscription(riderId);
+          }
+        });
+      } else {
+        _performRideAcceptanceSubscription(riderId);
+      }
+    }
+  }
+
+  void _performRideAcceptanceSubscription(String riderId) {
+    _webSocketService.subscribeToRideAcceptance(riderId);
+
+    _rideAcceptedSubscription = _webSocketService.rideAcceptedStream.listen(
+      (data) {
+        print('✅ Ride accepted notification received');
+        _handleRideAccepted(data);
+      },
+      onError: (error) {
+        print('❌ Error in ride accepted stream: $error');
+      },
+    );
+  }
+
+  void _handleRideAccepted(Map<String, dynamic> data) {
+    if (!mounted) return;
+
+    print('📨📨📨 FLUTTER: Ride accepted event received');
+    print('📨 Data: $data');
+    print('📨 Keys in data: ${data.keys.toList()}');
+
+    // Extract ALL fields from the message
+    setState(() {
+      currentState = RideState.accepted;
+      isLoading = false;
+
+      driverName = data['driverName']?.toString() ?? 'Driver';
+      driverPhone = data['driverPhone']?.toString();
+
+      if (data['driverRating'] != null) {
+        driverRating = (data['driverRating'] as num).toDouble();
+      }
+
+      String? vehicleModel = data['vehicleModel']?.toString();
+      String? plateNumber = data['vehiclePlateNumber']?.toString();
+
+      if (vehicleModel != null && plateNumber != null) {
+        vehicleDetails = '$vehicleModel • $plateNumber';
+      } else {
+        vehicleDetails = 'Vehicle details pending';
+      }
+
+      estimatedArrival = 'Arriving in 5-10 mins';
+
+      print('✅ Driver details extracted:');
+      print('   Name: $driverName');
+      print('   Phone: $driverPhone');
+      print('   Vehicle: $vehicleDetails');
+      print('   Rating: $driverRating');
+    });
+
+    if (driverName != null && driverName != 'Driver' && driverName != 'null') {
+      SnackbarHelper.showSuccessSnackBar(
+        context,
+        'Driver $driverName accepted your ride!',
+      );
+    }
+  }
+
+  void _startPollingFallback(String rideId, String token) {
+    _statusSubscription = RideStatusService.startRideStatusPolling(
+      rideId: rideId,
+      token: token,
+      interval: const Duration(seconds: 10),
+    ).listen(
+      (rideData) {
+        setState(() {
+          currentRideData = rideData;
+          isLoading = false;
+          errorMessage = null;
+          _updateRideState(rideData);
+        });
+      },
+      onError: (error) {
+        if (error.toString().contains('Authentication failed')) {
+          _handleAuthError();
+        } else {
+          setState(() {
+            errorMessage = 'Failed to get ride updates: $error';
+            isLoading = false;
+          });
+        }
+      },
+    );
+  }
+
+  void _subscribeToRideUpdates(String rideId) {
+    if (!_webSocketService.isConnected) {
+      print('⚠️ WebSocket not connected. Waiting for connection...');
+      _webSocketService.connectionStream.listen((isConnected) {
+        if (isConnected && mounted) {
+          _performRideUpdatesSubscription(rideId);
+        }
+      });
+    } else {
+      _performRideUpdatesSubscription(rideId);
+    }
+  }
+
+  void _performRideUpdatesSubscription(String rideId) {
+    final updateStream = _webSocketService.subscribeToRideUpdates(rideId);
+
+    if (updateStream == null) {
+      print('⚠️ Could not subscribe to ride updates');
+      return;
+    }
+
+    _rideUpdatesSubscription = updateStream.listen(
+      (updateData) {
+        print('📬 Received real-time ride update: $updateData');
+
+        if (mounted) {
+          setState(() {
+            currentRideData = updateData;
+            isLoading = false;
+            errorMessage = null;
+            _updateRideState(updateData);
+          });
+        }
+      },
+      onError: (error) {
+        print('❌ Error in ride updates stream: $error');
+      },
+    );
+
+    print('✅ Subscribed to ride updates via WebSocket');
+  }
+
   void _updateRideState(Map<String, dynamic> rideData) {
     final status = rideData['status'] as String?;
 
-    // Extract coordinates from ride data
     _currentPickupLat = (rideData['pickupLatitude'] as num?)?.toDouble();
     _currentPickupLng = (rideData['pickupLongitude'] as num?)?.toDouble();
     _currentDestLat = (rideData['dropoffLatitude'] as num?)?.toDouble();
@@ -191,6 +304,7 @@ class _RideTrackingScreenState extends State<RideTrackingScreen> {
       case 'ACCEPTED':
         currentState = RideState.accepted;
         _updateDriverInfo(rideData);
+        _subscribeToLocationUpdates(rideData['id'] as String);
         break;
       case 'DRIVER_ARRIVED':
         currentState = RideState.driverArrived;
@@ -205,6 +319,9 @@ class _RideTrackingScreenState extends State<RideTrackingScreen> {
         _updateDriverInfo(rideData);
         break;
       case 'CANCELLED':
+      case 'CANCELLED_BY_RIDER':
+      case 'CANCELLED_BY_DRIVER':
+      case 'CANCELLED_BY_SYSTEM':
         currentState = RideState.cancelled;
         break;
       default:
@@ -214,11 +331,60 @@ class _RideTrackingScreenState extends State<RideTrackingScreen> {
     print('📊 Ride state updated to: $currentState');
   }
 
+  void _subscribeToLocationUpdates(String rideId) {
+    final rideTrackingProvider = Provider.of<RideTrackingProvider>(
+      context,
+      listen: false,
+    );
+
+    rideTrackingProvider.startTracking(rideId);
+    print('📍 Started tracking driver location for ride: $rideId');
+  }
+
   void _updateDriverInfo(Map<String, dynamic> rideData) {
-    driverName = rideData['driverName'] as String?;
-    driverPhone = rideData['driverPhone'] as String?;
-    vehicleDetails = rideData['vehicleDetails'] as String?;
-    // You can add driver rating and ETA calculation here
+    if (!mounted) return;
+
+    print('📋 Updating driver info from ride data');
+    print('📋 Ride data keys: ${rideData.keys.toList()}');
+
+    setState(() {
+      // ✅ Extract driver details from ride response
+      driverName = rideData['driverName']?.toString();
+      driverPhone = rideData['driverPhone']?.toString();
+
+      if (rideData['driverRating'] != null) {
+        driverRating = (rideData['driverRating'] as num).toDouble();
+      }
+
+      // ✅ Extract vehicle details
+      String? vehicleModel = rideData['vehicleModel']?.toString();
+      String? plateNumber = rideData['vehiclePlateNumber']?.toString();
+
+      if (vehicleModel != null && plateNumber != null) {
+        vehicleDetails = '$vehicleModel • $plateNumber';
+      } else {
+        vehicleDetails = 'Vehicle details pending';
+      }
+
+      estimatedArrival = 'Arriving soon';
+
+      print('📋 Driver info updated from API:');
+      print('   Name: $driverName');
+      print('   Phone: $driverPhone');
+      print('   Vehicle: $vehicleDetails');
+      print('   Rating: $driverRating');
+    });
+
+    // ✅ Only show snackbar if we have actual driver info
+    if (driverName != null &&
+        driverName!.isNotEmpty &&
+        driverName != 'null' &&
+        driverName != 'Driver') {
+      SnackbarHelper.showSuccessSnackBar(
+        context,
+        'Driver $driverName is on the way!',
+      );
+    }
   }
 
   void _handleAuthError() async {
@@ -227,12 +393,11 @@ class _RideTrackingScreenState extends State<RideTrackingScreen> {
       final newToken = await authProvider.refreshAccessToken();
 
       if (newToken != null) {
-        // Retry with new token
         setState(() {
           isLoading = true;
           errorMessage = null;
         });
-        _startRideStatusPolling();
+        _startRideMonitoring();
       } else {
         setState(() {
           errorMessage = 'Session expired. Please login again.';
@@ -247,92 +412,6 @@ class _RideTrackingScreenState extends State<RideTrackingScreen> {
     }
   }
 
-  // void _acceptSharedRide() {
-  //   setState(() {
-  //     currentState = RideState.accepted;
-  //     sliderValue = 0.5; // Reset to center
-  //     isSliderActive = false;
-  //   });
-  // }
-
-  // void _startRideFlow() {
-  //   // Start a new search for rides
-  //   setState(() {
-  //     currentState = RideState.pending;
-  //     isLoading = true;
-  //     errorMessage = null;
-  //   });
-
-  //   // Simulate searching for a new ride
-  //   Timer.periodic(const Duration(milliseconds: 100), (timer) {
-  //     setState(() {
-  //       searchProgress = (searchProgress + 2).clamp(0, 100);
-  //     });
-
-  //     if (searchProgress >= 100) {
-  //       timer.cancel();
-  //       // You can add logic here to either find a new ride or show no rides available
-  //     }
-  //   });
-  // }
-
-  // COMMENT UNUSED METHODS
-  // void _autoAcceptRide() {
-  //   // Animate slider to accept position
-  //   setState(() {
-  //     sliderValue = 1.0;
-  //   });
-  //   // Small delay to show the animation then accept
-  //   Future.delayed(const Duration(milliseconds: 300), () {
-  //     if (mounted) {
-  //       _acceptSharedRide();
-  //     }
-  //   });
-  // }
-
-  // void _rejectSharedRide() {
-  //   setState(() {
-  //     currentState = RideState.pending;
-  //     searchProgress = 0;
-  //     sliderValue = 0.5; // Reset to center
-  //     isSliderActive = false;
-  //   });
-  //   // Start finding another ride
-  //   _startRideFlow();
-  // }
-
-  // // COMMENT UNUSED METHODS
-  // void _onSliderChanged(double value) {
-  //   setState(() {
-  //     sliderValue = value;
-  //     if (value >= 0.9) {
-  //       // Accept ride when slider is almost at the end
-  //       _acceptSharedRide();
-  //     } else if (value <= 0.1) {
-  //       // Reject ride when slider is moved to the start
-  //       _rejectSharedRide();
-  //     }
-
-  //     // Mark slider as active once it's moved significantly from center (0.5)
-  //     if ((value - 0.5).abs() > 0.2) {
-  //       isSliderActive = true;
-  //     }
-  //   });
-  // }
-
-  // void _createNewSharedRide() {
-  //   setState(() {
-  //     currentState = RideState.accepted;
-  //   });
-  // }
-
-  // // COMMENT UNUSED METHODS
-  // void _completeRide() {
-  //   setState(() {
-  //     currentState = RideState.completed;
-  //   });
-  // }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -340,7 +419,6 @@ class _RideTrackingScreenState extends State<RideTrackingScreen> {
       appBar: CustomAppbarName(title: _getAppBarTitle(), showBackButton: true),
       body: Stack(
         children: [
-          // Map background
           SizedBox.expand(
             child: RouteMap(
               pickupAddress: widget.pickupAddress,
@@ -351,10 +429,12 @@ class _RideTrackingScreenState extends State<RideTrackingScreen> {
               destLng: _currentDestLng ?? widget.destLng,
               bottomPadding: MediaQuery.of(context).size.height * 0.4,
               showBackButton: false,
+              showDriverLocation:
+                  currentState == RideState.accepted ||
+                  currentState == RideState.driverArrived ||
+                  currentState == RideState.inProgress,
             ),
           ),
-
-          // Bottom content based on current state
           Positioned(
             bottom: 0,
             left: 0,
@@ -384,6 +464,9 @@ class _RideTrackingScreenState extends State<RideTrackingScreen> {
   }
 
   Widget _buildBottomContent() {
+    print('🎨 Building bottom sheet for state: $currentState');
+    print('🎨 Driver name: $driverName, Vehicle: $vehicleDetails');
+
     if (isLoading) {
       return _buildLoadingContent();
     } else if (errorMessage != null) {
@@ -393,8 +476,24 @@ class _RideTrackingScreenState extends State<RideTrackingScreen> {
     switch (currentState) {
       case RideState.pending:
         return _buildPendingContent();
+
       case RideState.accepted:
-        return _buildDriverOnWayContent();
+        // ✅ IMPROVED: Check for actual driver data, not just 'Driver' placeholder
+        final hasDriverInfo =
+            driverName != null &&
+            driverName != 'null' &&
+            driverName!.isNotEmpty &&
+            driverName != 'Driver' &&
+            driverName != 'N/A';
+
+        if (hasDriverInfo) {
+          print('✅ Showing driver card with info: $driverName');
+          return _buildDriverOnWayContent();
+        } else {
+          print('⏳ Still waiting for driver details, showing pending');
+          return _buildPendingContent(); // ⏳ Still waiting for driver details
+        }
+
       case RideState.driverArrived:
         return _buildDriverArrivedContent();
       case RideState.inProgress:
@@ -453,7 +552,7 @@ class _RideTrackingScreenState extends State<RideTrackingScreen> {
                 isLoading = true;
                 errorMessage = null;
               });
-              _startRideStatusPolling();
+              _startRideMonitoring();
             },
             child: const Text('Retry'),
           ),
@@ -463,64 +562,6 @@ class _RideTrackingScreenState extends State<RideTrackingScreen> {
   }
 
   Widget _buildPendingContent() {
-    return SafeArea(
-      child: Container(
-        height: 400,
-        padding: const EdgeInsets.all(20),
-        decoration: const BoxDecoration(
-          color: AppColors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Progress indicator
-            const SizedBox(height: 20),
-            const Center(child: CircularProgressIndicator()),
-            const SizedBox(height: 20),
-
-            // Status text
-            const Center(
-              child: Text(
-                'Finding a driver for you...',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-              ),
-            ),
-            const SizedBox(height: 8),
-            const Center(
-              child: Text(
-                'This usually takes less than 3 minutes',
-                style: TextStyle(fontSize: 14, color: Colors.grey),
-              ),
-            ),
-
-            const SizedBox(height: 30),
-
-            // Trip details
-            _buildTripDetailsCard(),
-
-            const Spacer(),
-
-            // Cancel button
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () => _showCancelConfirmation(context),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                ),
-                child: const Text('Cancel Ride'),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDriverOnWayContent() {
     return Container(
       decoration: const BoxDecoration(
         color: AppColors.white,
@@ -542,7 +583,6 @@ class _RideTrackingScreenState extends State<RideTrackingScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Handle bar
               Container(
                 width: 40,
                 height: 4,
@@ -552,8 +592,6 @@ class _RideTrackingScreenState extends State<RideTrackingScreen> {
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
-
-              // Searching animation
               Container(
                 width: 80,
                 height: 80,
@@ -567,9 +605,7 @@ class _RideTrackingScreenState extends State<RideTrackingScreen> {
                   color: AppColors.primaryBlue,
                 ),
               ),
-
               const SizedBox(height: 16),
-
               Text(
                 'Finding the best ride for you...',
                 style: AppTextStyles.heading2.copyWith(
@@ -577,9 +613,7 @@ class _RideTrackingScreenState extends State<RideTrackingScreen> {
                 ),
                 textAlign: TextAlign.center,
               ),
-
               const SizedBox(height: 8),
-
               Text(
                 'This may take a few moments',
                 style: AppTextStyles.bodyMedium.copyWith(
@@ -587,10 +621,7 @@ class _RideTrackingScreenState extends State<RideTrackingScreen> {
                 ),
                 textAlign: TextAlign.center,
               ),
-
               const SizedBox(height: 24),
-
-              // Progress bar
               Column(
                 children: [
                   Row(
@@ -621,16 +652,277 @@ class _RideTrackingScreenState extends State<RideTrackingScreen> {
                   ),
                 ],
               ),
-
               const SizedBox(height: 24),
-
-              // Trip details
               _buildTripDetailsCard(),
+              const SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton(
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    side: const BorderSide(color: Colors.red),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  onPressed: () => _showCancelConfirmation(context),
+                  child: const Text(
+                    'Cancel Ride',
+                    style: TextStyle(
+                      color: Colors.red,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
             ],
           ),
         ),
       ),
     );
+  }
+
+  // ✅ NEW: Complete Driver On Way Content with all details
+  Widget _buildDriverOnWayContent() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(20),
+          topRight: Radius.circular(20),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, -5),
+          ),
+        ],
+      ),
+      child: SafeArea(
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(AppDimensions.pageHorizontalPadding),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Handle bar
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[300],
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+
+                // Status Header
+                Text(
+                  'Driver On The Way',
+                  style: AppTextStyles.heading2.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Your driver will arrive at the pickup location soon',
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: Colors.grey[600],
+                  ),
+                ),
+
+                const SizedBox(height: 24),
+
+                // ✅ DRIVER CARD
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.withOpacity(0.05),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.blue.withOpacity(0.2)),
+                  ),
+                  child: Row(
+                    children: [
+                      // Driver Photo
+                      CircleAvatar(
+                        radius: 30,
+                        backgroundColor: Colors.blue,
+                        child: Text(
+                          driverName != null && driverName!.isNotEmpty
+                              ? driverName!.substring(0, 1).toUpperCase()
+                              : 'D',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+
+                      // Driver Info
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              driverName ?? 'Driver',
+                              style: AppTextStyles.bodyLarge.copyWith(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            if (driverRating != null)
+                              Row(
+                                children: [
+                                  const Icon(
+                                    Icons.star,
+                                    color: Colors.amber,
+                                    size: 16,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    driverRating!.toStringAsFixed(1),
+                                    style: AppTextStyles.bodySmall.copyWith(
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            if (vehicleDetails != null) ...[
+                              const SizedBox(height: 4),
+                              Text(
+                                vehicleDetails!,
+                                style: AppTextStyles.bodySmall.copyWith(
+                                  color: Colors.grey[600],
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+
+                      // Action Buttons
+                      Column(
+                        children: [
+                          // Call Button
+                          IconButton(
+                            icon: const Icon(Icons.phone, color: Colors.green),
+                            onPressed: () => _callDriver(),
+                          ),
+                          // Message Button
+                          IconButton(
+                            icon: const Icon(Icons.message, color: Colors.blue),
+                            onPressed: () {
+                              SnackbarHelper.showInfoSnackBar(
+                                context,
+                                'Messaging feature coming soon',
+                              );
+                            },
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 16),
+
+                // ETA Info
+                if (estimatedArrival != null)
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.orange.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.access_time,
+                          color: Colors.orange,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          estimatedArrival!,
+                          style: AppTextStyles.bodyMedium.copyWith(
+                            color: Colors.orange[800],
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                const SizedBox(height: 24),
+
+                // Trip Details
+                _buildTripDetailsCard(),
+
+                const SizedBox(height: 24),
+
+                // Cancel Button
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton(
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      side: const BorderSide(color: Colors.red),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    onPressed: () => _showCancelConfirmation(context),
+                    child: const Text(
+                      'Cancel Ride',
+                      style: TextStyle(
+                        color: Colors.red,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ✅ Add call driver functionality
+  Future<void> _callDriver() async {
+    if (driverPhone == null) {
+      SnackbarHelper.showErrorSnackBar(
+        context,
+        'Driver phone number not available',
+      );
+      return;
+    }
+
+    final Uri phoneUri = Uri(scheme: 'tel', path: driverPhone);
+
+    try {
+      if (await canLaunchUrl(phoneUri)) {
+        await launchUrl(phoneUri);
+      } else {
+        if (mounted) {
+          SnackbarHelper.showErrorSnackBar(
+            context,
+            'Could not launch phone dialer',
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        SnackbarHelper.showErrorSnackBar(context, 'Error making call: $e');
+      }
+    }
   }
 
   Widget _buildDriverArrivedContent() {
@@ -860,667 +1152,12 @@ class _RideTrackingScreenState extends State<RideTrackingScreen> {
     );
   }
 
-  // // COMMENT UNUSED METHODS
-  // Widget _buildSharedRideDetailsContent() {
-  //   return Container(
-  //     decoration: const BoxDecoration(
-  //       color: AppColors.white,
-  //       borderRadius: BorderRadius.only(
-  //         topLeft: Radius.circular(20),
-  //         topRight: Radius.circular(20),
-  //       ),
-  //       boxShadow: [
-  //         BoxShadow(
-  //           color: Colors.black26,
-  //           blurRadius: 10,
-  //           offset: Offset(0, -2),
-  //         ),
-  //       ],
-  //     ),
-  //     child: SafeArea(
-  //       child: SingleChildScrollView(
-  //         child: Padding(
-  //           padding: const EdgeInsets.all(AppDimensions.pageHorizontalPadding),
-  //           child: Column(
-  //             mainAxisSize: MainAxisSize.min,
-  //             crossAxisAlignment: CrossAxisAlignment.start,
-  //             children: [
-  //               // Handle bar
-  //               Center(
-  //                 child: Container(
-  //                   width: 40,
-  //                   height: 4,
-  //                   margin: const EdgeInsets.only(bottom: 16),
-  //                   decoration: BoxDecoration(
-  //                     color: AppColors.lightGrey,
-  //                     borderRadius: BorderRadius.circular(2),
-  //                   ),
-  //                 ),
-  //               ),
-
-  //               // Header
-  //               Row(
-  //                 children: [
-  //                   Icon(Icons.group, color: AppColors.primaryBlue, size: 24),
-  //                   const SizedBox(width: 12),
-  //                   Text(
-  //                     'Shared Ride Found!',
-  //                     style: AppTextStyles.heading2.copyWith(
-  //                       fontWeight: FontWeight.w600,
-  //                       color: AppColors.primaryBlue,
-  //                     ),
-  //                   ),
-  //                 ],
-  //               ),
-
-  //               const SizedBox(height: 16),
-
-  //               // Driver info
-  //               Container(
-  //                 padding: const EdgeInsets.all(16),
-  //                 decoration: BoxDecoration(
-  //                   color: AppColors.surfaceLight,
-  //                   borderRadius: BorderRadius.circular(12),
-  //                   border: Border.all(color: AppColors.lightGrey),
-  //                 ),
-  //                 child: Row(
-  //                   children: [
-  //                     CircleAvatar(
-  //                       radius: 25,
-  //                       backgroundImage: AssetImage(driverInfo['profileImage']),
-  //                     ),
-  //                     const SizedBox(width: 12),
-  //                     Expanded(
-  //                       child: Column(
-  //                         crossAxisAlignment: CrossAxisAlignment.start,
-  //                         children: [
-  //                           Text(
-  //                             driverInfo['name'],
-  //                             style: AppTextStyles.bodyLarge.copyWith(
-  //                               fontWeight: FontWeight.w600,
-  //                             ),
-  //                           ),
-  //                           Row(
-  //                             children: [
-  //                               Icon(
-  //                                 Icons.star,
-  //                                 size: 16,
-  //                                 color: AppColors.warning,
-  //                               ),
-  //                               const SizedBox(width: 4),
-  //                               Text(
-  //                                 '${driverInfo['rating']}',
-  //                                 style: AppTextStyles.bodySmall,
-  //                               ),
-  //                               const SizedBox(width: 16),
-  //                               Text(
-  //                                 '${driverInfo['vehicleModel']} • ${driverInfo['vehicleNumber']}',
-  //                                 style: AppTextStyles.bodySmall.copyWith(
-  //                                   color: AppColors.textSecondary,
-  //                                 ),
-  //                               ),
-  //                             ],
-  //                           ),
-  //                         ],
-  //                       ),
-  //                     ),
-  //                   ],
-  //                 ),
-  //               ),
-
-  //               const SizedBox(height: 16),
-
-  //               Text(
-  //                 'Current Riders (${currentRiders.length})',
-  //                 style: AppTextStyles.bodyLarge.copyWith(
-  //                   fontWeight: FontWeight.w600,
-  //                 ),
-  //               ),
-
-  //               const SizedBox(height: 12),
-
-  //               // Current riders list
-  //               ...currentRiders.map(
-  //                 (rider) => Container(
-  //                   margin: const EdgeInsets.only(bottom: 12),
-  //                   padding: const EdgeInsets.all(12),
-  //                   decoration: BoxDecoration(
-  //                     color: AppColors.surfaceLight,
-  //                     borderRadius: BorderRadius.circular(8),
-  //                     border: Border.all(color: AppColors.lightGrey),
-  //                   ),
-  //                   child: Row(
-  //                     children: [
-  //                       CircleAvatar(
-  //                         radius: 20,
-  //                         backgroundImage: AssetImage(rider['profileImage']),
-  //                       ),
-  //                       const SizedBox(width: 12),
-  //                       Expanded(
-  //                         child: Column(
-  //                           crossAxisAlignment: CrossAxisAlignment.start,
-  //                           children: [
-  //                             Row(
-  //                               children: [
-  //                                 Text(
-  //                                   rider['name'],
-  //                                   style: AppTextStyles.bodyMedium.copyWith(
-  //                                     fontWeight: FontWeight.w600,
-  //                                   ),
-  //                                 ),
-  //                                 const SizedBox(width: 8),
-  //                                 Icon(
-  //                                   Icons.star,
-  //                                   size: 14,
-  //                                   color: AppColors.warning,
-  //                                 ),
-  //                                 const SizedBox(width: 2),
-  //                                 Text(
-  //                                   '${rider['rating']}',
-  //                                   style: AppTextStyles.bodySmall,
-  //                                 ),
-  //                               ],
-  //                             ),
-  //                             Text(
-  //                               '${rider['pickupLocation']} → ${rider['dropLocation']}',
-  //                               style: AppTextStyles.bodySmall.copyWith(
-  //                                 color: AppColors.textSecondary,
-  //                               ),
-  //                             ),
-  //                           ],
-  //                         ),
-  //                       ),
-  //                     ],
-  //                   ),
-  //                 ),
-  //               ),
-
-  //               const SizedBox(height: 16),
-
-  //               // Auto-accept countdown
-  //               Container(
-  //                 padding: const EdgeInsets.all(12),
-  //                 decoration: BoxDecoration(
-  //                   color: AppColors.warning.withValues(alpha: 0.1),
-  //                   borderRadius: BorderRadius.circular(8),
-  //                   border: Border.all(color: AppColors.warning),
-  //                 ),
-  //                 child: Row(
-  //                   children: [
-  //                     Icon(Icons.timer, color: AppColors.warning, size: 20),
-  //                     const SizedBox(width: 8),
-  //                     Text(
-  //                       'This ride will be auto-accepted in 15 seconds',
-  //                       style: AppTextStyles.bodySmall.copyWith(
-  //                         color: AppColors.textPrimary,
-  //                         fontWeight: FontWeight.w500,
-  //                       ),
-  //                     ),
-  //                   ],
-  //                 ),
-  //               ),
-
-  //               const SizedBox(height: 20),
-
-  //               // Slider to accept/reject
-  //               Container(
-  //                 padding: const EdgeInsets.all(20),
-  //                 decoration: BoxDecoration(
-  //                   color: AppColors.surfaceLight,
-  //                   borderRadius: BorderRadius.circular(16),
-  //                   border: Border.all(color: AppColors.lightGrey),
-  //                 ),
-  //                 child: Column(
-  //                   children: [
-  //                     Text(
-  //                       'Slide to Accept or Reject',
-  //                       style: AppTextStyles.bodyMedium.copyWith(
-  //                         fontWeight: FontWeight.w600,
-  //                         color: AppColors.textPrimary,
-  //                       ),
-  //                     ),
-  //                     const SizedBox(height: 16),
-  //                     Stack(
-  //                       children: [
-  //                         // Background track
-  //                         Container(
-  //                           height: 60,
-  //                           decoration: BoxDecoration(
-  //                             borderRadius: BorderRadius.circular(30),
-  //                             gradient: LinearGradient(
-  //                               colors: [
-  //                                 AppColors.error.withValues(alpha: 0.3),
-  //                                 AppColors.lightGrey,
-  //                                 AppColors.success.withValues(alpha: 0.3),
-  //                               ],
-  //                             ),
-  //                           ),
-  //                         ),
-  //                         // Labels
-  //                         Positioned.fill(
-  //                           child: Row(
-  //                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-  //                             children: [
-  //                               Padding(
-  //                                 padding: const EdgeInsets.only(left: 20),
-  //                                 child: Row(
-  //                                   children: [
-  //                                     Icon(
-  //                                       Icons.close,
-  //                                       color: AppColors.error,
-  //                                       size: 20,
-  //                                     ),
-  //                                     const SizedBox(width: 8),
-  //                                     Text(
-  //                                       'Reject',
-  //                                       style: AppTextStyles.bodySmall.copyWith(
-  //                                         color: AppColors.error,
-  //                                         fontWeight: FontWeight.w600,
-  //                                       ),
-  //                                     ),
-  //                                   ],
-  //                                 ),
-  //                               ),
-  //                               Padding(
-  //                                 padding: const EdgeInsets.only(right: 20),
-  //                                 child: Row(
-  //                                   children: [
-  //                                     Text(
-  //                                       'Accept',
-  //                                       style: AppTextStyles.bodySmall.copyWith(
-  //                                         color: AppColors.success,
-  //                                         fontWeight: FontWeight.w600,
-  //                                       ),
-  //                                     ),
-  //                                     const SizedBox(width: 8),
-  //                                     Icon(
-  //                                       Icons.check,
-  //                                       color: AppColors.success,
-  //                                       size: 20,
-  //                                     ),
-  //                                   ],
-  //                                 ),
-  //                               ),
-  //                             ],
-  //                           ),
-  //                         ),
-  //                         // Slider
-  //                         SliderTheme(
-  //                           data: SliderTheme.of(context).copyWith(
-  //                             trackHeight: 60,
-  //                             activeTrackColor: Colors.transparent,
-  //                             inactiveTrackColor: Colors.transparent,
-  //                             thumbShape: CustomSliderThumb(),
-  //                             overlayShape: const RoundSliderOverlayShape(
-  //                               overlayRadius: 0,
-  //                             ),
-  //                             trackShape: const RoundedRectSliderTrackShape(),
-  //                           ),
-  //                           child: Slider(
-  //                             value: sliderValue,
-  //                             min: 0.0,
-  //                             max: 1.0,
-  //                             onChanged: _onSliderChanged,
-  //                           ),
-  //                         ),
-  //                       ],
-  //                     ),
-  //                     const SizedBox(height: 12),
-  //                     Text(
-  //                       sliderValue <= 0.1
-  //                           ? 'Finding another ride...'
-  //                           : sliderValue >= 0.9
-  //                           ? 'Ride accepted!'
-  //                           : sliderValue > 0.7
-  //                           ? 'Slide right to accept...'
-  //                           : sliderValue < 0.3
-  //                           ? 'Slide left to reject...'
-  //                           : 'Slide to make your choice',
-  //                       style: AppTextStyles.bodySmall.copyWith(
-  //                         color:
-  //                             sliderValue <= 0.1
-  //                                 ? AppColors.error
-  //                                 : sliderValue >= 0.9
-  //                                 ? AppColors.success
-  //                                 : AppColors.textSecondary,
-  //                         fontWeight: FontWeight.w500,
-  //                       ),
-  //                       textAlign: TextAlign.center,
-  //                     ),
-  //                   ],
-  //                 ),
-  //               ),
-  //             ],
-  //           ),
-  //         ),
-  //       ),
-  //     ),
-  //   );
-  // }
-
-  // // COMMENT UNUSED METHODS
-  // Widget _buildNoSharedRideContent() {
-  //   return Container(
-  //     decoration: const BoxDecoration(
-  //       color: AppColors.white,
-  //       borderRadius: BorderRadius.only(
-  //         topLeft: Radius.circular(20),
-  //         topRight: Radius.circular(20),
-  //       ),
-  //       boxShadow: [
-  //         BoxShadow(
-  //           color: Colors.black26,
-  //           blurRadius: 10,
-  //           offset: Offset(0, -2),
-  //         ),
-  //       ],
-  //     ),
-  //     child: SafeArea(
-  //       child: Padding(
-  //         padding: const EdgeInsets.all(AppDimensions.pageHorizontalPadding),
-  //         child: Column(
-  //           mainAxisSize: MainAxisSize.min,
-  //           children: [
-  //             // Handle bar
-  //             Container(
-  //               width: 40,
-  //               height: 4,
-  //               margin: const EdgeInsets.only(bottom: 16),
-  //               decoration: BoxDecoration(
-  //                 color: AppColors.lightGrey,
-  //                 borderRadius: BorderRadius.circular(2),
-  //               ),
-  //             ),
-
-  //             Icon(Icons.group_off, size: 64, color: AppColors.textSecondary),
-
-  //             const SizedBox(height: 16),
-
-  //             Text(
-  //               'No Shared Rides Available',
-  //               style: AppTextStyles.heading2.copyWith(
-  //                 fontWeight: FontWeight.w600,
-  //               ),
-  //               textAlign: TextAlign.center,
-  //             ),
-
-  //             const SizedBox(height: 8),
-
-  //             Text(
-  //               'Would you like to create a new shared ride? Other riders can join your trip.',
-  //               style: AppTextStyles.bodyMedium.copyWith(
-  //                 color: AppColors.textSecondary,
-  //               ),
-  //               textAlign: TextAlign.center,
-  //             ),
-
-  //             const SizedBox(height: 24),
-
-  //             Row(
-  //               children: [
-  //                 Expanded(
-  //                   child: OutlinedButton(
-  //                     onPressed: () => Navigator.pop(context),
-  //                     style: OutlinedButton.styleFrom(
-  //                       side: const BorderSide(color: AppColors.lightGrey),
-  //                       padding: const EdgeInsets.symmetric(vertical: 16),
-  //                     ),
-  //                     child: Text(
-  //                       'Cancel',
-  //                       style: AppTextStyles.bodyMedium.copyWith(
-  //                         color: AppColors.textSecondary,
-  //                       ),
-  //                     ),
-  //                   ),
-  //                 ),
-  //                 const SizedBox(width: 12),
-  //                 Expanded(
-  //                   flex: 2,
-  //                   child: ElevatedButton(
-  //                     onPressed: _createNewSharedRide,
-  //                     style: AppButtonStyles.primaryButton,
-  //                     child: const Text('Create Shared Ride'),
-  //                   ),
-  //                 ),
-  //               ],
-  //             ),
-  //           ],
-  //         ),
-  //       ),
-  //     ),
-  //   );
-  // }
-
-  // Widget _buildDropOffContent() {
-  //   return Container(
-  //     decoration: const BoxDecoration(
-  //       color: AppColors.white,
-  //       borderRadius: BorderRadius.only(
-  //         topLeft: Radius.circular(20),
-  //         topRight: Radius.circular(20),
-  //       ),
-  //       boxShadow: [
-  //         BoxShadow(
-  //           color: Colors.black26,
-  //           blurRadius: 10,
-  //           offset: Offset(0, -2),
-  //         ),
-  //       ],
-  //     ),
-  //     child: SafeArea(
-  //       child: Padding(
-  //         padding: const EdgeInsets.all(AppDimensions.pageHorizontalPadding),
-  //         child: Column(
-  //           mainAxisSize: MainAxisSize.min,
-  //           children: [
-  //             // Handle bar
-  //             Container(
-  //               width: 40,
-  //               height: 4,
-  //               margin: const EdgeInsets.only(bottom: 16),
-  //               decoration: BoxDecoration(
-  //                 color: AppColors.lightGrey,
-  //                 borderRadius: BorderRadius.circular(2),
-  //               ),
-  //             ),
-
-  //             // Success icon
-  //             Container(
-  //               width: 80,
-  //               height: 80,
-  //               decoration: BoxDecoration(
-  //                 color: AppColors.success.withValues(alpha: 0.1),
-  //                 shape: BoxShape.circle,
-  //               ),
-  //               child: const Icon(
-  //                 Icons.check_circle,
-  //                 size: 40,
-  //                 color: AppColors.success,
-  //               ),
-  //             ),
-
-  //             const SizedBox(height: 16),
-
-  //             Text(
-  //               'Trip Completed!',
-  //               style: AppTextStyles.heading2.copyWith(
-  //                 fontWeight: FontWeight.w600,
-  //                 color: AppColors.success,
-  //               ),
-  //               textAlign: TextAlign.center,
-  //             ),
-
-  //             const SizedBox(height: 8),
-
-  //             Text(
-  //               'Thank you for choosing Thirikkale',
-  //               style: AppTextStyles.bodyMedium.copyWith(
-  //                 color: AppColors.textSecondary,
-  //               ),
-  //               textAlign: TextAlign.center,
-  //             ),
-
-  //             const SizedBox(height: 24),
-
-  //             // Price breakdown
-  //             Container(
-  //               padding: const EdgeInsets.all(16),
-  //               decoration: BoxDecoration(
-  //                 color: AppColors.surfaceLight,
-  //                 borderRadius: BorderRadius.circular(12),
-  //                 border: Border.all(color: AppColors.lightGrey),
-  //               ),
-  //               child: Column(
-  //                 crossAxisAlignment: CrossAxisAlignment.start,
-  //                 children: [
-  //                   Text(
-  //                     'Trip Summary',
-  //                     style: AppTextStyles.bodyLarge.copyWith(
-  //                       fontWeight: FontWeight.w600,
-  //                     ),
-  //                   ),
-  //                   const SizedBox(height: 12),
-  //                   Row(
-  //                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
-  //                     children: [
-  //                       Text(
-  //                         'Estimated Price',
-  //                         style: AppTextStyles.bodyMedium,
-  //                       ),
-  //                       Text(
-  //                         'LKR ${widget.estimatedPrice}',
-  //                         style: AppTextStyles.bodyMedium,
-  //                       ),
-  //                     ],
-  //                   ),
-  //                   if (savings > 0) ...[
-  //                     const SizedBox(height: 4),
-  //                     Row(
-  //                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
-  //                       children: [
-  //                         Text(
-  //                           'Savings',
-  //                           style: AppTextStyles.bodyMedium.copyWith(
-  //                             color: AppColors.success,
-  //                           ),
-  //                         ),
-  //                         Text(
-  //                           '- LKR $savings',
-  //                           style: AppTextStyles.bodyMedium.copyWith(
-  //                             color: AppColors.success,
-  //                           ),
-  //                         ),
-  //                       ],
-  //                     ),
-  //                   ],
-  //                   const Divider(),
-  //                   Row(
-  //                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
-  //                     children: [
-  //                       Text(
-  //                         'Final Amount',
-  //                         style: AppTextStyles.bodyLarge.copyWith(
-  //                           fontWeight: FontWeight.w600,
-  //                         ),
-  //                       ),
-  //                       Text(
-  //                         'LKR $actualPrice',
-  //                         style: AppTextStyles.bodyLarge.copyWith(
-  //                           fontWeight: FontWeight.w600,
-  //                           color: AppColors.primaryBlue,
-  //                         ),
-  //                       ),
-  //                     ],
-  //                   ),
-  //                 ],
-  //               ),
-  //             ),
-
-  //             const SizedBox(height: 16),
-
-  //             // Driver rating
-  //             Container(
-  //               padding: const EdgeInsets.all(16),
-  //               decoration: BoxDecoration(
-  //                 color: AppColors.surfaceLight,
-  //                 borderRadius: BorderRadius.circular(12),
-  //                 border: Border.all(color: AppColors.lightGrey),
-  //               ),
-  //               child: Column(
-  //                 children: [
-  //                   Text(
-  //                     'Rate your driver',
-  //                     style: AppTextStyles.bodyMedium.copyWith(
-  //                       fontWeight: FontWeight.w600,
-  //                     ),
-  //                   ),
-  //                   const SizedBox(height: 8),
-  //                   Row(
-  //                     mainAxisAlignment: MainAxisAlignment.center,
-  //                     children: List.generate(
-  //                       5,
-  //                       (index) => Icon(
-  //                         Icons.star_border,
-  //                         color: AppColors.warning,
-  //                         size: 32,
-  //                       ),
-  //                     ),
-  //                   ),
-  //                 ],
-  //               ),
-  //             ),
-
-  //             const SizedBox(height: 20),
-
-  //             // Action buttons
-  //             Row(
-  //               children: [
-  //                 Expanded(
-  //                   child: OutlinedButton(
-  //                     onPressed: () {},
-  //                     style: OutlinedButton.styleFrom(
-  //                       side: const BorderSide(color: AppColors.lightGrey),
-  //                       padding: const EdgeInsets.symmetric(vertical: 16),
-  //                     ),
-  //                     child: Text(
-  //                       'Download Receipt',
-  //                       style: AppTextStyles.bodyMedium.copyWith(
-  //                         color: AppColors.textSecondary,
-  //                       ),
-  //                     ),
-  //                   ),
-  //                 ),
-  //                 const SizedBox(width: 12),
-  //                 Expanded(
-  //                   child: ElevatedButton(
-  //                     onPressed: () {
-  //                       // Navigate to home screen
-  //                       Navigator.pushNamedAndRemoveUntil(
-  //                         context,
-  //                         '/home', // Navigate to home route
-  //                         (route) => false, // Remove all previous routes
-  //                       );
-  //                     },
-  //                     style: AppButtonStyles.primaryButton,
-  //                     child: const Text('Done'),
-  //                   ),
-  //                 ),
-  //               ],
-  //             ),
-  //           ],
-  //         ),
-  //       ),
-  //     ),
-  //   );
-  // }
-
   Widget _buildTripDetailsCard() {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.surfaceLight,
+        color: Colors.grey[50],
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.lightGrey),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1528,14 +1165,23 @@ class _RideTrackingScreenState extends State<RideTrackingScreen> {
           Text(
             'Trip Details',
             style: AppTextStyles.bodyLarge.copyWith(
-              fontWeight: FontWeight.w600,
+              fontWeight: FontWeight.bold,
             ),
           ),
           const SizedBox(height: 12),
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(Icons.circle, color: AppColors.success, size: 12),
-              const SizedBox(width: 8),
+              Container(
+                width: 8,
+                height: 8,
+                margin: const EdgeInsets.only(top: 6),
+                decoration: const BoxDecoration(
+                  color: Colors.green,
+                  shape: BoxShape.circle,
+                ),
+              ),
+              const SizedBox(width: 12),
               Expanded(
                 child: Text(
                   widget.pickupAddress,
@@ -1544,11 +1190,20 @@ class _RideTrackingScreenState extends State<RideTrackingScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(Icons.location_on, color: AppColors.error, size: 12),
-              const SizedBox(width: 8),
+              Container(
+                width: 8,
+                height: 8,
+                margin: const EdgeInsets.only(top: 6),
+                decoration: const BoxDecoration(
+                  color: Colors.red,
+                  shape: BoxShape.circle,
+                ),
+              ),
+              const SizedBox(width: 12),
               Expanded(
                 child: Text(
                   widget.destinationAddress,
@@ -1557,25 +1212,6 @@ class _RideTrackingScreenState extends State<RideTrackingScreen> {
               ),
             ],
           ),
-          if (widget.rideType != null) ...[
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Icon(
-                  widget.rideType?.toLowerCase() == 'shared'
-                      ? Icons.group
-                      : Icons.person,
-                  color: AppColors.primaryBlue,
-                  size: 12,
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  '${widget.rideType} Ride • Estimated: LKR ${widget.estimatedPrice}',
-                  style: AppTextStyles.bodyMedium,
-                ),
-              ],
-            ),
-          ],
         ],
       ),
     );
@@ -1585,7 +1221,8 @@ class _RideTrackingScreenState extends State<RideTrackingScreen> {
     DialogHelper.showConfirmationDialog(
       context: context,
       title: 'Cancel Ride?',
-      content: 'Are you sure you want to cancel this ride? You may be charged a cancellation fee.',
+      content:
+          'Are you sure you want to cancel this ride? You may be charged a cancellation fee.',
       confirmText: 'Cancel Ride',
       cancelText: 'Keep Ride',
       confirmButtonColor: AppColors.error,
@@ -1606,8 +1243,6 @@ class _RideTrackingScreenState extends State<RideTrackingScreen> {
       );
       final token = await authProvider.getCurrentToken();
       final rideId = rideBookingProvider.rideId;
-
-      print("Cancel token: $token");
 
       if (token != null && rideId.isNotEmpty) {
         await RideStatusService.cancelRide(
@@ -1642,10 +1277,7 @@ class _RideTrackingScreenState extends State<RideTrackingScreen> {
       }
     } catch (e) {
       if (mounted) {
-        SnackbarHelper.showErrorSnackBar(
-          context,
-          "'Failed to cancel ride: $e'",
-        );
+        SnackbarHelper.showErrorSnackBar(context, "Failed to cancel ride: $e");
       }
     }
   }
@@ -1689,102 +1321,10 @@ class _RideTrackingScreenState extends State<RideTrackingScreen> {
           ),
           if (driverPhone != null)
             IconButton(
-              onPressed: () {
-                // Add call functionality
-              },
+              onPressed: _callDriver,
               icon: const Icon(Icons.phone, color: Colors.green),
             ),
         ],
-      ),
-    );
-  }
-}
-
-class CustomSliderThumb extends SliderComponentShape {
-  @override
-  Size getPreferredSize(bool isEnabled, bool isDiscrete) {
-    return const Size(56, 56);
-  }
-
-  @override
-  void paint(
-    PaintingContext context,
-    Offset center, {
-    required Animation<double> activationAnimation,
-    required Animation<double> enableAnimation,
-    required bool isDiscrete,
-    required TextPainter labelPainter,
-    required RenderBox parentBox,
-    required SliderThemeData sliderTheme,
-    required TextDirection textDirection,
-    required double value,
-    required double textScaleFactor,
-    required Size sizeWithOverflow,
-  }) {
-    final Canvas canvas = context.canvas;
-
-    // Draw outer circle (white background)
-    final outerCirclePaint =
-        Paint()
-          ..color = AppColors.white
-          ..style = PaintingStyle.fill;
-
-    canvas.drawCircle(center, 28, outerCirclePaint);
-
-    // Draw border
-    final borderPaint =
-        Paint()
-          ..color = AppColors.lightGrey
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 2;
-
-    canvas.drawCircle(center, 28, borderPaint);
-
-    // Draw inner circle with gradient based on position
-    final innerColor =
-        value < 0.2
-            ? AppColors.error
-            : value > 0.8
-            ? AppColors.success
-            : AppColors.primaryBlue;
-
-    final innerCirclePaint =
-        Paint()
-          ..color = innerColor
-          ..style = PaintingStyle.fill;
-
-    canvas.drawCircle(center, 20, innerCirclePaint);
-
-    // Draw arrow icon
-    final iconData =
-        value < 0.2
-            ? Icons.close
-            : value > 0.8
-            ? Icons.check
-            : Icons.drag_handle;
-
-    final textSpan = TextSpan(
-      text: String.fromCharCode(iconData.codePoint),
-      style: TextStyle(
-        fontSize: 20,
-        fontFamily: iconData.fontFamily,
-        color: AppColors.white,
-        fontWeight: FontWeight.w600,
-      ),
-    );
-
-    final textPainter = TextPainter(
-      text: textSpan,
-      textAlign: TextAlign.center,
-      textDirection: TextDirection.ltr,
-    );
-
-    textPainter.layout();
-    textPainter.paint(
-      canvas,
-      Offset(
-        center.dx - textPainter.width / 2,
-        center.dy - textPainter.height / 2,
       ),
     );
   }
