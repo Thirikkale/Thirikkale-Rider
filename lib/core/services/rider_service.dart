@@ -94,11 +94,10 @@ class RiderService {
     required String jwtToken,
   }) async {
     try {
-      print('🚀 Starting driver profile completion...');
-      print('🆔 Driver ID: $riderId');
+      print('🚀 Starting rider profile completion...');
+      print('🆔 Rider ID: $riderId');
       print('👤 Name: $firstName $lastName');
 
-      // final url = ApiConfig.completeProfile(riderId);
       final url = RiderEndpoints.completeProfile(riderId);
 
       final headers = {
@@ -124,29 +123,37 @@ class RiderService {
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
 
+        // The backend returns the complete auth response with tokens
         return {
           'success': true,
           'data': responseData,
-          'message': 'Profile completed successfully',
+          'userId': responseData['userId'],
+          'accessToken': responseData['accessToken'],
+          'refreshToken': responseData['refreshToken'],
+          'firstName': responseData['firstName'],
+          'lastName': responseData['lastName'],
+          'message':
+              responseData['registrationMessage'] ??
+              'Profile completed successfully',
         };
       } else if (response.statusCode == 401) {
         return {
           'success': false,
           'error': 'Session expired. Please login again.',
-          'statusCode': response.statusCode,
+          'type': 'auth_error',
         };
       } else if (response.statusCode == 404) {
         return {
           'success': false,
-          'error': 'Driver not found',
-          'statusCode': response.statusCode,
+          'error': 'Rider not found.',
+          'type': 'not_found',
         };
       } else {
         final errorData = jsonDecode(response.body);
         return {
           'success': false,
           'error': errorData['message'] ?? 'Profile completion failed',
-          'statusCode': response.statusCode,
+          'details': errorData,
         };
       }
     } catch (e) {
@@ -154,6 +161,7 @@ class RiderService {
       return {
         'success': false,
         'error': 'Network error: Failed to complete profile',
+        'type': 'network_error',
       };
     }
   }

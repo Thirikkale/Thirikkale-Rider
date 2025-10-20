@@ -321,37 +321,28 @@ class AuthProvider extends ChangeNotifier {
       );
 
       if (result['success'] == true) {
-        // Update local state with the new names
-        _firstName = firstName;
-        _lastName = lastName;
-        if (_currentUser != null) {
-          _currentUser!.firstName = firstName;
-          _currentUser!.lastName = lastName;
+        print('✅ Profile completion successful!');
+
+        // Update local user data
+        _firstName = result['firstName'] ?? firstName;
+        _lastName = result['lastName'] ?? lastName;
+
+        // Update tokens if provided (backend sends new tokens after profile completion)
+        if (result['accessToken'] != null && result['refreshToken'] != null) {
+          await _storeJWTTokens(result);
         }
-
-        // Save updated information to local storage
-        await _saveTokensToStorage();
-
-        print('✅ Driver profile completed successfully');
-        print('👤 Updated Name: $_firstName $_lastName');
 
         notifyListeners();
         return true;
       } else {
         final errorMessage = result['error'] ?? 'Profile completion failed';
-
-        // Handle token expiry or authentication errors
-        if (result['statusCode'] == 401 || result['statusCode'] == 403) {
-          _setError('Session expired. Please login again.');
-          // Clear JWT tokens and logout
-          await logout();
-        } else {
-          _setError(errorMessage);
-        }
+        _setError(errorMessage);
+        print('❌ Profile completion failed: $errorMessage');
         return false;
       }
     } catch (e) {
       _setError('Profile completion error: $e');
+      print('❌ Exception during profile completion: $e');
       return false;
     } finally {
       _setLoading(false);
