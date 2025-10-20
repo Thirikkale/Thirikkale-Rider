@@ -8,11 +8,17 @@ import 'package:thirikkale_rider/core/providers/ride_booking_provider.dart';
 import 'package:thirikkale_rider/core/providers/ride_tracking_provider.dart';
 import 'package:thirikkale_rider/core/services/env_service.dart';
 import 'package:thirikkale_rider/core/utils/app_theme.dart';
+import 'package:flutter_stripe/flutter_stripe.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
   await EnvService.load();
+
+  Stripe.publishableKey = dotenv.env['STRIPE_PUBLISHABLE_KEY'] ?? 'PK_KEY_FALLBACK';
+  await Stripe.instance.applySettings();
+
   imageCache.maximumSizeBytes = 100 << 20; // 100MB
   runApp(ThirikkaleApp());
 }

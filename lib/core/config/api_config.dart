@@ -2,7 +2,7 @@ class ApiConfig {
   // Base URLs - Update this IP address to your backend server's IP
   // IMPORTANT: Replace 'YOUR_BACKEND_IP' with the actual IP address of your backend device
   // Example: 'http://192.168.1.100:8081/user-service/api/v1'
-  static const String baseIP = 'http://10.138.196.69';
+  static const String baseIP = 'http://192.168.1.113';
 
   static const String userServiceBaseUrl = '$baseIP:8081/user-service/api/v1';
   static const String rideServiceBaseUrl = '$baseIP:8082/ride-service/api/v1';
@@ -10,6 +10,9 @@ class ApiConfig {
   static const String rideServiceSocketUrl = '$baseIP:8082/ride-service';
 
   static const String pricingServiceBaseUrl = '$baseIP:8084/pricing-service/api';
+
+  static const String paymentServiceBaseUrl = '$baseIP:8086/api/payments';
+
 
   static const String pricingBaseUrl = '$pricingServiceBaseUrl/pricing';
   // User Service URLs
@@ -89,6 +92,12 @@ class ApiConfig {
       '$driversBaseUrl/$driverId/skip-gender-detection';
   static String driverWomenOnlyStatus(String driverId) =>
       '$driversBaseUrl/$driverId/women-only-status';
+
+  // =================== PAYMENT SERVICE ENDPOINTS ===================
+
+  // Creates a SetupIntent for saving a new card
+  static const String setupPaymentIntent = '$paymentServiceBaseUrl/setup-intent';
+  static String getPaymentMethods(String riderId) => '$paymentServiceBaseUrl/methods/$riderId';
 
   // =================== RIDE SERVICE ENDPOINTS ===================
 
@@ -286,6 +295,12 @@ class RiderEndpoints {
   // Payments
   static String payments(String riderId) => ApiConfig.getRiderPayments(riderId);
   static String spending(String riderId) => ApiConfig.getRiderSpending(riderId);
+
+  // Endpoint to save a new payment card
+  static const String saveCard = ApiConfig.setupPaymentIntent;
+
+  //endpoint to get saved payment methods
+  static String getSavedCards(String riderId) => ApiConfig.getPaymentMethods(riderId);
 }
 
 // Driver-specific endpoints class
