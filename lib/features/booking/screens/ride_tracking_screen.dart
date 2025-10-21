@@ -291,79 +291,172 @@ class _RideTrackingScreenState extends State<RideTrackingScreen> {
     print('✅ Subscribed to ride updates via WebSocket');
   }
 
+  // ✅ Refined _updateRideState: Call _updateDriverInfo logically, add logging
   void _updateRideState(Map<String, dynamic> rideData) {
-    print('📊 Updating ride state with data: $rideData');
-
+    print(
+      '📊 [Start Update] Updating ride state with incoming data: $rideData',
+    );
     final status = rideData['status']?.toString() ?? '';
+    final rideIdFromEvent = rideData['rideId']?.toString() ?? 'N/A';
 
+    if (!mounted) {
+      print('⚠️ [Update Aborted] Widget not mounted.');
+      return;
+    }
+
+    // Get current ride ID from provider for comparison
+    final currentRideId =
+        Provider.of<RideBookingProvider>(context, listen: false).rideId;
+    print(
+      '📊 Comparing Event Ride ID ($rideIdFromEvent) with Provider Ride ID ($currentRideId)',
+    );
+
+    // Optional: Ignore updates for rides other than the current one
+    // if (currentRideId.isNotEmpty && rideIdFromEvent != currentRideId) {
+    //    print('⚠️ [Update Ignored] Event is for a different ride ID.');
+    //    return;
+    // }
+
+    // Use setState ensures the build method runs *after* state variables change
     setState(() {
-      currentRideData = rideData;
+      RideState previousState = currentState;
+      print('📊 [Inside SetState] Previous state: $previousState');
 
-      // Update driver info
-      _updateDriverInfo(rideData);
+      currentRideData = rideData; // Store latest data
 
-      // Map status to RideState
+      RideState newState = currentState; // Start with current state
+
       switch (status) {
         case 'PENDING':
-          currentState = RideState.pending;
+          if (previousState != RideState.pending) {
+            newState = RideState.pending;
+            print('🚦 [SetState] State changing to: RideState.pending');
+          }
           break;
-
         case 'ACCEPTED':
-          currentState = RideState.accepted;
-          estimatedArrival = rideData['estimatedArrival'] ?? '5-10 mins';
-          // ✅ Start tracking driver location
-          _subscribeToLocationUpdates(rideData['id']);
-          break;
-
-        case 'DRIVER_ARRIVED': // ✅ NEW STATE
-          currentState = RideState.driverArrived;
-          print('🎉 Driver has arrived at pickup location!');
-          SnackbarHelper.showSuccessSnackBar(
-            context,
-            'Your driver has arrived! 🎉',
-          );
-          break;
-
-        case 'IN_PROGRESS':
-          currentState = RideState.inProgress;
-          print('🚗 Ride is now in progress');
-          break;
-
-        case 'COMPLETED':
-          currentState = RideState.completed;
-          print('✅ Ride completed successfully');
-          // Stop location tracking
-          Provider.of<RideTrackingProvider>(
-            context,
-            listen: false,
-          ).stopTracking();
-          // Show rating dialog after a short delay
-          Future.delayed(const Duration(seconds: 1), () {
-            if (mounted) {
-              _showRatingDialog();
+          if (previousState == RideState.pending || isLoading) {
+            newState = RideState.accepted;
+            print('🚦 [SetState] State changing to: RideState.accepted');
+            _updateDriverInfo(rideData); // Update driver info NOW
+            estimatedArrival = rideData['estimatedArrival'] ?? '5-10 mins';
+            if (!Provider.of<RideTrackingProvider>(
+              context,
+              listen: false,
+            ).isTracking) {
+              final rideBookingProvider = Provider.of<RideBookingProvider>(
+                context,
+                listen: false,
+              );
+              _subscribeToLocationUpdates(
+                rideData['id'] ?? rideBookingProvider.rideId,
+              );
             }
-          });
+            if (driverName != null &&
+                driverName != 'Driver' &&
+                driverName != 'null') {
+              // Delay snackbar slightly to ensure build completes
+              Future.delayed(
+                Duration.zero,
+                () => SnackbarHelper.showSuccessSnackBar(
+                  context,
+                  'Driver $driverName accepted your ride!',
+                ),
+              );
+            }
+          } else {
+            print(
+              '🚦 [SetState] Received ACCEPTED status again, but already in state $currentState. Ignoring state change.',
+            );
+            _updateDriverInfo(rideData); // Still update info
+          }
           break;
-
+        case 'DRIVER_ARRIVED':
+          if (previousState == RideState.accepted ||
+              previousState == RideState.inProgress) {
+            newState = RideState.driverArrived;
+            print('🚦🎉 [SetState] State changing to: RideState.driverArrived');
+            _updateDriverInfo(rideData);
+            if (previousState != RideState.driverArrived) {
+              // Delay snackbar slightly
+              Future.delayed(
+                Duration.zero,
+                () => SnackbarHelper.showSuccessSnackBar(
+                  context,
+                  'Your driver has arrived! 🎉',
+                ),
+              );
+            }
+          } else {
+            print(
+              '🚦 [SetState] Received DRIVER_ARRIVED status, but in unexpected state $currentState. Ignoring state change.',
+            );
+          }
+          break;
+        case 'IN_PROGRESS':
+          if (previousState == RideState.driverArrived ||
+              previousState == RideState.accepted) {
+            newState = RideState.inProgress;
+            print('🚦🚗 [SetState] State changing to: RideState.inProgress');
+            _updateDriverInfo(rideData);
+          } else {
+            print(
+              '🚦 [SetState] Received IN_PROGRESS status, but in unexpected state $currentState. Ignoring state change.',
+            );
+          }
+          break;
+        case 'COMPLETED':
+          if (previousState != RideState.completed) {
+            newState = RideState.completed;
+            print('🚦✅ [SetState] State changing to: RideState.completed');
+            _updateDriverInfo(rideData);
+            Provider.of<RideTrackingProvider>(
+              context,
+              listen: false,
+            ).stopTracking();
+            Future.delayed(const Duration(seconds: 1), () {
+              if (mounted && currentState == RideState.completed) {
+                _showRatingDialog();
+              }
+            });
+          } else {
+            print('🚦 [SetState] Received COMPLETED status again. Ignoring.');
+          }
+          break;
         case 'CANCELLED_BY_RIDER':
         case 'CANCELLED_BY_DRIVER':
         case 'CANCELLED_BY_SYSTEM':
-          currentState = RideState.cancelled;
-          print('❌ Ride was cancelled');
-          // Stop location tracking
-          Provider.of<RideTrackingProvider>(
-            context,
-            listen: false,
-          ).stopTracking();
+          if (previousState != RideState.cancelled) {
+            newState = RideState.cancelled;
+            print('🚦❌ [SetState] State changing to: RideState.cancelled');
+            Provider.of<RideTrackingProvider>(
+              context,
+              listen: false,
+            ).stopTracking();
+          } else {
+            print('🚦 [SetState] Received CANCELLED status again. Ignoring.');
+          }
           break;
-
         default:
-          print('⚠️ Unknown ride status: $status');
+          print(
+            '⚠️ [SetState] Unknown ride status received: $status. State remains $currentState.',
+          );
+          newState = currentState; // Explicitly keep current state
       }
 
-      isLoading = false;
-      errorMessage = null;
-    });
+      // --- Critical: Assign the calculated newState to currentState ---
+      currentState = newState;
+
+      // Reset loading/error flags
+      if (isLoading || errorMessage != null) {
+        isLoading = false;
+        errorMessage = null;
+      }
+
+      print(
+        '📊 [End SetState] State update applied. Current state is now: $currentState',
+      );
+    }); // End of setState
+    print('📊 [End Update] _updateRideState function finished.');
   }
 
   void stopTracking() {
@@ -384,47 +477,53 @@ class _RideTrackingScreenState extends State<RideTrackingScreen> {
   void _updateDriverInfo(Map<String, dynamic> rideData) {
     if (!mounted) return;
 
-    print('📋 Updating driver info from ride data');
+    print('📋 Updating driver info potentially from ride data');
     print('📋 Ride data keys: ${rideData.keys.toList()}');
 
-    setState(() {
-      // ✅ Extract driver details from ride response
+    // Only update fields if they are present and non-null in the incoming data
+    bool infoUpdated = false;
+    if (rideData.containsKey('driverName') && rideData['driverName'] != null) {
       driverName = rideData['driverName']?.toString();
+      infoUpdated = true;
+    }
+    if (rideData.containsKey('driverPhone') &&
+        rideData['driverPhone'] != null) {
       driverPhone = rideData['driverPhone']?.toString();
-
-      if (rideData['driverRating'] != null) {
-        driverRating = (rideData['driverRating'] as num).toDouble();
-      }
-
-      // ✅ Extract vehicle details
+      infoUpdated = true;
+    }
+    if (rideData.containsKey('driverRating') &&
+        rideData['driverRating'] != null) {
+      driverRating = (rideData['driverRating'] as num?)?.toDouble();
+      infoUpdated = true;
+    }
+    if (rideData.containsKey('vehicleModel') &&
+        rideData['vehicleModel'] != null &&
+        rideData.containsKey('vehiclePlateNumber') &&
+        rideData['vehiclePlateNumber'] != null) {
       String? vehicleModel = rideData['vehicleModel']?.toString();
       String? plateNumber = rideData['vehiclePlateNumber']?.toString();
+      vehicleDetails = '$vehicleModel • $plateNumber';
+      infoUpdated = true;
+    } else if (rideData.containsKey('vehicleDetails') &&
+        rideData['vehicleDetails'] != null) {
+      // Fallback if combined field is sent
+      vehicleDetails = rideData['vehicleDetails']?.toString();
+      infoUpdated = true;
+    }
 
-      if (vehicleModel != null && plateNumber != null) {
-        vehicleDetails = '$vehicleModel • $plateNumber';
-      } else {
-        vehicleDetails = 'Vehicle details pending';
-      }
-
-      estimatedArrival = 'Arriving soon';
-
-      print('📋 Driver info updated from API:');
+    // Only print if something actually changed from this specific data packet
+    if (infoUpdated) {
+      print('📋 Driver info updated from incoming data:');
       print('   Name: $driverName');
       print('   Phone: $driverPhone');
       print('   Vehicle: $vehicleDetails');
       print('   Rating: $driverRating');
-    });
-
-    // ✅ Only show snackbar if we have actual driver info
-    if (driverName != null &&
-        driverName!.isNotEmpty &&
-        driverName != 'null' &&
-        driverName != 'Driver') {
-      SnackbarHelper.showSuccessSnackBar(
-        context,
-        'Driver $driverName is on the way!',
-      );
+    } else {
+      print('📋 No new driver info found in this data packet.');
     }
+
+    // Note: The snackbar logic was moved from here to _handleRideAccepted
+    // and _updateRideState to ensure it shows at the right time.
   }
 
   void _handleAuthError() async {
@@ -504,8 +603,9 @@ class _RideTrackingScreenState extends State<RideTrackingScreen> {
   }
 
   Widget _buildBottomContent() {
-    print('🎨 Building bottom sheet for state: $currentState');
-    print('🎨 Driver name: $driverName, Vehicle: $vehicleDetails');
+    // ✅ ADD LOGGING HERE
+    print('🎨 [Build] Building bottom sheet for state: $currentState');
+    print('🎨 [Build] Driver name: $driverName, Vehicle: $vehicleDetails');
 
     if (isLoading) {
       return _buildLoadingContent();
@@ -516,31 +616,33 @@ class _RideTrackingScreenState extends State<RideTrackingScreen> {
     switch (currentState) {
       case RideState.pending:
         return _buildPendingContent();
-
       case RideState.accepted:
-        // ✅ IMPROVED: Check for actual driver data, not just 'Driver' placeholder
         final hasDriverInfo =
             driverName != null &&
             driverName != 'null' &&
             driverName!.isNotEmpty &&
             driverName != 'Driver' &&
             driverName != 'N/A';
-
         if (hasDriverInfo) {
-          print('✅ Showing driver card with info: $driverName');
+          print('✅ [Build] Showing driver card with info: $driverName');
           return _buildDriverOnWayContent();
         } else {
-          print('⏳ Still waiting for driver details, showing pending');
-          return _buildPendingContent(); // ⏳ Still waiting for driver details
+          print(
+            '⏳ [Build] Still waiting for driver details, showing pending UI',
+          );
+          return _buildPendingContent();
         }
-
       case RideState.driverArrived:
+        print('✅ [Build] Returning _buildDriverArrivedContent'); // ✅ ADD LOG
         return _buildDriverArrivedContent();
       case RideState.inProgress:
+        print('✅ [Build] Returning _buildInProgressContent'); // ✅ ADD LOG
         return _buildInProgressContent();
       case RideState.completed:
+        print('✅ [Build] Returning _buildCompletedContent'); // ✅ ADD LOG
         return _buildCompletedContent();
       case RideState.cancelled:
+        print('✅ [Build] Returning _buildCancelledContent'); // ✅ ADD LOG
         return _buildCancelledContent();
     }
   }
@@ -1109,11 +1211,16 @@ class _RideTrackingScreenState extends State<RideTrackingScreen> {
                   decoration: BoxDecoration(
                     color: AppColors.primaryBlue.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppColors.primaryBlue.withOpacity(0.3)),
+                    border: Border.all(
+                      color: AppColors.primaryBlue.withOpacity(0.3),
+                    ),
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.info_outline, color: AppColors.primaryBlue),
+                      const Icon(
+                        Icons.info_outline,
+                        color: AppColors.primaryBlue,
+                      ),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(
