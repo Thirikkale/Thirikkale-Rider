@@ -7,11 +7,19 @@ import 'package:thirikkale_rider/features/booking/screens/ride_summary_screen.da
 import 'package:provider/provider.dart';
 import 'package:thirikkale_rider/core/providers/ride_booking_provider.dart';
 
+
 class PickupTimeScreen extends StatefulWidget {
-  
+  final double? price;
+  final String? duration;
+  final String? distance;
+  final dynamic vehicle;
 
   const PickupTimeScreen({
     super.key,
+    this.price,
+    this.duration,
+    this.distance,
+    this.vehicle,
   });
 
   @override
@@ -390,13 +398,16 @@ class _PickupTimeScreenState extends State<PickupTimeScreen> {
   }
 
   void _confirmPickupTime() {
-    final scheduledDateTime = DateTime(
+    final scheduledDateTime = DateTime.utc(
       selectedDate.year,
       selectedDate.month,
       selectedDate.day,
       selectedHour,
       selectedMinute,
     );
+    // Log the UTC pickup time
+    print('[PickupTimeScreen] Selected UTC pickup time: '
+        '${scheduledDateTime.toIso8601String()}');
     // Set scheduledDateTime in provider
     Provider.of<RideBookingProvider>(context, listen: false)
         .setScheduledDateTime(scheduledDateTime);
@@ -404,7 +415,12 @@ class _PickupTimeScreenState extends State<PickupTimeScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => RideSummaryScreen(),
+        builder: (context) => RideSummaryScreen(
+          price: widget.price,
+          duration: widget.duration,
+          distance: widget.distance,
+          vehicle: widget.vehicle,
+        ),
       ),
     );
   }

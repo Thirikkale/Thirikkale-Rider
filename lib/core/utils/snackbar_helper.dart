@@ -36,7 +36,7 @@ class SnackbarHelper {
     required IconData icon,
     Duration duration = const Duration(seconds: 3),
     VoidCallback? onDismiss,
-    bool showAction = false,
+    bool showAction = true,
   }) {
     // Clear any existing snackbars first to prevent stacking
     ScaffoldMessenger.of(context).clearSnackBars();

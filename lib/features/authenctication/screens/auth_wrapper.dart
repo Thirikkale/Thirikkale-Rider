@@ -36,8 +36,8 @@ class _AuthWrapperState extends State<AuthWrapper> {
         // No valid token, user needs to log in.
         // print('❌ No valid session. Navigating to login screen.');
         Navigator.of(context).pushReplacement(
-          // MaterialPageRoute(builder: (_) => const GetStartedScreen())
-          MaterialPageRoute(builder: (_) => const HomeScreen()),
+          MaterialPageRoute(builder: (_) => const GetStartedScreen())
+          // MaterialPageRoute(builder: (_) => const HomeScreen())
         );
       }
     }

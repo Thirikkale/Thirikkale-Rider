@@ -270,7 +270,7 @@ class _RouteMapState extends State<RouteMap> {
     if (widget.pickupLat != null && widget.destLat != null) {
       try {
         _mapController!.animateCamera(
-          CameraUpdate.newLatLngBounds(_calculateBounds(), 120.0),
+          CameraUpdate.newLatLngBounds(_calculateBounds(), 150.0),
         );
       } catch (e) {
         print('Error fitting route in view: $e');

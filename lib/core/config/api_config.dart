@@ -10,8 +10,13 @@ class ApiConfig {
   static const String rideServiceSocketUrl = '$baseIP:8082/ride-service';
 
   static const String pricingServiceBaseUrl = '$baseIP:8084/pricing-service/api';
+  
+  static const String scheduleServiceBaseUrl = '$baseIP:8085/scheduling-service/api';
 
   static const String pricingBaseUrl = '$pricingServiceBaseUrl/pricing';
+  // Scheduled rides base: http://$ip:8085/scheduling-service/api/scheduled-rides
+  static const String scheduledRidesBaseUrl =
+      '$scheduleServiceBaseUrl/scheduled-rides';
   // User Service URLs
   static const String authBaseUrl = '$userServiceBaseUrl/auth';
   static const String ridersBaseUrl = '$userServiceBaseUrl/riders';
@@ -50,6 +55,9 @@ class ApiConfig {
       '$driversBaseUrl/$driverId/profile';
   static String uploadDriverProfilePhoto(String driverId) =>
       '$driversBaseUrl/$driverId/profile-photo';
+  // Driver Card/Details
+  static String getDriverCard(String driverId) =>
+      '$driversBaseUrl/$driverId/card';
 
   // Driver Document Management
   static String uploadDriverDocuments(String driverId) =>
@@ -400,6 +408,36 @@ class RideEndpoints {
   static const String wsDriverLocation = ApiConfig.webSocketDriverLocation;
 }
 
+// Scheduling service endpoints (Scheduled Rides)
+// Date-time format: ISO 8601 (e.g., 2025-10-19T09:30:00)
+class ScheduledRideEndpoints {
+  // Create scheduled ride (POST)
+  static const String create = ApiConfig.scheduledRidesBaseUrl;
+
+  // Cancel/delete by ID (DELETE)
+  static String deleteById(String id) =>
+      '${ApiConfig.scheduledRidesBaseUrl}/$id';
+
+  // Get all scheduled rides (GET)
+  static const String getAll = ApiConfig.scheduledRidesBaseUrl;
+
+  // Get rides by rider ID (GET)
+  static String byRider(String riderId) =>
+      '${ApiConfig.scheduledRidesBaseUrl}/rider/$riderId';
+
+  // Get rides by driver ID (GET)
+  static String byDriver(String driverId) =>
+      '${ApiConfig.scheduledRidesBaseUrl}/driver/$driverId';
+
+  // Assign a driver (PUT)
+  static String assignDriver(String rideId, String driverId) =>
+      '${ApiConfig.scheduledRidesBaseUrl}/$rideId/assign-driver/$driverId';
+
+  // Remove driver (DELETE)
+  static String removeDriver(String rideId) =>
+      '${ApiConfig.scheduledRidesBaseUrl}/$rideId/remove-driver';
+}
+
 // Profile completion steps for different user types
 class RiderProfileSteps {
   static const List<String> onboardingSteps = [
@@ -485,6 +523,14 @@ class RideStatus {
   static const String cancelledBySystem = 'CANCELLED_BY_SYSTEM';
 }
 
+// Scheduled Ride Status (matching backend enum)
+class ScheduledRideStatus {
+    static const String scheduled = 'SCHEDULED';
+    static const String grouping = 'GROUPING';
+    static const String dispatched = 'DISPATCHED';
+    static const String cancelled = 'CANCELLED';
+}
+
 // Payment Methods (matching backend enum)
 class PaymentMethods {
   static const String cash = 'CASH';
@@ -496,6 +542,6 @@ class PaymentMethods {
   static const Map<String, String> displayNames = {
     cash: 'Cash',
     card: 'Credit/Debit Card',
-    digitalWallet: 'Digital Wallet',
+    // digitalWallet: 'Digital Wallet',
   };
 }
