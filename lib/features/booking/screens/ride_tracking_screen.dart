@@ -212,6 +212,8 @@ class _RideTrackingScreenState extends State<RideTrackingScreen> {
       print('   Rating: $driverRating');
     });
 
+    _statusSubscription?.cancel();
+
     if (driverName != null && driverName != 'Driver' && driverName != 'null') {
       SnackbarHelper.showSuccessSnackBar(
         context,
@@ -289,46 +291,177 @@ class _RideTrackingScreenState extends State<RideTrackingScreen> {
     print('✅ Subscribed to ride updates via WebSocket');
   }
 
+  // ✅ Refined _updateRideState: Call _updateDriverInfo logically, add logging
   void _updateRideState(Map<String, dynamic> rideData) {
-    final status = rideData['status'] as String?;
+    print(
+      '📊 [Start Update] Updating ride state with incoming data: $rideData',
+    );
+    final status = rideData['status']?.toString() ?? '';
+    final rideIdFromEvent = rideData['rideId']?.toString() ?? 'N/A';
 
-    _currentPickupLat = (rideData['pickupLatitude'] as num?)?.toDouble();
-    _currentPickupLng = (rideData['pickupLongitude'] as num?)?.toDouble();
-    _currentDestLat = (rideData['dropoffLatitude'] as num?)?.toDouble();
-    _currentDestLng = (rideData['dropoffLongitude'] as num?)?.toDouble();
-
-    switch (status) {
-      case 'PENDING':
-        currentState = RideState.pending;
-        break;
-      case 'ACCEPTED':
-        currentState = RideState.accepted;
-        _updateDriverInfo(rideData);
-        _subscribeToLocationUpdates(rideData['id'] as String);
-        break;
-      case 'DRIVER_ARRIVED':
-        currentState = RideState.driverArrived;
-        _updateDriverInfo(rideData);
-        break;
-      case 'IN_PROGRESS':
-        currentState = RideState.inProgress;
-        _updateDriverInfo(rideData);
-        break;
-      case 'COMPLETED':
-        currentState = RideState.completed;
-        _updateDriverInfo(rideData);
-        break;
-      case 'CANCELLED':
-      case 'CANCELLED_BY_RIDER':
-      case 'CANCELLED_BY_DRIVER':
-      case 'CANCELLED_BY_SYSTEM':
-        currentState = RideState.cancelled;
-        break;
-      default:
-        currentState = RideState.pending;
+    if (!mounted) {
+      print('⚠️ [Update Aborted] Widget not mounted.');
+      return;
     }
 
-    print('📊 Ride state updated to: $currentState');
+    // Get current ride ID from provider for comparison
+    final currentRideId =
+        Provider.of<RideBookingProvider>(context, listen: false).rideId;
+    print(
+      '📊 Comparing Event Ride ID ($rideIdFromEvent) with Provider Ride ID ($currentRideId)',
+    );
+
+    // Optional: Ignore updates for rides other than the current one
+    // if (currentRideId.isNotEmpty && rideIdFromEvent != currentRideId) {
+    //    print('⚠️ [Update Ignored] Event is for a different ride ID.');
+    //    return;
+    // }
+
+    // Use setState ensures the build method runs *after* state variables change
+    setState(() {
+      RideState previousState = currentState;
+      print('📊 [Inside SetState] Previous state: $previousState');
+
+      currentRideData = rideData; // Store latest data
+
+      RideState newState = currentState; // Start with current state
+
+      switch (status) {
+        case 'PENDING':
+          if (previousState != RideState.pending) {
+            newState = RideState.pending;
+            print('🚦 [SetState] State changing to: RideState.pending');
+          }
+          break;
+        case 'ACCEPTED':
+          if (previousState == RideState.pending || isLoading) {
+            newState = RideState.accepted;
+            print('🚦 [SetState] State changing to: RideState.accepted');
+            _updateDriverInfo(rideData); // Update driver info NOW
+            estimatedArrival = rideData['estimatedArrival'] ?? '5-10 mins';
+            if (!Provider.of<RideTrackingProvider>(
+              context,
+              listen: false,
+            ).isTracking) {
+              final rideBookingProvider = Provider.of<RideBookingProvider>(
+                context,
+                listen: false,
+              );
+              _subscribeToLocationUpdates(
+                rideData['id'] ?? rideBookingProvider.rideId,
+              );
+            }
+            if (driverName != null &&
+                driverName != 'Driver' &&
+                driverName != 'null') {
+              // Delay snackbar slightly to ensure build completes
+              Future.delayed(
+                Duration.zero,
+                () => SnackbarHelper.showSuccessSnackBar(
+                  context,
+                  'Driver $driverName accepted your ride!',
+                ),
+              );
+            }
+          } else {
+            print(
+              '🚦 [SetState] Received ACCEPTED status again, but already in state $currentState. Ignoring state change.',
+            );
+            _updateDriverInfo(rideData); // Still update info
+          }
+          break;
+        case 'DRIVER_ARRIVED':
+          if (previousState == RideState.accepted ||
+              previousState == RideState.inProgress) {
+            newState = RideState.driverArrived;
+            print('🚦🎉 [SetState] State changing to: RideState.driverArrived');
+            _updateDriverInfo(rideData);
+            if (previousState != RideState.driverArrived) {
+              // Delay snackbar slightly
+              Future.delayed(
+                Duration.zero,
+                () => SnackbarHelper.showSuccessSnackBar(
+                  context,
+                  'Your driver has arrived! 🎉',
+                ),
+              );
+            }
+          } else {
+            print(
+              '🚦 [SetState] Received DRIVER_ARRIVED status, but in unexpected state $currentState. Ignoring state change.',
+            );
+          }
+          break;
+        case 'IN_PROGRESS':
+          if (previousState == RideState.driverArrived ||
+              previousState == RideState.accepted) {
+            newState = RideState.inProgress;
+            print('🚦🚗 [SetState] State changing to: RideState.inProgress');
+            _updateDriverInfo(rideData);
+          } else {
+            print(
+              '🚦 [SetState] Received IN_PROGRESS status, but in unexpected state $currentState. Ignoring state change.',
+            );
+          }
+          break;
+        case 'COMPLETED':
+          if (previousState != RideState.completed) {
+            newState = RideState.completed;
+            print('🚦✅ [SetState] State changing to: RideState.completed');
+            _updateDriverInfo(rideData);
+            Provider.of<RideTrackingProvider>(
+              context,
+              listen: false,
+            ).stopTracking();
+            Future.delayed(const Duration(seconds: 1), () {
+              if (mounted && currentState == RideState.completed) {
+                _showRatingDialog();
+              }
+            });
+          } else {
+            print('🚦 [SetState] Received COMPLETED status again. Ignoring.');
+          }
+          break;
+        case 'CANCELLED_BY_RIDER':
+        case 'CANCELLED_BY_DRIVER':
+        case 'CANCELLED_BY_SYSTEM':
+          if (previousState != RideState.cancelled) {
+            newState = RideState.cancelled;
+            print('🚦❌ [SetState] State changing to: RideState.cancelled');
+            Provider.of<RideTrackingProvider>(
+              context,
+              listen: false,
+            ).stopTracking();
+          } else {
+            print('🚦 [SetState] Received CANCELLED status again. Ignoring.');
+          }
+          break;
+        default:
+          print(
+            '⚠️ [SetState] Unknown ride status received: $status. State remains $currentState.',
+          );
+          newState = currentState; // Explicitly keep current state
+      }
+
+      // --- Critical: Assign the calculated newState to currentState ---
+      currentState = newState;
+
+      // Reset loading/error flags
+      if (isLoading || errorMessage != null) {
+        isLoading = false;
+        errorMessage = null;
+      }
+
+      print(
+        '📊 [End SetState] State update applied. Current state is now: $currentState',
+      );
+    }); // End of setState
+    print('📊 [End Update] _updateRideState function finished.');
+  }
+
+  void stopTracking() {
+    Provider.of<RideTrackingProvider>(context, listen: false).stopTracking();
+    print('🛑 Stopped tracking driver location.');
   }
 
   void _subscribeToLocationUpdates(String rideId) {
@@ -344,47 +477,53 @@ class _RideTrackingScreenState extends State<RideTrackingScreen> {
   void _updateDriverInfo(Map<String, dynamic> rideData) {
     if (!mounted) return;
 
-    print('📋 Updating driver info from ride data');
+    print('📋 Updating driver info potentially from ride data');
     print('📋 Ride data keys: ${rideData.keys.toList()}');
 
-    setState(() {
-      // ✅ Extract driver details from ride response
+    // Only update fields if they are present and non-null in the incoming data
+    bool infoUpdated = false;
+    if (rideData.containsKey('driverName') && rideData['driverName'] != null) {
       driverName = rideData['driverName']?.toString();
+      infoUpdated = true;
+    }
+    if (rideData.containsKey('driverPhone') &&
+        rideData['driverPhone'] != null) {
       driverPhone = rideData['driverPhone']?.toString();
-
-      if (rideData['driverRating'] != null) {
-        driverRating = (rideData['driverRating'] as num).toDouble();
-      }
-
-      // ✅ Extract vehicle details
+      infoUpdated = true;
+    }
+    if (rideData.containsKey('driverRating') &&
+        rideData['driverRating'] != null) {
+      driverRating = (rideData['driverRating'] as num?)?.toDouble();
+      infoUpdated = true;
+    }
+    if (rideData.containsKey('vehicleModel') &&
+        rideData['vehicleModel'] != null &&
+        rideData.containsKey('vehiclePlateNumber') &&
+        rideData['vehiclePlateNumber'] != null) {
       String? vehicleModel = rideData['vehicleModel']?.toString();
       String? plateNumber = rideData['vehiclePlateNumber']?.toString();
+      vehicleDetails = '$vehicleModel • $plateNumber';
+      infoUpdated = true;
+    } else if (rideData.containsKey('vehicleDetails') &&
+        rideData['vehicleDetails'] != null) {
+      // Fallback if combined field is sent
+      vehicleDetails = rideData['vehicleDetails']?.toString();
+      infoUpdated = true;
+    }
 
-      if (vehicleModel != null && plateNumber != null) {
-        vehicleDetails = '$vehicleModel • $plateNumber';
-      } else {
-        vehicleDetails = 'Vehicle details pending';
-      }
-
-      estimatedArrival = 'Arriving soon';
-
-      print('📋 Driver info updated from API:');
+    // Only print if something actually changed from this specific data packet
+    if (infoUpdated) {
+      print('📋 Driver info updated from incoming data:');
       print('   Name: $driverName');
       print('   Phone: $driverPhone');
       print('   Vehicle: $vehicleDetails');
       print('   Rating: $driverRating');
-    });
-
-    // ✅ Only show snackbar if we have actual driver info
-    if (driverName != null &&
-        driverName!.isNotEmpty &&
-        driverName != 'null' &&
-        driverName != 'Driver') {
-      SnackbarHelper.showSuccessSnackBar(
-        context,
-        'Driver $driverName is on the way!',
-      );
+    } else {
+      print('📋 No new driver info found in this data packet.');
     }
+
+    // Note: The snackbar logic was moved from here to _handleRideAccepted
+    // and _updateRideState to ensure it shows at the right time.
   }
 
   void _handleAuthError() async {
@@ -464,8 +603,9 @@ class _RideTrackingScreenState extends State<RideTrackingScreen> {
   }
 
   Widget _buildBottomContent() {
-    print('🎨 Building bottom sheet for state: $currentState');
-    print('🎨 Driver name: $driverName, Vehicle: $vehicleDetails');
+    // ✅ ADD LOGGING HERE
+    print('🎨 [Build] Building bottom sheet for state: $currentState');
+    print('🎨 [Build] Driver name: $driverName, Vehicle: $vehicleDetails');
 
     if (isLoading) {
       return _buildLoadingContent();
@@ -476,31 +616,33 @@ class _RideTrackingScreenState extends State<RideTrackingScreen> {
     switch (currentState) {
       case RideState.pending:
         return _buildPendingContent();
-
       case RideState.accepted:
-        // ✅ IMPROVED: Check for actual driver data, not just 'Driver' placeholder
         final hasDriverInfo =
             driverName != null &&
             driverName != 'null' &&
             driverName!.isNotEmpty &&
             driverName != 'Driver' &&
             driverName != 'N/A';
-
         if (hasDriverInfo) {
-          print('✅ Showing driver card with info: $driverName');
+          print('✅ [Build] Showing driver card with info: $driverName');
           return _buildDriverOnWayContent();
         } else {
-          print('⏳ Still waiting for driver details, showing pending');
-          return _buildPendingContent(); // ⏳ Still waiting for driver details
+          print(
+            '⏳ [Build] Still waiting for driver details, showing pending UI',
+          );
+          return _buildPendingContent();
         }
-
       case RideState.driverArrived:
+        print('✅ [Build] Returning _buildDriverArrivedContent'); // ✅ ADD LOG
         return _buildDriverArrivedContent();
       case RideState.inProgress:
+        print('✅ [Build] Returning _buildInProgressContent'); // ✅ ADD LOG
         return _buildInProgressContent();
       case RideState.completed:
+        print('✅ [Build] Returning _buildCompletedContent'); // ✅ ADD LOG
         return _buildCompletedContent();
       case RideState.cancelled:
+        print('✅ [Build] Returning _buildCancelledContent'); // ✅ ADD LOG
         return _buildCancelledContent();
     }
   }
@@ -927,40 +1069,232 @@ class _RideTrackingScreenState extends State<RideTrackingScreen> {
 
   Widget _buildDriverArrivedContent() {
     return Container(
-      height: 350,
-      padding: const EdgeInsets.all(20),
-      decoration: const BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      child: Column(
-        children: [
-          const Icon(Icons.location_on, color: Colors.green, size: 48),
-          const SizedBox(height: 16),
-          const Text(
-            'Driver has arrived!',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-          ),
-          const SizedBox(height: 8),
-          const Text(
-            'Your driver is waiting at the pickup location',
-            style: TextStyle(fontSize: 14, color: Colors.grey),
-          ),
-          const SizedBox(height: 20),
-          if (currentRideData != null) _buildDriverInfoCard(),
-          const Spacer(),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: () {
-                setState(() {
-                  currentState = RideState.inProgress;
-                });
-              },
-              child: const Text('Start Ride'),
-            ),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(20),
+          topRight: Radius.circular(20),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, -5),
           ),
         ],
+      ),
+      child: SafeArea(
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(AppDimensions.pageHorizontalPadding),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Handle bar
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[300],
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+
+                // Celebration icon
+                Container(
+                  width: 80,
+                  height: 80,
+                  decoration: BoxDecoration(
+                    color: AppColors.success.withOpacity(0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.check_circle,
+                    size: 48,
+                    color: AppColors.success,
+                  ),
+                ),
+
+                const SizedBox(height: AppDimensions.widgetSpacing),
+
+                Text(
+                  'Your driver has arrived! 🎉',
+                  style: AppTextStyles.heading2.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+
+                const SizedBox(height: 8),
+
+                Text(
+                  'Your driver is waiting at the pickup location',
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: Colors.grey[600],
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+
+                const SizedBox(height: 24),
+
+                // Driver info card
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppColors.surfaceLight,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 30,
+                        backgroundColor: AppColors.primaryBlue,
+                        child: Text(
+                          driverName?.substring(0, 1).toUpperCase() ?? 'D',
+                          style: AppTextStyles.heading2.copyWith(
+                            color: AppColors.white,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              driverName ?? 'Driver',
+                              style: AppTextStyles.bodyLarge.copyWith(
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            if (vehicleDetails != null)
+                              Text(
+                                vehicleDetails!,
+                                style: AppTextStyles.bodySmall,
+                              ),
+                            Row(
+                              children: [
+                                const Icon(
+                                  Icons.star,
+                                  size: 16,
+                                  color: AppColors.warning,
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  '${driverRating?.toStringAsFixed(1) ?? '5.0'}',
+                                  style: AppTextStyles.bodySmall,
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: () => _callDriver(),
+                        icon: const Icon(
+                          Icons.phone,
+                          color: AppColors.primaryBlue,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 24),
+
+                // Instructions
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryBlue.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: AppColors.primaryBlue.withOpacity(0.3),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.info_outline,
+                        color: AppColors.primaryBlue,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          'Please meet your driver at the pickup location',
+                          style: AppTextStyles.bodyMedium.copyWith(
+                            color: AppColors.primaryBlue,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 24),
+
+                // Trip Details
+                _buildTripDetailsCard(),
+
+                const SizedBox(height: 24),
+
+                // Action buttons row
+                Row(
+                  children: [
+                    // Contact driver button
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          side: const BorderSide(color: AppColors.primaryBlue),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        onPressed: () => _callDriver(),
+                        icon: const Icon(
+                          Icons.phone,
+                          color: AppColors.primaryBlue,
+                        ),
+                        label: const Text(
+                          'Call Driver',
+                          style: TextStyle(
+                            color: AppColors.primaryBlue,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    // Cancel button
+                    Expanded(
+                      child: OutlinedButton(
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          side: const BorderSide(color: Colors.red),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        onPressed: () => _showCancelConfirmation(context),
+                        child: const Text(
+                          'Cancel Ride',
+                          style: TextStyle(
+                            color: Colors.red,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
